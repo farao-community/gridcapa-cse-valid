@@ -6,7 +6,11 @@
  */
 package com.farao_community.farao.cse_valid.app.net_position;
 
-import com.powsybl.iidm.network.*;
+import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.Country;
+import com.powsybl.iidm.network.DanglingLine;
+import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.Substation;
 
 import java.util.Optional;
 

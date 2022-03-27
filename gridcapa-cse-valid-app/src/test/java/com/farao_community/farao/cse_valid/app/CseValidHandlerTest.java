@@ -40,13 +40,20 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.farao_community.farao.cse_valid.app.Constants.*;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_CALCULATION_DIRECTIONS;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_SHIFTING_FACTORS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -56,26 +63,29 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 class CseValidHandlerTest {
 
-    @Autowired
-    private CseValidHandler cseValidHandler;
-
     @MockBean
-    private Logger businessLogger;
+    private MinioAdapter minioAdapter;
 
     @MockBean
     private DichotomyRunner dichotomyRunner;
 
     @MockBean
-    private MinioAdapter minioAdapter;
+    private NetPositionService netPositionService;
 
     @MockBean
     private LimitingElementService limitingElementService;
 
     @MockBean
-    private NetPositionService netPositionService;
+    private Logger businessLogger;
 
     @MockBean
     private CseValidRequestValidator cseValidRequestValidator;
+
+    @MockBean
+    private CseValidNetworkShifter cseValidNetworkShifter;
+
+    @Autowired
+    private CseValidHandler cseValidHandler;
 
     @Test
     void existingTtcAdjustmentFileWithoutCalcul() {
@@ -460,7 +470,7 @@ class CseValidHandlerTest {
     }
 
     @Test
-    void computeTimestampMiecWithFranceOutAreaAndFilesNotAvailable() throws CseValidRequestValidatorException {
+    void computeTimestampMiecWithFranceOutAreaAndFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
@@ -489,6 +499,7 @@ class CseValidHandlerTest {
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
+        verify(cseValidNetworkShifter, times(1)).shiftNetworkWithShifttingFactors(timestamp, cseValidRequest);
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), true);
     }
 
@@ -505,6 +516,7 @@ class CseValidHandlerTest {
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
+        verify(cseValidNetworkShifter, times(1)).shiftNetworkWithShifttingFactors(timestamp, cseValidRequest);
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), false);
     }
 }

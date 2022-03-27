@@ -6,7 +6,12 @@
  */
 package com.farao_community.farao.cse_valid.app.util;
 
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.*;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirections;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TFactor;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import xsd.etso_code_lists.CodingSchemeType;
 import xsd.etso_core_cmpts.AreaType;
 import xsd.etso_core_cmpts.QuantityType;

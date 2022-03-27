@@ -6,37 +6,29 @@
  */
 package com.farao_community.farao.cse_valid.app.dichotomy;
 
-import com.farao_community.farao.commons.EICode;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.app.CseValidNetworkShifter;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TSplittingFactors;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
 import com.farao_community.farao.dichotomy.api.DichotomyEngine;
-import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.NetworkValidator;
 import com.farao_community.farao.dichotomy.api.index.Index;
 import com.farao_community.farao.dichotomy.api.index.RangeDivisionIndexStrategy;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
-import com.farao_community.farao.dichotomy.shift.LinearScaler;
-import com.farao_community.farao.dichotomy.shift.SplittingFactors;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
-import com.powsybl.glsk.api.GlskDocument;
-import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Network;
 
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 @Service
 public class DichotomyRunner {
@@ -44,18 +36,23 @@ public class DichotomyRunner {
     private static final String DICHOTOMY_PARAMETERS_MSG = "Minimum dichotomy index: {}, Maximum dichotomy index: {}, Dichotomy precision: {}";
     private static final double DEFAULT_DICHOTOMY_PRECISION = 50;
     private static final int DEFAULT_MIN_INDEX = 0;
-    private static final double SHIFT_TOLERANCE = 1;
 
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final RaoRunnerClient raoRunnerClient;
     private final Logger businessLogger;
+    private final CseValidNetworkShifter cseValidNetworkShifter;
 
-    public DichotomyRunner(FileImporter fileImporter, FileExporter fileExporter, RaoRunnerClient raoRunnerClient, Logger businessLogger) {
+    public DichotomyRunner(FileImporter fileImporter,
+                           FileExporter fileExporter,
+                           RaoRunnerClient raoRunnerClient,
+                           Logger businessLogger,
+                           CseValidNetworkShifter cseValidNetworkShifter) {
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.raoRunnerClient = raoRunnerClient;
         this.businessLogger = businessLogger;
+        this.cseValidNetworkShifter = cseValidNetworkShifter;
     }
 
     public DichotomyResult<RaoResponse> runImportCornerDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp) {
@@ -68,7 +65,7 @@ public class DichotomyRunner {
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
-                getNetworkShifter(timestamp.getSplittingFactors(), network, cseValidRequest),
+                cseValidNetworkShifter.getNetworkShifterWithSplittingFactors(timestamp.getSplittingFactors(), network, cseValidRequest.getGlsk().getUrl()),
                 getNetworkValidator(cseValidRequest, jsonCracUrl));
         return engine.run(network);
     }
@@ -85,7 +82,7 @@ public class DichotomyRunner {
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
-                getNetworkShifter(timestamp.getSplittingFactors(), network, cseValidRequest),
+                cseValidNetworkShifter.getNetworkShifterWithShifttingFactors(timestamp.getShiftingFactors(), network, cseValidRequest.getGlsk().getUrl()),
                 getNetworkValidator(cseValidRequest, jsonCracUrl));
         return engine.run(network);
     }
@@ -94,25 +91,6 @@ public class DichotomyRunner {
         CseCrac cseCrac = fileImporter.importCseCrac(cracUrl);
         Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
         return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
-    }
-
-    private NetworkShifter getNetworkShifter(TSplittingFactors splittingFactors, Network network, CseValidRequest cseValidRequest) {
-        GlskDocument glskDocument = fileImporter.importGlsk(cseValidRequest.getGlsk().getUrl());
-        return new LinearScaler(
-                glskDocument.getZonalScalable(network),
-                new SplittingFactors(convertSplittingFactors(splittingFactors)),
-                SHIFT_TOLERANCE);
-    }
-
-    private Map<String, Double> convertSplittingFactors(TSplittingFactors tSplittingFactors) {
-        Map<String, Double> splittingFactors = new TreeMap<>();
-        tSplittingFactors.getSplittingFactor().forEach(factor -> splittingFactors.put(toEic(factor.getCountry().getV()), factor.getFactor().getV().doubleValue()));
-        splittingFactors.put(toEic("IT"), -1.);
-        return splittingFactors;
-    }
-
-    private String toEic(String country) {
-        return new EICode(Country.valueOf(country)).getAreaCode();
     }
 
     private NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl) {

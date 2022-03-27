@@ -60,7 +60,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.BiConsumer;
 
-import static com.farao_community.farao.cse_valid.app.Constants.*;
+import static com.farao_community.farao.cse_valid.app.Constants.DOMAIN;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_GENERIC;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_TTC_ADJ_FILE;
+import static com.farao_community.farao.cse_valid.app.Constants.EUROPE_BRUSSELS_ZONE_ID;
+import static com.farao_community.farao.cse_valid.app.Constants.IN_AREA;
+import static com.farao_community.farao.cse_valid.app.Constants.OUT_AREA;
+import static com.farao_community.farao.cse_valid.app.Constants.PRODUCT;
+import static com.farao_community.farao.cse_valid.app.Constants.RECEIVER_IDENTIFICATION;
+import static com.farao_community.farao.cse_valid.app.Constants.SENDER_IDENTIFICATION;
+import static com.farao_community.farao.cse_valid.app.Constants.TIMESERIES_IDENTIFICATION_PATTERN;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}

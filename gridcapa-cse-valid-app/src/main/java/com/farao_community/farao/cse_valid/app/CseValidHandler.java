@@ -42,6 +42,7 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSIN
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 @Component
 public class CseValidHandler {
@@ -53,6 +54,7 @@ public class CseValidHandler {
     private final LimitingElementService limitingElementService;
     private final Logger businessLogger;
     private final CseValidRequestValidator cseValidRequestValidator;
+    private final CseValidNetworkShifter cseValidNetworkShifter;
 
     public CseValidHandler(DichotomyRunner dichotomyRunner,
                            EicCodesConfiguration eicCodesConfiguration,
@@ -61,7 +63,8 @@ public class CseValidHandler {
                            NetPositionService netPositionService,
                            LimitingElementService limitingElementService,
                            Logger businessLogger,
-                           CseValidRequestValidator cseValidRequestValidator) {
+                           CseValidRequestValidator cseValidRequestValidator,
+                           CseValidNetworkShifter cseValidNetworkShifter) {
         this.dichotomyRunner = dichotomyRunner;
         this.eicCodesConfiguration = eicCodesConfiguration;
         this.fileImporter = fileImporter;
@@ -70,6 +73,7 @@ public class CseValidHandler {
         this.limitingElementService = limitingElementService;
         this.businessLogger = businessLogger;
         this.cseValidRequestValidator = cseValidRequestValidator;
+        this.cseValidNetworkShifter = cseValidNetworkShifter;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
@@ -132,6 +136,8 @@ public class CseValidHandler {
         }
     }
 
+    /* --------------- IMPORT CORNER --------------- */
+
     private void computeTimestampForFullImport(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         if (irrelevantValuesInTimestampForFullImport(timestampWrapper)) {
             tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), timestampWrapper.getMniiValue());
@@ -151,30 +157,6 @@ public class CseValidHandler {
         }
     }
 
-    private void computeTimestampForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
-        TTimestamp timestamp = timestampWrapper.getTimestamp();
-        if (irrelevantValuesInTimestampForExportCorner(timestampWrapper)) {
-            tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
-        } else if (missingDataInTimestampForExportCorner(timestampWrapper)) {
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_DATA);
-        } else if (!timestampWrapper.hasShiftingFactors()) {
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_SHIFTING_FACTORS);
-        } else if (!timestampWrapper.hasCalculationDirections()) {
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_CALCULATION_DIRECTIONS);
-        } else if (actualNtcAboveTargetForExportCorner(timestampWrapper)) {
-            BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
-            tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
-        } else {
-            if (isFranceInArea(timestamp)) {
-                runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, true);
-            } else if (isFranceOutArea(timestamp)) {
-                runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, false);
-            } else {
-                throw new CseValidInvalidDataException("France must appear in InArea or OutArea");
-            }
-        }
-    }
-
     private static boolean irrelevantValuesInTimestampForFullImport(TTimestampWrapper timestampWrapper) {
         // MNII is present but both values MiBNII and ANTCFinal are absent or both values are equal to zero
         final boolean mibniiAndAntcfinalAbsent = timestampWrapper.getMibnii() == null && timestampWrapper.getAntcfinal() == null;
@@ -184,34 +166,14 @@ public class CseValidHandler {
         return mibniiAndAntcfinalAbsent || (mibniiIsZero && antcfinalIsZero);
     }
 
-    private static boolean irrelevantValuesInTimestampForExportCorner(TTimestampWrapper timestampWrapper) {
-        // MIEC is present but both values MiBIEC and ANTCFinal are absent or both values are equal to zero
-        final boolean mibiecAndAntcfinalAbsent = timestampWrapper.getMibiec() == null && timestampWrapper.getAntcfinal() == null;
-        final boolean mibiecIsZero = timestampWrapper.hasMibiec() && timestampWrapper.getMibiecIntValue() == 0;
-        final boolean antcfinalIsZero = timestampWrapper.hasAntcfinal() && timestampWrapper.getAntcfinalIntValue() == 0;
-
-        return mibiecAndAntcfinalAbsent || (mibiecIsZero && antcfinalIsZero);
-    }
-
     private static boolean missingDataInTimestampForFullImport(TTimestampWrapper timestampWrapper) {
         // MNII is present but one of the required data (MiBNII or ANTCFinal) is missing
         return !timestampWrapper.hasMibnii() || !timestampWrapper.hasAntcfinal();
     }
 
-    private static boolean missingDataInTimestampForExportCorner(TTimestampWrapper timestampWrapper) {
-        // MIEC is present but one of the required data (MiBIEC or ANTCFinal) is missing
-        return !timestampWrapper.hasMibiec() || !timestampWrapper.hasAntcfinal();
-    }
-
     private boolean actualNtcAboveTargetForFullImport(TTimestampWrapper timestampWrapper) {
         final int actualNtc = timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue();
         final int targetNtc = timestampWrapper.getMniiIntValue();
-        return actualNtcAboveTargetNtc(timestampWrapper, actualNtc, targetNtc);
-    }
-
-    private boolean actualNtcAboveTargetForExportCorner(TTimestampWrapper timestampWrapper) {
-        final int actualNtc = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
-        final int targetNtc = timestampWrapper.getMiecIntValue();
         return actualNtcAboveTargetNtc(timestampWrapper, actualNtc, targetNtc);
     }
 
@@ -236,15 +198,79 @@ public class CseValidHandler {
         }
     }
 
-    private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, boolean isExportCornerActive) {
+    private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
+        if (dichotomyResult.getHighestValidStep() == null) {
+            return Optional.empty();
+        }
+        String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
+        NetPositionReport netPositionReport = netPositionService.generateNetPositionReport(finalNetworkWithPraUrl);
+        Map<String, Double> italianBordersExchange = netPositionReport.getAreasReport().get("IT").getBordersExchanges();
+        double italianCseNetPosition = italianBordersExchange.get("FR") +
+                italianBordersExchange.get("CH") +
+                italianBordersExchange.get("AT") +
+                italianBordersExchange.get("SI");
+        return Optional.of(-italianCseNetPosition);
+    }
+
+    /* --------------- EXPORT CORNER --------------- */
+
+    private void computeTimestampForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+        TTimestamp timestamp = timestampWrapper.getTimestamp();
+        if (irrelevantValuesInTimestampForExportCorner(timestampWrapper)) {
+            tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
+        } else if (missingDataInTimestampForExportCorner(timestampWrapper)) {
+            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_DATA);
+        } else if (!timestampWrapper.hasShiftingFactors()) {
+            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_SHIFTING_FACTORS);
+        } else if (!timestampWrapper.hasCalculationDirections()) {
+            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_CALCULATION_DIRECTIONS);
+        } else if (actualNtcAboveTargetForExportCorner(timestampWrapper)) {
+            BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
+            tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
+        } else {
+            if (!isDegradedMode(timestampWrapper, cseValidRequest, tcDocumentTypeWriter)) {
+                cseValidNetworkShifter.shiftNetworkWithShifttingFactors(timestamp, cseValidRequest);
+                runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            }
+        }
+    }
+
+    private static boolean irrelevantValuesInTimestampForExportCorner(TTimestampWrapper timestampWrapper) {
+        // MIEC is present but both values MiBIEC and ANTCFinal are absent or both values are equal to zero
+        final boolean mibiecAndAntcfinalAbsent = timestampWrapper.getMibiec() == null && timestampWrapper.getAntcfinal() == null;
+        final boolean mibiecIsZero = timestampWrapper.hasMibiec() && timestampWrapper.getMibiecIntValue() == 0;
+        final boolean antcfinalIsZero = timestampWrapper.hasAntcfinal() && timestampWrapper.getAntcfinalIntValue() == 0;
+
+        return mibiecAndAntcfinalAbsent || (mibiecIsZero && antcfinalIsZero);
+    }
+
+    private static boolean missingDataInTimestampForExportCorner(TTimestampWrapper timestampWrapper) {
+        // MIEC is present but one of the required data (MiBIEC or ANTCFinal) is missing
+        return !timestampWrapper.hasMibiec() || !timestampWrapper.hasAntcfinal();
+    }
+
+    private boolean actualNtcAboveTargetForExportCorner(TTimestampWrapper timestampWrapper) {
+        final int actualNtc = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
+        final int targetNtc = timestampWrapper.getMiecIntValue();
+        return actualNtcAboveTargetNtc(timestampWrapper, actualNtc, targetNtc);
+    }
+
+    private boolean isDegradedMode(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+        TTimestamp timestamp = timestampWrapper.getTimestamp();
         try {
-            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, isExportCornerActive);
-            DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), isExportCornerActive);
-            // TODO
+            if (isFranceInArea(timestamp)) {
+                cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true);
+            } else if (isFranceOutArea(timestamp)) {
+                cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false);
+            } else {
+                throw new CseValidInvalidDataException("France must appear in InArea or OutArea");
+            }
         } catch (CseValidRequestValidatorException e) {
             businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
             tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
+            return true;
         }
+        return false;
     }
 
     private boolean isFranceInArea(TTimestamp timestamp) {
@@ -265,17 +291,10 @@ public class CseValidHandler {
         return franceOutArea.isPresent();
     }
 
-    private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
-        if (dichotomyResult.getHighestValidStep() == null) {
-            return Optional.empty();
-        }
-        String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
-        NetPositionReport netPositionReport = netPositionService.generateNetPositionReport(finalNetworkWithPraUrl);
-        Map<String, Double> italianBordersExchange = netPositionReport.getAreasReport().get("IT").getBordersExchanges();
-        double italianCseNetPosition = italianBordersExchange.get("FR") +
-                italianBordersExchange.get("CH") +
-                italianBordersExchange.get("AT") +
-                italianBordersExchange.get("SI");
-        return Optional.of(-italianCseNetPosition);
+    private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+        TTimestamp timestamp = timestampWrapper.getTimestamp();
+        boolean isExportCornerActive = isFranceInArea(timestamp);
+        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), isExportCornerActive);
+        // TODO
     }
 }
