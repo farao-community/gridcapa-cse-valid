@@ -22,7 +22,7 @@ import com.github.jasminb.jsonapi.models.errors.Error;
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
-public class JsonApiConverter {
+class JsonApiConverter {
     private final ObjectMapper objectMapper;
 
     public JsonApiConverter() {

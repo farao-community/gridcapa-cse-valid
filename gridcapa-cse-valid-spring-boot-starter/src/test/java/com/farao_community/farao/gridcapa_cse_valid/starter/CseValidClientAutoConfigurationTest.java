@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
-public class CseValidClientAutoConfigurationTest {
+class CseValidClientAutoConfigurationTest {
     private AnnotationConfigApplicationContext context;
 
     @BeforeEach

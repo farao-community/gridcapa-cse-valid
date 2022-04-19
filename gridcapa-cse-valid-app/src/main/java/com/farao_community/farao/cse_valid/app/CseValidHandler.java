@@ -24,7 +24,6 @@ public class CseValidHandler {
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
-        System.out.println("ID LOL " + cseValidRequest.getId());
         return new CseValidResponse(cseValidRequest.getId());
     }
 }
