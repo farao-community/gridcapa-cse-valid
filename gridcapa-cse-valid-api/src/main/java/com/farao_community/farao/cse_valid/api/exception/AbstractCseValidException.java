@@ -7,7 +7,7 @@
 package com.farao_community.farao.cse_valid.api.exception;
 
 /**
- * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author The o Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 public abstract class AbstractCseValidException extends RuntimeException {
 
