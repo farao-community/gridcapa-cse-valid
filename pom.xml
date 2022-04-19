@@ -47,13 +47,27 @@
     </modules>
 
     <properties>
+        <commons.lang.version>3.11</commons.lang.version>
+        <commons.io.version>2.11.0</commons.io.version>
         <farao.dependencies.version>1.2.2</farao.dependencies.version>
-        <jsonapi.converter.version>0.11</jsonapi.converter.version>
         <jackson-datatype.version>2.13.2</jackson-datatype.version>
+        <jsonapi.converter.version>0.11</jsonapi.converter.version>
+        <logstash.version>7.0.1</logstash.version>
+        <task-manager.version>1.0.0</task-manager.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons.io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.farao-community.farao</groupId>
+                <artifactId>gridcapa-task-manager-api</artifactId>
+                <version>${task-manager.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.github.jasminb</groupId>
                 <artifactId>jsonapi-converter</artifactId>
@@ -64,13 +78,22 @@
                 <artifactId>jackson-datatype-jdk8</artifactId>
                 <version>${jackson-datatype.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.farao-community.farao</groupId>
                 <artifactId>farao-dependencies</artifactId>
                 <version>${farao.dependencies.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons.lang.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
