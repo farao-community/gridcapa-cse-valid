@@ -1,0 +1,16 @@
+
+`com.farao_community.farao.cse_valid.app.configuration.EventsLogger#getLogger()Lorg/slf4j/Logger;¯
+¤/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/EventsLogger.java ("1*Ï
+1¯
+¤/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/EventsLogger.java (È
+Å
+¯
+¤/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/EventsLogger.java (:
+%0org.slf4j.Logger"Gorg.slf4j.LoggerFactory#getLogger(Ljava/lang/String;)Lorg/slf4j/Logger;*"
+org.slf4j.LoggerFactory*
+BUSINESS_LOGGER"Ì
+¯
+¤/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/EventsLogger.java (;
+
+%0org.slf4j.LoggerBFD
+Bcom.farao_community.farao.cse_valid.app.configuration.EventsLogger
