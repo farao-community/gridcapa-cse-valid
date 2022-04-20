@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CseValidClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GridCapa CSE Validation runner service client SpringBoot starter</a> &gt; <a href="index.source.html" class="el_package">com.farao_community.farao.gridcapa_cse_valid.starter</a> &gt; <span class="el_source">CseValidClient.java</span></div><h1>CseValidClient.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ *  This Source Code Form is subject to the terms of the Mozilla Public
+ *  License, v. 2.0. If a copy of the MPL was not distributed with this
+ *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+package com.farao_community.farao.gridcapa_cse_valid.starter;
+
+import com.farao_community.farao.cse_valid.api.JsonApiConverter;
+import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
+import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.*;
+
+/**
+ * @author Theo Pascoli {@literal &lt;theo.pascoli at rte-france.com&gt;}
+ */
+public class CseValidClient {
+    private static final int DEFAULT_PRIORITY = 1;
+<span class="fc" id="L22">    private static final Logger LOGGER = LoggerFactory.getLogger(CseValidClient.class);</span>
+    private static final String CONTENT_ENCODING = &quot;UTF-8&quot;;
+    private static final String CONTENT_TYPE = &quot;application/vnd.api+json&quot;;
+
+    private final AmqpTemplate amqpTemplate;
+    private final CseValidClientProperties cseValidClientProperties;
+    private final JsonApiConverter jsonConverter;
+
+<span class="fc" id="L30">    public CseValidClient(AmqpTemplate amqpTemplate, CseValidClientProperties cseValidClientProperties) {</span>
+<span class="fc" id="L31">        this.amqpTemplate = amqpTemplate;</span>
+<span class="fc" id="L32">        this.cseValidClientProperties = cseValidClientProperties;</span>
+<span class="fc" id="L33">        this.jsonConverter = new JsonApiConverter();</span>
+<span class="fc" id="L34">    }</span>
+
+    public CseValidResponse run(CseValidRequest cseValidRequest, int priority) {
+<span class="fc" id="L37">        LOGGER.info(&quot;Cse valid request sent: {}&quot;, cseValidRequest);</span>
+<span class="fc" id="L38">        Message responseMessage = amqpTemplate.sendAndReceive(cseValidClientProperties.getAmqp().getQueueName(), buildMessage(cseValidRequest, priority));</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (responseMessage != null) {</span>
+<span class="fc" id="L40">            return CseValidResponseConversionHelper.convertCseValidResponse(responseMessage, jsonConverter);</span>
+        } else {
+<span class="nc" id="L42">            throw new CseValidInternalException(&quot;Cse valid Runner server did not respond&quot;);</span>
+        }
+    }
+
+    public CseValidResponse run(CseValidRequest cseValidRequest) {
+<span class="fc" id="L47">        return run(cseValidRequest, DEFAULT_PRIORITY);</span>
+    }
+
+    public Message buildMessage(CseValidRequest cseValidRequest, int priority) {
+<span class="fc" id="L51">        return MessageBuilder.withBody(jsonConverter.toJsonMessage(cseValidRequest))</span>
+<span class="fc" id="L52">                .andProperties(buildMessageProperties(priority))</span>
+<span class="fc" id="L53">                .build();</span>
+    }
+
+    private MessageProperties buildMessageProperties(int priority) {
+<span class="fc" id="L57">        return MessagePropertiesBuilder.newInstance()</span>
+<span class="fc" id="L58">                .setAppId(cseValidClientProperties.getAmqp().getApplicationId())</span>
+<span class="fc" id="L59">                .setContentEncoding(CONTENT_ENCODING)</span>
+<span class="fc" id="L60">                .setContentType(CONTENT_TYPE)</span>
+<span class="fc" id="L61">                .setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT)</span>
+<span class="fc" id="L62">                .setExpiration(cseValidClientProperties.getAmqp().getExpiration())</span>
+<span class="fc" id="L63">                .setPriority(priority)</span>
+<span class="fc" id="L64">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,17 @@
+{
+  "groups": [
+    {
+      "name": "cse-valid-runner",
+      "type": "com.farao_community.farao.cse_valid.app.configuration.UrlWhitelistConfiguration",
+      "sourceType": "com.farao_community.farao.cse_valid.app.configuration.UrlWhitelistConfiguration"
+    }
+  ],
+  "properties": [
+    {
+      "name": "cse-valid-runner.whitelist",
+      "type": "java.util.List<java.lang.String>",
+      "sourceType": "com.farao_community.farao.cse_valid.app.configuration.UrlWhitelistConfiguration"
+    }
+  ],
+  "hints": []
+}

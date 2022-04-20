@@ -1,0 +1,4 @@
+com/farao_community/farao/cse_valid/app/CseValidListenerTest.class
+com/farao_community/farao/cse_valid/app/CseValidListenerTest$ProcessPublicationServiceTestConfiguration.class
+com/farao_community/farao/cse_valid/app/configuration/MinioConfigurationTest.class
+com/farao_community/farao/cse_valid/app/configuration/AmqpMessagesConfigurationTest.class

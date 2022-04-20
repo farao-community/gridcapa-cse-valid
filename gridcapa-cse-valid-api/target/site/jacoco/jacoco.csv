@@ -1,0 +1,11 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api.resource,CseValidResponse,0,9,0,0,0,4,0,2,0,2
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api.resource,CseValidRequest,0,9,0,0,0,4,0,2,0,2
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api.resource,CseValidFileResource,22,0,0,0,7,0,4,0,4,0
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api.exception,CseValidRaoException,0,13,0,0,0,6,0,4,0,4
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api.exception,CseValidInternalException,0,13,0,0,0,6,0,4,0,4
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api.exception,CseValidInvalidDataException,0,13,0,0,0,6,0,4,0,4
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api.exception,AbstractCseValidException,0,44,1,3,0,14,1,5,0,4
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api,OffsetDateTimeDeserializer,7,0,0,0,2,0,2,0,2,0
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api,JsonApiConverter,26,92,0,0,7,20,1,6,1,6
+GridCapa CSE valid runner API,com.farao_community.farao.cse_valid.api,OffsetDateTimeSerializer,8,0,0,0,3,0,2,0,2,0

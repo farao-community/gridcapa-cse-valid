@@ -1,0 +1,4 @@
+com/farao_communityfarao/cse_valid/api/exception/CseValidRaoExceptionTest.class
+com/farao_communityfarao/cse_valid/api/exception/CseValidInternalExceptionTest.class
+com/farao_communityfarao/cse_valid/api/exception/CseValidInvalidDataExceptionTest.class
+com/farao_communityfarao/cse_valid/api/JsonApiConverterTest.class

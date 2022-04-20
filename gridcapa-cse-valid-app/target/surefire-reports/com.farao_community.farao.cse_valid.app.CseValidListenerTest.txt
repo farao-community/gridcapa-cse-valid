@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.farao_community.farao.cse_valid.app.CseValidListenerTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.263 s - in com.farao_community.farao.cse_valid.app.CseValidListenerTest

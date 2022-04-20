@@ -1,0 +1,29 @@
+{
+  "properties": [
+    {
+      "name": "cse-valid-runner.amqp.application-id",
+      "type": "java.lang.String",
+      "description": "Name of the application that call cse valid through starter."
+    },
+    {
+      "name": "cse-valid-runner.amqp.queue-name",
+      "type": "java.lang.String",
+      "description": "AMQP queue to be used to send Cse valid requests."
+    },
+    {
+      "name": "cse-valid-runner.amqp.exchange",
+      "type": "java.lang.String",
+      "description": "AMQP exchange to be used to send cse valid requests."
+    },
+    {
+      "name": "cse-valid-runner.amqp.routing-key",
+      "type": "java.lang.String",
+      "description": "AMQP routing key to associate to cse valid requests."
+    },
+    {
+      "name": "cse-valid-runner.amqp.expiration",
+      "type": "java.lang.String",
+      "description": "Expiration time of cse valid requests."
+    }
+  ]
+}
