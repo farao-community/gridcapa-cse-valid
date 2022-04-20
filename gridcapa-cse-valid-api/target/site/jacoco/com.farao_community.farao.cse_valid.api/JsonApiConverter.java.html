@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JsonApiConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">GridCapa CSE valid runner API</a> &gt; <a href="index.source.html" class="el_package">com.farao_community.farao.cse_valid.api</a> &gt; <span class="el_source">JsonApiConverter.java</span></div><h1>JsonApiConverter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ *  This Source Code Form is subject to the terms of the Mozilla Public
+ *  License, v. 2.0. If a copy of the MPL was not distributed with this
+ *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+package com.farao_community.farao.cse_valid.api;
+
+import com.farao_community.farao.cse_valid.api.exception.AbstractCseValidException;
+import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
+import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.jasminb.jsonapi.JSONAPIDocument;
+import com.github.jasminb.jsonapi.ResourceConverter;
+import com.github.jasminb.jsonapi.SerializationFeature;
+import com.github.jasminb.jsonapi.exceptions.DocumentSerializationException;
+import com.github.jasminb.jsonapi.models.errors.Error;
+
+/**
+ * @author Theo Pascoli {@literal &lt;theo.pascoli at rte-france.com&gt;}
+ */
+public class JsonApiConverter {
+    private final ObjectMapper objectMapper;
+
+<span class="fc" id="L28">    public JsonApiConverter() {</span>
+<span class="fc" id="L29">        this.objectMapper = createObjectMapper();</span>
+<span class="fc" id="L30">        objectMapper.registerModule(new Jdk8Module());</span>
+<span class="fc" id="L31">        objectMapper.registerModule(new JavaTimeModule());</span>
+<span class="fc" id="L32">    }</span>
+
+    public &lt;T&gt; T fromJsonMessage(byte[] jsonMessage, Class&lt;T&gt; tClass) {
+<span class="fc" id="L35">        ResourceConverter converter = createConverter();</span>
+<span class="fc" id="L36">        return converter.readDocument(jsonMessage, tClass).get();</span>
+    }
+
+    public &lt;T&gt; byte[] toJsonMessage(T jsonApiObject) {
+<span class="nc" id="L40">        ResourceConverter converter = createConverter();</span>
+<span class="nc" id="L41">        JSONAPIDocument&lt;?&gt; jsonapiDocument = new JSONAPIDocument&lt;&gt;(jsonApiObject);</span>
+        try {
+<span class="nc" id="L43">            return converter.writeDocument(jsonapiDocument);</span>
+<span class="nc" id="L44">        } catch (DocumentSerializationException e) {</span>
+<span class="nc" id="L45">            throw new CseValidInternalException(&quot;Exception occurred during object conversion&quot;, e);</span>
+        }
+    }
+
+    public byte[] toJsonMessage(AbstractCseValidException exception) {
+<span class="fc" id="L50">        ResourceConverter converter = createConverter();</span>
+<span class="fc" id="L51">        JSONAPIDocument&lt;?&gt; jsonapiDocument = new JSONAPIDocument&lt;&gt;(convertExceptionToJsonError(exception));</span>
+        try {
+<span class="fc" id="L53">            return converter.writeDocument(jsonapiDocument);</span>
+<span class="nc" id="L54">        } catch (DocumentSerializationException e) {</span>
+<span class="nc" id="L55">            throw new CseValidInternalException(&quot;Exception occurred during exception message conversion&quot;, e);</span>
+        }
+    }
+
+    private ResourceConverter createConverter() {
+<span class="fc" id="L60">        ResourceConverter converter = new ResourceConverter(objectMapper, CseValidRequest.class, CseValidResponse.class);</span>
+<span class="fc" id="L61">        converter.disableSerializationOption(SerializationFeature.INCLUDE_META);</span>
+<span class="fc" id="L62">        return converter;</span>
+    }
+
+    private Error convertExceptionToJsonError(AbstractCseValidException exception) {
+<span class="fc" id="L66">        Error error = new Error();</span>
+<span class="fc" id="L67">        error.setStatus(Integer.toString(exception.getStatus()));</span>
+<span class="fc" id="L68">        error.setCode(exception.getCode());</span>
+<span class="fc" id="L69">        error.setTitle(exception.getTitle());</span>
+<span class="fc" id="L70">        error.setDetail(exception.getDetails());</span>
+<span class="fc" id="L71">        return error;</span>
+    }
+
+    private ObjectMapper createObjectMapper() {
+<span class="fc" id="L75">        return new ObjectMapper();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

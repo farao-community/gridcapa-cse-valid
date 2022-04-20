@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.29">
+<file name="/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-spring-boot-starter/src/main/java/com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClient.java">
+</file>
+<file name="/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-spring-boot-starter/src/main/java/com/farao_community/farao/gridcapa_cse_valid/starter/CseValidResponseConversionHelper.java">
+</file>
+<file name="/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-spring-boot-starter/src/main/java/com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClientAutoConfiguration.java">
+</file>
+<file name="/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-spring-boot-starter/src/main/java/com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClientProperties.java">
+</file>
+<file name="/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-spring-boot-starter/src/test/java/com/farao_community/farao/gridcapa_cse_valid/starter/CseValidResponseConversionHelperTest.java">
+</file>
+<file name="/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-spring-boot-starter/src/test/java/com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClientAutoConfigurationTest.java">
+</file>
+<file name="/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-spring-boot-starter/src/test/java/com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClientTest.java">
+</file>
+</checkstyle>
