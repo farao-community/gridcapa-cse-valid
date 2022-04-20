@@ -1,27 +1,0 @@
-
-Ôcom.farao_community.farao.cse_valid.app.CseValidHandler#handleCseValidRequest(Lcom/farao_community/farao/cse_valid/api/resource/CseValidRequest;)Lcom/farao_community/farao/cse_valid/api/resource/CseValidResponse;¤
-™/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/CseValidHandler.java (1"1*Ð
-1¤
-™/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/CseValidHandler.java$ (3þû
-¤
-™/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/CseValidHandler.java$ (;
-%0java.lang.String"Zcom.farao_community.farao.cse_valid.api.resource.CseValidRequest#getId()Ljava/lang/String;*U
-S
-cseValidRequest@com.farao_community.farao.cse_valid.api.resource.CseValidRequest2getId()¶³
-¤
-™/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/CseValidHandler.java (#G
-%1Acom.farao_community.farao.cse_valid.api.resource.CseValidResponse"Acom.farao_community.farao.cse_valid.api.resource.CseValidResponseô
-ñ
-¤
-™/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/CseValidHandler.java (<
-%2"]com.farao_community.farao.cse_valid.api.resource.CseValidResponse#<init>(Ljava/lang/String;)V*I
-G
-%1Acom.farao_community.farao.cse_valid.api.resource.CseValidResponse*
-
-%0java.lang.String"ò
-¤
-™/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/CseValidHandler.java (=I
-G
-%1Acom.farao_community.farao.cse_valid.api.resource.CseValidResponse:S
-cseValidRequest@com.farao_community.farao.cse_valid.api.resource.CseValidRequestB;9
-7com.farao_community.farao.cse_valid.app.CseValidHandler
