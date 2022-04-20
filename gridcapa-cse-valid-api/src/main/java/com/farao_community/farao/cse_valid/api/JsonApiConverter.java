@@ -24,6 +24,7 @@ import com.github.jasminb.jsonapi.models.errors.Error;
  */
 public class JsonApiConverter {
     private final ObjectMapper objectMapper;
+
     public JsonApiConverter() {
         this.objectMapper = createObjectMapper();
         objectMapper.registerModule(new Jdk8Module());
