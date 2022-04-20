@@ -1,68 +1,0 @@
-
-tcom.farao_community.farao.cse_valid.app.configuration.MinioConfiguration#generateMinioClient()Lio/minio/MinioClient;µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java! !(*"7*”
-3µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java# #(i"Ö
-µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java# #(i
-
-%6io.minio.MinioClient*…
-4µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java# #(hÂ¿
-µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java# #(h
-%6io.minio.MinioClient":io.minio.MinioClient$Builder#build()Lio/minio/MinioClient;*$
-"
-%5io.minio.MinioClient$Builder2build()*
-3*’
-
-5µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java#H #(Q¶
-³
-µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java#H #(Q
-%3java.lang.String"__id*[*YJ
-Hcom.farao_community.farao.cse_valid.app.configuration.MinioConfiguration"
-	accessKey¹
-¶
-µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java#S #(_
-%4java.lang.String"__id*^*\J
-Hcom.farao_community.farao.cse_valid.app.configuration.MinioConfiguration"
-accessSecretÚ×
-µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java# #(`"
-%5io.minio.MinioClient$Builder"lio.minio.MinioClient$Builder#credentials(Ljava/lang/String;Ljava/lang/String;)Lio/minio/MinioClient$Builder;*$
-"
-%2io.minio.MinioClient$Builder*
-
-%3java.lang.String*
-
-%4java.lang.String21credentials(Ljava/lang/String;Ljava/lang/String;)*
-4*‘
-6µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java#2 #(:µ
-²
-µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java#2 #(:
-%1java.lang.String"__id*Z*XJ
-Hcom.farao_community.farao.cse_valid.app.configuration.MinioConfiguration"
-
-minioUrl–“
-µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java# #(;"
-%2io.minio.MinioClient$Builder"Wio.minio.MinioClient$Builder#endpoint(Ljava/lang/String;)Lio/minio/MinioClient$Builder;*$
-"
-%0io.minio.MinioClient$Builder*
-
-%1java.lang.String2endpoint(Ljava/lang/String;)*
-5*ú
-7µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java# #(·
-´
-µ
-ª/home/runner/work/gridcapa-cse-valid/gridcapa-cse-valid/gridcapa-cse-valid-app/src/main/java/com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.java# #(("
-%0io.minio.MinioClient$Builder"<io.minio.MinioClient#builder()Lio/minio/MinioClient$Builder;*"
-io.minio.MinioClient*
-6BLJ
-Hcom.farao_community.farao.cse_valid.app.configuration.MinioConfiguration

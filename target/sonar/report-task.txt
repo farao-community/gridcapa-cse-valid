@@ -1,7 +1,0 @@
-organization=farao-community
-projectKey=farao-community_gridcapa-cse-valid
-serverUrl=https://sonarcloud.io
-serverVersion=8.0.0.28356
-dashboardUrl=https://sonarcloud.io/dashboard?id=farao-community_gridcapa-cse-valid
-ceTaskId=AYBHI5wCY2wQggX9vCpm
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AYBHI5wCY2wQggX9vCpm
