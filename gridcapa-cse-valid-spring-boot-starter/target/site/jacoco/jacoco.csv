@@ -1,6 +1,0 @@
-GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
-GridCapa CSE Validation runner service client SpringBoot starter,com.farao_community.farao.gridcapa_cse_valid.starter,CseValidClientAutoConfiguration,0,13,0,0,0,4,0,2,0,2
-GridCapa CSE Validation runner service client SpringBoot starter,com.farao_community.farao.gridcapa_cse_valid.starter,CseValidClientProperties,0,10,0,0,0,4,0,3,0,3
-GridCapa CSE Validation runner service client SpringBoot starter,com.farao_community.farao.gridcapa_cse_valid.starter,CseValidClient,5,80,1,1,1,22,1,6,0,6
-GridCapa CSE Validation runner service client SpringBoot starter,com.farao_community.farao.gridcapa_cse_valid.starter,CseValidClientProperties.AmqpConfiguration,0,24,0,0,0,10,0,7,0,7
-GridCapa CSE Validation runner service client SpringBoot starter,com.farao_community.farao.gridcapa_cse_valid.starter,CseValidResponseConversionHelper,14,21,0,0,4,4,1,1,1,1

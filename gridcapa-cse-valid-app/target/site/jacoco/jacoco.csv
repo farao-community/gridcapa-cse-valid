@@ -1,9 +1,0 @@
-GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
-GridCapa Cse validation runner application,com.farao_community.farao.cse_valid.app.configuration,UrlWhitelistConfiguration,0,11,0,0,0,3,0,2,0,2
-GridCapa Cse validation runner application,com.farao_community.farao.cse_valid.app.configuration,MinioConfiguration,7,20,0,0,2,4,0,4,0,4
-GridCapa Cse validation runner application,com.farao_community.farao.cse_valid.app.configuration,EventsLogger,0,6,0,0,0,2,0,2,0,2
-GridCapa Cse validation runner application,com.farao_community.farao.cse_valid.app.configuration,MinioAdapter,256,18,6,0,56,6,11,2,8,2
-GridCapa Cse validation runner application,com.farao_community.farao.cse_valid.app.configuration,AmqpMessagesConfiguration,0,69,0,0,0,14,0,8,0,8
-GridCapa Cse validation runner application,com.farao_community.farao.cse_valid.app,CseValidListener,95,178,4,2,17,46,4,9,1,9
-GridCapa Cse validation runner application,com.farao_community.farao.cse_valid.app,CseValidHandler,6,6,0,0,1,3,1,1,1,1
-GridCapa Cse validation runner application,com.farao_community.farao.cse_valid.app,CseValidApplication,5,3,0,0,2,1,1,1,1,1

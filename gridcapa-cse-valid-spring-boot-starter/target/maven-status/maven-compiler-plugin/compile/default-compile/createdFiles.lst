@@ -1,6 +1,0 @@
-META-INF/spring-configuration-metadata.json
-com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClientProperties.class
-com/farao_community/farao/gridcapa_cse_valid/starter/CseValidResponseConversionHelper.class
-com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClientProperties$AmqpConfiguration.class
-com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClient.class
-com/farao_community/farao/gridcapa_cse_valid/starter/CseValidClientAutoConfiguration.class
