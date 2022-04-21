@@ -1,9 +1,0 @@
-com/farao_community/farao/cse_valid/app/CseValidApplication.class
-com/farao_community/farao/cse_valid/app/configuration/EventsLogger.class
-META-INF/spring-configuration-metadata.json
-com/farao_community/farao/cse_valid/app/configuration/MinioConfiguration.class
-com/farao_community/farao/cse_valid/app/configuration/MinioAdapter.class
-com/farao_community/farao/cse_valid/app/CseValidHandler.class
-com/farao_community/farao/cse_valid/app/configuration/UrlWhitelistConfiguration.class
-com/farao_community/farao/cse_valid/app/CseValidListener.class
-com/farao_community/farao/cse_valid/app/configuration/AmqpMessagesConfiguration.class
