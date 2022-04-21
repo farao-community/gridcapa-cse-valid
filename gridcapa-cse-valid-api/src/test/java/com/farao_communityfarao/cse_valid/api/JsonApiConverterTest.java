@@ -23,13 +23,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
-public class JsonApiConverterTest {
+class JsonApiConverterTest {
+
     @Test
     void checkCseValidInputsJsonConversion() throws URISyntaxException, IOException {
         JsonApiConverter jsonApiConverter = new JsonApiConverter();
         String inputMessage = Files.readString(Paths.get(getClass().getResource("/validRequest.json").toURI()));
         CseValidRequest cseValidRequest = jsonApiConverter.fromJsonMessage(inputMessage.getBytes(), CseValidRequest.class);
         assertEquals("test", cseValidRequest.getId());
+        assertEquals("ttcAdjustment.txt", cseValidRequest.getTtcAdjustment().getFilename());
+        assertEquals("https://ttcAdjustment/file/url", cseValidRequest.getTtcAdjustment().getUrl());
+        assertEquals("crac.txt", cseValidRequest.getCrac().getFilename());
+        assertEquals("https://crac/file/url", cseValidRequest.getCrac().getUrl());
+        assertEquals("cgm.txt", cseValidRequest.getCgm().getFilename());
+        assertEquals("https://cgm/file/url", cseValidRequest.getCgm().getUrl());
+        assertEquals("glsk.txt", cseValidRequest.getGlsk().getFilename());
+        assertEquals("https://glsk/file/url", cseValidRequest.getGlsk().getUrl());
     }
 
     @Test
@@ -45,8 +54,6 @@ public class JsonApiConverterTest {
         JsonApiConverter jsonApiConverter = new JsonApiConverter();
         byte[] responseBytes = getClass().getResourceAsStream("/cseValidResponse.json").readAllBytes();
         CseValidResponse response = jsonApiConverter.fromJsonMessage(responseBytes, CseValidResponse.class);
-
         assertEquals("test", response.getId());
-
     }
 }

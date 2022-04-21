@@ -1,6 +1,25 @@
 {
   "data": {
     "type": "cse-valid-request",
-    "id": "test"
+    "id": "test",
+    "timestamp": "2022-04-20T00:30",
+    "attributes": {
+      "ttcAdjustment": {
+        "filename": "ttcAdjustment.txt",
+        "url": "https://ttcAdjustment/file/url"
+      },
+      "crac": {
+        "filename": "crac.txt",
+        "url": "https://crac/file/url"
+      },
+      "cgm": {
+        "filename": "cgm.txt",
+        "url": "https://cgm/file/url"
+      },
+      "glsk": {
+        "filename": "glsk.txt",
+        "url": "https://glsk/file/url"
+      }
+    }
   }
 }
