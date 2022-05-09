@@ -29,6 +29,22 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.jvnet.jaxb2.maven2</groupId>
+                <artifactId>maven-jaxb2-plugin</artifactId>
+                <version>${maven.jaxb2.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <schemaDirectory>src/main/resources/xsd</schemaDirectory>
+                    <bindingDirectory>src/main/resources/xjb</bindingDirectory>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -83,6 +99,17 @@
         <dependency>
             <groupId>org.springframework.amqp</groupId>
             <artifactId>spring-amqp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+
+        <!-- Runtime, com.sun.xml.bind module -->
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
 
         <!-- TEST DEPENDENCIES -->
