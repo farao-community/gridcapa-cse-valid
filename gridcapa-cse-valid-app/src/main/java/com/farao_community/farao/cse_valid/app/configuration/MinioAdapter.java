@@ -6,8 +6,8 @@
  */
 package com.farao_community.farao.cse_valid.app.configuration;
 
-import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
-import io.minio.*;
+import io.minio.GetObjectArgs;
+import io.minio.MinioClient;
 import io.minio.errors.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +24,7 @@ import java.util.Optional;
  */
 @Component
 public class MinioAdapter {
-    private static final int DEFAULT_DOWNLOAD_LINK_EXPIRY_IN_DAYS = 7;
     private static final Logger LOGGER = LoggerFactory.getLogger(MinioAdapter.class);
-    public static final String FORMAT_URL = "%s/%s";
 
     private final MinioClient client;
     private final String bucket;
