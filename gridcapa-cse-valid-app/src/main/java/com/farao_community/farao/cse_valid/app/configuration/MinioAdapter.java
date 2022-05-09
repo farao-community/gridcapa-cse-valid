@@ -42,33 +42,11 @@ public class MinioAdapter {
         return basePath;
     }
 
-    public void uploadFile(String filePath, InputStream sourceInputStream) {
-        String fullPath = String.format(FORMAT_URL, basePath, filePath);
-        try {
-            createBucketIfDoesNotExist(bucket);
-            client.putObject(PutObjectArgs.builder().bucket(bucket).object(fullPath).stream(sourceInputStream, -1, 50000000).build());
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
-            throw new CseValidInternalException(String.format("Exception occurred while uploading file: %s, to minio server", filePath));
-        }
-    }
-
     public Optional<InputStream> getMinioObject(String filename) throws ErrorResponseException, InsufficientDataException, InternalException, InvalidKeyException, InvalidResponseException, IOException, NoSuchAlgorithmException, ServerException, XmlParserException {
         return Optional.of(client.getObject(GetObjectArgs
                 .builder()
                 .bucket(bucket)
                 .object(filename)
                 .build()));
-    }
-
-    private void createBucketIfDoesNotExist(String bucket) {
-        try {
-            if (!client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
-                LOGGER.info("Create Minio bucket '{}' that did not exist already", bucket);
-                client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
-            }
-        } catch (Exception e) {
-            throw new CseValidInternalException(String.format("Cannot create bucket '%s'", bucket), e);
-        }
     }
 }
