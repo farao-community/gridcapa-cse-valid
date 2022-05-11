@@ -9,6 +9,7 @@ package com.farao_community.farao.cse_valid.app;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
+import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TTimestamp;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -25,11 +27,15 @@ import java.io.InputStream;
 public class CseValidHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CseValidHandler.class);
+    private final DichotomyRunner dichotomyRunner;
+    private final FileImporter fileImporter;
     private final MinioAdapter minioAdapter;
     private TcDocumentType tcDocumentType;
     private TcDocumentTypeWriter tcDocumentTypeWriter;
 
-    public CseValidHandler(MinioAdapter minioAdapter) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, MinioAdapter minioAdapter) {
+        this.dichotomyRunner = dichotomyRunner;
+        this.fileImporter = fileImporter;
         this.minioAdapter = minioAdapter;
     }
 
@@ -46,7 +52,7 @@ public class CseValidHandler {
     private TcDocumentType importTTcAdjustmentFile(CseValidRequest cseValidRequest) {
         String url = buildTtcAdjustmentFileUrl(cseValidRequest);
         InputStream minioObject = getInputStreamOfMinioObject(url);
-        return FileImporter.importTtcAdjustment(minioObject);
+        return fileImporter.importTtcAdjustment(minioObject);
     }
 
     private String buildTtcAdjustmentFileUrl(CseValidRequest cseValidRequest) {
@@ -76,7 +82,7 @@ public class CseValidHandler {
                     tcDocumentTypeWriter.writeOneTimestamp(timestamp, timestampStatus);
                     break;
                 case COMPUTATION_NEEDED:
-                    test();
+                    runDichotomy(timestamp);
                     break;
                 default:
                     throw new CseValidInvalidDataException("Timestamp Status not supported");
@@ -84,7 +90,12 @@ public class CseValidHandler {
         }
     }
 
-    private void test() {
+    private void runDichotomy(TTimestamp timestamp) {
+        try {
+            dichotomyRunner.runDichotomy(timestamp);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private TimestampStatus isComputationNeeded(TTimestamp timestamp) {

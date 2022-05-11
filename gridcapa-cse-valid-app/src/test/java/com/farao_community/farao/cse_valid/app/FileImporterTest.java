@@ -10,6 +10,7 @@ import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataExce
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,9 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 class FileImporterTest {
 
+    @Autowired
+    private FileImporter fileImporter;
+
     @Test
     void testImportTtcAdjustmentFile() {
-        TcDocumentType document = FileImporter.importTtcAdjustment(getClass().getResourceAsStream("/TTC_Adjustment_20200813_2D4_CSE1_Simple_Import.xml"));
+        TcDocumentType document = fileImporter.importTtcAdjustment(getClass().getResourceAsStream("/TTC_Adjustment_20200813_2D4_CSE1_Simple_Import.xml"));
         assertEquals("TTC_Adjustment_20200813_2D4_CSE", document.getDocumentIdentification().getV());
         assertEquals(1, document.getAdjustmentResults().size());
         assertEquals("2020-08-12T22:30Z", document.getAdjustmentResults().get(0).getTimestamp().get(0).getReferenceCalculationTime().getV());
@@ -30,9 +34,9 @@ class FileImporterTest {
     }
 
     @Test
-    void testImportNonExistingFile() {
+    void testImportTtcNonExistingFile() {
         Assertions.assertThrows(CseValidInvalidDataException.class, () ->  {
-            FileImporter.importTtcAdjustment(getClass().getResourceAsStream("/DoesNotExist.xml"));
+            fileImporter.importTtcAdjustment(getClass().getResourceAsStream("/DoesNotExist.xml"));
         });
     }
 }

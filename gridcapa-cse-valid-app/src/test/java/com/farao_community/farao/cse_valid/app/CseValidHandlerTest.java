@@ -48,10 +48,10 @@ class CseValidHandlerTest {
     @Test
     void simpleTestWithExistingTtcAdjustmentFile() {
         when(minioAdapter.getProperties()).thenReturn(new MinioAdapterProperties("bucket", "basepath", "url", "accesskey", "secretkey"));
-        when(minioAdapter.getFile(any())).thenReturn(getClass().getResourceAsStream("/TTC_Adjustment_20200813_2D4_CSE1_Simple_Import.xml"));
+        when(minioAdapter.getFile(any())).thenReturn(getClass().getResourceAsStream("/TTC_Adjustment_20200813_2D4_CSE1_no_calcul.xml"));
         cseValidHandler.handleCseValidRequest(cseValidRequest);
         assertNotNull(cseValidHandler.getTcDocumentType());
-        assertEquals(24, cseValidHandler.getTcDocumentType().getAdjustmentResults().get(0).getTimestamp().size());
+        assertEquals(1, cseValidHandler.getTcDocumentType().getAdjustmentResults().get(0).getTimestamp().size());
     }
 
     @Test
