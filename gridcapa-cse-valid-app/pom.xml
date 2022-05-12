@@ -121,7 +121,6 @@
             <artifactId>jaxb-runtime</artifactId>
         </dependency>
 
-        <!-- Compile dependencies -->
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-iidm-converter-api</artifactId>
@@ -134,6 +133,7 @@
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-ucte-util</artifactId>
         </dependency>
+
         <!-- Runtime dependencies -->
         <dependency>
             <groupId>com.powsybl</groupId>

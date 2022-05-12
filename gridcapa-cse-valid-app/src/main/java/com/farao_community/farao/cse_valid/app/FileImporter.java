@@ -7,12 +7,15 @@
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.glsk.api.io.GlskDocumentImporters;
 import com.powsybl.iidm.import_.Importers;
 import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.ObjectFactory;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.xml.bind.JAXBContext;
@@ -25,7 +28,7 @@ import java.io.InputStream;
  */
 @Service
 public class FileImporter {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileImporter.class);
     private final UrlValidationService urlValidationService;
 
     public FileImporter(UrlValidationService urlValidationService) {
@@ -45,7 +48,25 @@ public class FileImporter {
         return GlskDocumentImporters.importGlsk(urlValidationService.openUrlStream(glskUrl));
     }
 
-    public Network importNetwork(String cgmUrl) throws IOException {
-        return Importers.loadNetwork(cgmUrl, urlValidationService.openUrlStream(cgmUrl));
+    public Network importNetwork(String filename, String cgmUrl) throws IOException {
+        return Importers.loadNetwork(filename, urlValidationService.openUrlStream(cgmUrl));
+    }
+
+    public String buildTtcFileUrl(CseValidRequest cseValidRequest) {
+        return cseValidRequest.getProcessType().toString() +
+                "/TTC_ADJUSTMENT/" +
+                cseValidRequest.getTtcAdjustment().getFilename();
+    }
+
+    public String buildNetworkFileUrl(CseValidRequest cseValidRequest) {
+        return cseValidRequest.getProcessType().toString() +
+                "/CGMs/" +
+                cseValidRequest.getCgm().getFilename();
+    }
+
+    public String buildGlskFileUrl(CseValidRequest cseValidRequest) {
+        return cseValidRequest.getProcessType().toString() +
+                "/GLSKs/" +
+                cseValidRequest.getGlsk().getFilename();
     }
 }

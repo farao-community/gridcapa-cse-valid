@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.cse_valid.app.dichotomy;
 
+import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.dichotomy.api.DichotomyEngine;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
@@ -15,6 +16,8 @@ import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.dichotomy.shift.LinearScaler;
 import com.farao_community.farao.dichotomy.shift.SplittingFactors;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.powsybl.glsk.api.GlskDocument;
+import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TTimestamp;
 import org.springframework.stereotype.Service;
 
@@ -28,12 +31,15 @@ public class DichotomyRunner {
 
     private static final RangeDivisionIndexStrategy INDEX_STRATEGY_CONFIGURATION = new RangeDivisionIndexStrategy(false);
     private final FileImporter fileImporter;
+    private GlskDocument glskDocument;
+    private Network network;
 
     public DichotomyRunner(FileImporter fileImporter) {
         this.fileImporter = fileImporter;
     }
 
-    public DichotomyResult<RaoResponse> runDichotomy(TTimestamp timestamp) throws IOException {
+    public DichotomyResult<RaoResponse> runDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp) throws IOException {
+        importFiles(cseValidRequest);
         int npAugmented = timestamp.getMNII().getV().intValue();
         int np = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
         double minValue = 0;
@@ -47,6 +53,10 @@ public class DichotomyRunner {
                 getNetworkShifter(),
                 null);
         return engine.run(null);
+
+    }
+
+    private void importFiles(CseValidRequest cseValidRequest) {
 
     }
 

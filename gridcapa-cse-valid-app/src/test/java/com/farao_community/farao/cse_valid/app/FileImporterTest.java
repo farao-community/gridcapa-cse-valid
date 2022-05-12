@@ -53,7 +53,7 @@ class FileImporterTest {
 
     @Test
     void testImportNetwork() throws IOException {
-        Network network = fileImporter.importNetwork(getClass().getResource("/20211125_1930_2D4_CO_Final_CSE1.uct").toString());
+        Network network = fileImporter.importNetwork("cgm.uct", getClass().getResource("/20211125_1930_2D4_CO_Final_CSE1.uct").toString());
         assertNotNull(network);
     }
 }

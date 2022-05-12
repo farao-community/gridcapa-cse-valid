@@ -11,6 +11,8 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
+import com.powsybl.glsk.api.GlskDocument;
+import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TTimestamp;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
 import org.slf4j.Logger;
@@ -30,6 +32,7 @@ public class CseValidHandler {
     private final DichotomyRunner dichotomyRunner;
     private final FileImporter fileImporter;
     private final MinioAdapter minioAdapter;
+    private CseValidRequest cseValidRequest;
     private TcDocumentType tcDocumentType;
     private TcDocumentTypeWriter tcDocumentTypeWriter;
 
@@ -40,6 +43,7 @@ public class CseValidHandler {
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
+        this.cseValidRequest = cseValidRequest;
         this.tcDocumentType = importTTcAdjustmentFile(cseValidRequest);
         if (tcDocumentType != null) {
             computeEveryTimestamp(tcDocumentType);
@@ -49,26 +53,22 @@ public class CseValidHandler {
         return new CseValidResponse(cseValidRequest.getId());
     }
 
-    private TcDocumentType importTTcAdjustmentFile(CseValidRequest cseValidRequest) {
-        String url = buildTtcAdjustmentFileUrl(cseValidRequest);
-        InputStream minioObject = getInputStreamOfMinioObject(url);
+    public GlskDocument importGlskFile(CseValidRequest cseValidRequest) throws IOException {
+        String url = fileImporter.buildGlskFileUrl(cseValidRequest);
+        String file = minioAdapter.generatePreSignedUrl(url);
+        return fileImporter.importGlsk(file);
+    }
+
+    public Network importNetworkFile(CseValidRequest cseValidRequest) throws IOException {
+        String url = fileImporter.buildNetworkFileUrl(cseValidRequest);
+        String fileUrl = minioAdapter.generatePreSignedUrl(url);
+        return fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), fileUrl);
+    }
+
+    public TcDocumentType importTTcAdjustmentFile(CseValidRequest cseValidRequest) {
+        String url = fileImporter.buildTtcFileUrl(cseValidRequest);
+        InputStream minioObject = minioAdapter.getFile(url);
         return fileImporter.importTtcAdjustment(minioObject);
-    }
-
-    private String buildTtcAdjustmentFileUrl(CseValidRequest cseValidRequest) {
-        return minioAdapter.getProperties().getBasePath() +
-                cseValidRequest.getProcessType().toString() +
-                "/TTC_ADJUSTMENT/" +
-                cseValidRequest.getTtcAdjustment().getFilename();
-    }
-
-    private InputStream getInputStreamOfMinioObject(String url) {
-        try {
-            return minioAdapter.getFile(url);
-        } catch (Exception e) {
-            LOGGER.error("Can not import TTC Adjustment file : {}", url);
-        }
-        return null;
     }
 
     private void computeEveryTimestamp(TcDocumentType tcDocumentType) {
@@ -92,7 +92,7 @@ public class CseValidHandler {
 
     private void runDichotomy(TTimestamp timestamp) {
         try {
-            dichotomyRunner.runDichotomy(timestamp);
+            dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
         } catch (IOException e) {
             e.printStackTrace();
         }
