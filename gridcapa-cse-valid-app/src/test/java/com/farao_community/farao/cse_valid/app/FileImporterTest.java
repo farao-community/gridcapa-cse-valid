@@ -7,13 +7,18 @@
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.powsybl.glsk.api.GlskDocument;
+import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -38,5 +43,17 @@ class FileImporterTest {
         Assertions.assertThrows(CseValidInvalidDataException.class, () ->  {
             fileImporter.importTtcAdjustment(getClass().getResourceAsStream("/DoesNotExist.xml"));
         });
+    }
+
+    @Test
+    void testImportGlsk() throws IOException {
+        GlskDocument glskDocument = fileImporter.importGlsk(getClass().getResource("/20211125_1930_2D4_CO_GSK_CSE1.xml").toString());
+        assertNotNull(glskDocument);
+    }
+
+    @Test
+    void testImportNetwork() throws IOException {
+        Network network = fileImporter.importNetwork(getClass().getResource("/20211125_1930_2D4_CO_Final_CSE1.uct").toString());
+        assertNotNull(network);
     }
 }
