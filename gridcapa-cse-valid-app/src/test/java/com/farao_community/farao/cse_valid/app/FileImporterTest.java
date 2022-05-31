@@ -7,6 +7,10 @@
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.farao_community.farao.data.crac_api.Crac;
+import com.farao_community.farao.data.crac_io_api.CracImporters;
+import com.farao_community.farao.data.rao_result_api.RaoResult;
+import com.farao_community.farao.data.rao_result_json.RaoResultImporter;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
@@ -15,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,20 +44,29 @@ class FileImporterTest {
 
     @Test
     void testImportTtcNonExistingFile() {
-        assertThrows(CseValidInvalidDataException.class, () ->  {
-            fileImporter.importTtcAdjustment(getClass().getResourceAsStream("/DoesNotExist.xml"));
-        });
+        InputStream resourceAsStream = getClass().getResourceAsStream("/DoesNotExist.xml");
+        assertThrows(CseValidInvalidDataException.class, () -> fileImporter.importTtcAdjustment(resourceAsStream));
     }
 
     @Test
     void testImportGlsk() throws IOException {
-        GlskDocument glskDocument = fileImporter.importGlsk(getClass().getResource("/20211125_1930_2D4_CO_GSK_CSE1.xml").toString());
+        GlskDocument glskDocument = fileImporter.importGlsk(Objects.requireNonNull(getClass().getResource("/20211125_1930_2D4_CO_GSK_CSE1.xml")).toString());
         assertNotNull(glskDocument);
     }
 
     @Test
     void testImportNetwork() throws IOException {
-        Network network = fileImporter.importNetwork("cgm.uct", getClass().getResource("/20211125_1930_2D4_CO_Final_CSE1.uct").toString());
+        Network network = fileImporter.importNetwork("cgm.uct", Objects.requireNonNull(getClass().getResource("/20211125_1930_2D4_CO_Final_CSE1.uct")).toString());
         assertNotNull(network);
+    }
+
+    @Test
+    void testImportRaoResult() {
+        InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.1.json");
+        InputStream raoResultInputStream = getClass().getResourceAsStream("/rao-result-v1.1.json");
+        assertNotNull(cracInputStream);
+        Crac crac = CracImporters.importCrac("crac.json", cracInputStream);
+        RaoResult raoResult = new RaoResultImporter().importRaoResult(raoResultInputStream, crac);
+        assertNotNull(raoResult);
     }
 }

@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>gridcapa-cse-valid-app</artifactId>
-    <name>GridCapa Cse validation runner application</name>
+    <name>GridCapa CSE validation runner application</name>
     <description>Cse validation runner application in GridCapa environment</description>
     <packaging>jar</packaging>
     <version>1.0.2-SNAPSHOT</version>
@@ -77,6 +77,14 @@
         <dependency>
             <groupId>com.farao-community.farao</groupId>
             <artifactId>farao-rao-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.farao-community.farao</groupId>
+            <artifactId>farao-crac-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.farao-community.farao</groupId>
+            <artifactId>farao-crac-creation-util</artifactId>
         </dependency>
         <dependency>
             <groupId>com.farao-community.farao</groupId>
@@ -162,11 +170,21 @@
             <artifactId>powsybl-ucte-converter</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>com.farao-community.farao</groupId>
+            <artifactId>farao-crac-io-json</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- TEST DEPENDENCIES -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.farao-community.farao</groupId>
+            <artifactId>farao-crac-impl</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
