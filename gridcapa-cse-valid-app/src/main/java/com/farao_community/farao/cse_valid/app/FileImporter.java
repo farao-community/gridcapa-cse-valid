@@ -8,18 +8,24 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.data.crac_api.Crac;
+import com.farao_community.farao.data.crac_io_api.CracImporters;
+import com.farao_community.farao.data.rao_result_api.RaoResult;
+import com.farao_community.farao.data.rao_result_json.RaoResultImporter;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.glsk.api.io.GlskDocumentImporters;
 import com.powsybl.iidm.import_.Importers;
 import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.ObjectFactory;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBIntrospector;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -47,6 +53,15 @@ public class FileImporter {
 
     public Network importNetwork(String filename, String cgmUrl) throws IOException {
         return Importers.loadNetwork(filename, urlValidationService.openUrlStream(cgmUrl));
+    }
+
+    public RaoResult importRaoResult(String raoResultUrl, Crac crac) throws IOException {
+        return new RaoResultImporter().importRaoResult(urlValidationService.openUrlStream(raoResultUrl), crac);
+    }
+
+    public Crac importCracFromJson(String cracUrl) throws IOException {
+        InputStream cracResultStream = urlValidationService.openUrlStream(cracUrl);
+        return CracImporters.importCrac(FilenameUtils.getName(new URL(cracUrl).getPath()), cracResultStream);
     }
 
     public String buildTtcFileUrl(CseValidRequest cseValidRequest) {

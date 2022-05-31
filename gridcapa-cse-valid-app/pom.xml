@@ -75,6 +75,18 @@
             <artifactId>gridcapa-starter-minio-adapter</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.farao-community.farao</groupId>
+            <artifactId>farao-rao-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.farao-community.farao</groupId>
+            <artifactId>farao-rao-result-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.farao-community.farao</groupId>
+            <artifactId>farao-search-tree-rao</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
