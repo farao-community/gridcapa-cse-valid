@@ -10,15 +10,13 @@ import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataExce
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -40,7 +38,7 @@ class FileImporterTest {
 
     @Test
     void testImportTtcNonExistingFile() {
-        Assertions.assertThrows(CseValidInvalidDataException.class, () ->  {
+        assertThrows(CseValidInvalidDataException.class, () ->  {
             fileImporter.importTtcAdjustment(getClass().getResourceAsStream("/DoesNotExist.xml"));
         });
     }

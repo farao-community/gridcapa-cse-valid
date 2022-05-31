@@ -11,15 +11,12 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
-import com.powsybl.glsk.api.GlskDocument;
-import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TTimestamp;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -53,18 +50,6 @@ public class CseValidHandler {
         return new CseValidResponse(cseValidRequest.getId());
     }
 
-    public GlskDocument importGlskFile(CseValidRequest cseValidRequest) throws IOException {
-        String url = fileImporter.buildGlskFileUrl(cseValidRequest);
-        String file = minioAdapter.generatePreSignedUrl(url);
-        return fileImporter.importGlsk(file);
-    }
-
-    public Network importNetworkFile(CseValidRequest cseValidRequest) throws IOException {
-        String url = fileImporter.buildNetworkFileUrl(cseValidRequest);
-        String fileUrl = minioAdapter.generatePreSignedUrl(url);
-        return fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), fileUrl);
-    }
-
     public TcDocumentType importTTcAdjustmentFile(CseValidRequest cseValidRequest) {
         String url = fileImporter.buildTtcFileUrl(cseValidRequest);
         InputStream minioObject = minioAdapter.getFile(url);
@@ -91,11 +76,7 @@ public class CseValidHandler {
     }
 
     private void runDichotomy(TTimestamp timestamp) {
-        try {
-            dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
     }
 
     private TimestampStatus isComputationNeeded(TTimestamp timestamp) {
