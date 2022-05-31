@@ -14,8 +14,6 @@ import com.powsybl.iidm.import_.Importers;
 import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.ObjectFactory;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.xml.bind.JAXBContext;
@@ -28,7 +26,6 @@ import java.io.InputStream;
  */
 @Service
 public class FileImporter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileImporter.class);
     private final UrlValidationService urlValidationService;
 
     public FileImporter(UrlValidationService urlValidationService) {
