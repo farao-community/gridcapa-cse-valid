@@ -12,6 +12,9 @@ import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_io_api.CracImporters;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.data.rao_result_json.RaoResultImporter;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
+import com.farao_community.farao.rao_api.json.JsonRaoParameters;
+import com.farao_community.farao.rao_api.parameters.RaoParameters;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.glsk.api.io.GlskDocumentImporters;
 import com.powsybl.iidm.import_.Importers;
@@ -23,6 +26,8 @@ import org.springframework.stereotype.Service;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBIntrospector;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -32,9 +37,13 @@ import java.net.URL;
  */
 @Service
 public class FileImporter {
+    public static final String ARTIFACTS_S = "artifacts/%s";
+    private static final String RAO_PARAMETERS_FILE_NAME = "raoParameters.json";
+    private final MinioAdapter minioAdapter;
     private final UrlValidationService urlValidationService;
 
-    public FileImporter(UrlValidationService urlValidationService) {
+    public FileImporter(MinioAdapter minioAdapter, UrlValidationService urlValidationService) {
+        this.minioAdapter = minioAdapter;
         this.urlValidationService = urlValidationService;
     }
 
@@ -65,6 +74,15 @@ public class FileImporter {
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Cannot import crac from JSON : %s", cracUrl));
         }
+    }
+
+    public String saveRaoParametersAndGetUrl(RaoParameters raoParameters) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JsonRaoParameters.write(raoParameters, baos);
+        String raoParametersDestinationPath = String.format(ARTIFACTS_S, RAO_PARAMETERS_FILE_NAME);
+        ByteArrayInputStream inStream = new ByteArrayInputStream(baos.toByteArray());
+        minioAdapter.uploadArtifact(raoParametersDestinationPath, inStream);
+        return minioAdapter.generatePreSignedUrl(raoParametersDestinationPath);
     }
 
     public String buildTtcFileUrl(CseValidRequest cseValidRequest) {

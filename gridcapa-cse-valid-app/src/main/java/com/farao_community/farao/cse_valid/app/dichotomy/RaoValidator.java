@@ -12,9 +12,11 @@ import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.NetworkValidator;
 import com.farao_community.farao.dichotomy.api.exceptions.ValidationException;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
+import com.farao_community.farao.rao_api.parameters.RaoParameters;
 import com.farao_community.farao.rao_runner.api.resource.RaoRequest;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
+import com.farao_community.farao.search_tree_rao.castor.parameters.SearchTreeRaoParameters;
 import com.powsybl.iidm.network.Network;
 
 import java.io.IOException;
@@ -51,6 +53,18 @@ public class RaoValidator implements NetworkValidator<RaoResponse> {
     }
 
     private RaoRequest buildRaoRequest() {
-        return new RaoRequest(requestId, networkUrl, cracUrl, "raoparameter");
+        return new RaoRequest(requestId, networkUrl, cracUrl, getRaoParameterURL());
+    }
+
+    private String getRaoParameterURL() {
+        RaoParameters raoParameters = getRaoParameters();
+        return fileImporter.saveRaoParametersAndGetUrl(raoParameters);
+    }
+
+    private RaoParameters getRaoParameters() {
+        RaoParameters raoParameters = RaoParameters.load();
+        SearchTreeRaoParameters searchTreeRaoParameters = raoParameters.getExtension(SearchTreeRaoParameters.class);
+        raoParameters.addExtension(SearchTreeRaoParameters.class, searchTreeRaoParameters);
+        return raoParameters;
     }
 }
