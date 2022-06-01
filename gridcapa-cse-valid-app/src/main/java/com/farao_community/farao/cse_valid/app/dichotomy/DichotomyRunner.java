@@ -42,6 +42,7 @@ public class DichotomyRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DichotomyRunner.class);
     private static final RangeDivisionIndexStrategy INDEX_STRATEGY_CONFIGURATION = new RangeDivisionIndexStrategy(false);
+    private static final double SHIFT_TOLERANCE = 1;
     private final FileImporter fileImporter;
     private final MinioAdapter minioAdapter;
     private final RaoRunnerClient raoRunnerClient;
@@ -82,7 +83,8 @@ public class DichotomyRunner {
 
     private NetworkShifter getNetworkShifter(TSplittingFactors splittingFactors) {
         return new LinearScaler(glskDocument.getZonalScalable(network),
-                new SplittingFactors(convertSplittingFactors(splittingFactors)));
+                new SplittingFactors(convertSplittingFactors(splittingFactors)),
+                SHIFT_TOLERANCE);
     }
 
     private Map<String, Double> convertSplittingFactors(TSplittingFactors tSplittingFactors) {
