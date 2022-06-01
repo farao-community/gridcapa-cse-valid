@@ -10,7 +10,6 @@ import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataExce
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_io_api.CracImporters;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
-import com.farao_community.farao.data.rao_result_json.RaoResultImporter;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.iidm.network.Network;
 import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TcDocumentType;
@@ -61,12 +60,18 @@ class FileImporterTest {
     }
 
     @Test
-    void testImportRaoResult() {
+    void testImportRaoResult() throws IOException {
         InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.1.json");
         InputStream raoResultInputStream = getClass().getResourceAsStream("/rao-result-v1.1.json");
         assertNotNull(cracInputStream);
         Crac crac = CracImporters.importCrac("crac.json", cracInputStream);
-        RaoResult raoResult = new RaoResultImporter().importRaoResult(raoResultInputStream, crac);
+        RaoResult raoResult = fileImporter.importRaoResult(Objects.requireNonNull(getClass().getResource("/rao-result-v1.1.json")).toString(), crac);
         assertNotNull(raoResult);
+    }
+
+    @Test
+    void testImportCracFromJson() throws IOException {
+        Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.1.json")).toString());
+        assertNotNull(crac);
     }
 }

@@ -40,9 +40,9 @@ class CseValidHandlerTest {
                 ProcessType.D2CC,
                 OffsetDateTime.now(),
                 new CseValidFileResource("ttcAdjustment.xml", "file://ttcAdjustment.xml"),
-                null,
-                null,
-                null);
+                new CseValidFileResource("crac.xml", "file://crac.xml"),
+                new CseValidFileResource("cgm.xml", "file://cgm.xml"),
+                new CseValidFileResource("glsk.xml", "file://glsk.xml"));
     }
 
     @Test
