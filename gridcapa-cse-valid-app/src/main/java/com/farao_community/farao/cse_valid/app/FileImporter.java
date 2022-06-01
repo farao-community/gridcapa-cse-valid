@@ -60,8 +60,11 @@ public class FileImporter {
     }
 
     public Crac importCracFromJson(String cracUrl) throws IOException {
-        InputStream cracResultStream = urlValidationService.openUrlStream(cracUrl);
-        return CracImporters.importCrac(FilenameUtils.getName(new URL(cracUrl).getPath()), cracResultStream);
+        try (InputStream cracResultStream = urlValidationService.openUrlStream(cracUrl)) {
+            return CracImporters.importCrac(FilenameUtils.getName(new URL(cracUrl).getPath()), cracResultStream);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Cannot import crac from JSON : %s", cracUrl));
+        }
     }
 
     public String buildTtcFileUrl(CseValidRequest cseValidRequest) {
