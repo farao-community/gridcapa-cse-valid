@@ -3,7 +3,7 @@
               xmlns:jxb="http://java.sun.com/xml/ns/jaxb">
     <jxb:bindings schemaLocation="../xsd/tc-document.xsd">
         <jxb:schemaBindings>
-            <jxb:package name="com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment" />
+            <jxb:package name="com.farao_community.farao.cse_valid.app.ttc_adjustment" />
         </jxb:schemaBindings>
     </jxb:bindings>
 </jxb:bindings>

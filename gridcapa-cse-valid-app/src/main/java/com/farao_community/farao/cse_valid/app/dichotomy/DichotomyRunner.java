@@ -10,6 +10,8 @@ import com.farao_community.farao.commons.EICode;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.app.FileImporter;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TSplittingFactors;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.dichotomy.api.DichotomyEngine;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.NetworkValidator;
@@ -24,8 +26,7 @@ import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Network;
-import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TSplittingFactors;
-import com.rte_france.farao.cep_seventy_validation.timestamp_validation.ttc_adjustment.TTimestamp;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
