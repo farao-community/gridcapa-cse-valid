@@ -9,9 +9,12 @@ package com.farao_community.farao.cse_valid.app.dichotomy;
 import com.farao_community.farao.commons.EICode;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TSplittingFactors;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
+import com.farao_community.farao.data.crac_api.Crac;
+import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
 import com.farao_community.farao.dichotomy.api.DichotomyEngine;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.NetworkValidator;
@@ -37,6 +40,7 @@ import java.util.TreeMap;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
  */
 @Service
 public class DichotomyRunner {
@@ -45,44 +49,46 @@ public class DichotomyRunner {
     private static final RangeDivisionIndexStrategy INDEX_STRATEGY_CONFIGURATION = new RangeDivisionIndexStrategy(false);
     private static final double SHIFT_TOLERANCE = 1;
     private final FileImporter fileImporter;
+    private final FileExporter fileExporter;
     private final MinioAdapter minioAdapter;
     private final RaoRunnerClient raoRunnerClient;
-    private GlskDocument glskDocument;
-    private Network network;
 
-    public DichotomyRunner(FileImporter fileImporter, MinioAdapter minioAdapter, RaoRunnerClient raoRunnerClient) {
+    public DichotomyRunner(FileImporter fileImporter, FileExporter fileExporter, MinioAdapter minioAdapter, RaoRunnerClient raoRunnerClient) {
         this.fileImporter = fileImporter;
+        this.fileExporter = fileExporter;
         this.minioAdapter = minioAdapter;
         this.raoRunnerClient = raoRunnerClient;
     }
 
     public DichotomyResult<RaoResponse> runDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp) {
-        importFiles(cseValidRequest);
         int npAugmented = timestamp.getMNII().getV().intValue();
         int np = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
         double minValue = 0;
         double maxValue = (double) npAugmented - np;
         double precision = 50;
-
+        Network network = importNetworkFile(cseValidRequest);
+        String jsonCracUrl = getJsonCracUrl(cseValidRequest, network);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(minValue, maxValue, precision),
                 INDEX_STRATEGY_CONFIGURATION,
-                getNetworkShifter(timestamp.getSplittingFactors()),
-                getNetworkValidator(cseValidRequest));
+                getNetworkShifter(timestamp.getSplittingFactors(), network, cseValidRequest),
+                getNetworkValidator(cseValidRequest, jsonCracUrl));
         return engine.run(network);
     }
 
-    private void importFiles(CseValidRequest cseValidRequest) {
+    private String getJsonCracUrl(CseValidRequest cseValidRequest, Network network) {
         try {
-            this.glskDocument = importGlskFile(cseValidRequest);
-            this.network = importNetworkFile(cseValidRequest);
+            CseCrac cseCrac = fileImporter.importCseCrac(cseValidRequest.getCrac().getUrl());
+            Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
+            return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
         } catch (IOException e) {
-            LOGGER.error("Can not import files");
-            throw new CseValidInvalidDataException("Can not import files");
+            LOGGER.error("Can not import Crac file", e);
+            throw new CseValidInvalidDataException("Can not import Crac file");
         }
     }
 
-    private NetworkShifter getNetworkShifter(TSplittingFactors splittingFactors) {
+    private NetworkShifter getNetworkShifter(TSplittingFactors splittingFactors, Network network, CseValidRequest cseValidRequest) {
+        GlskDocument glskDocument = importGlskFile(cseValidRequest);
         return new LinearScaler(glskDocument.getZonalScalable(network),
                 new SplittingFactors(convertSplittingFactors(splittingFactors)),
                 SHIFT_TOLERANCE);
@@ -99,19 +105,38 @@ public class DichotomyRunner {
         return new EICode(Country.valueOf(country)).getAreaCode();
     }
 
-    private NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest) {
-        return new RaoValidator(cseValidRequest, raoRunnerClient, fileImporter);
+    private NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl) {
+        String raoParametersURL = fileExporter.saveRaoParameters(cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+        return new RaoValidator(
+                cseValidRequest.getProcessType(),
+                cseValidRequest.getId(),
+                cseValidRequest.getTimestamp(),
+                jsonCracUrl,
+                raoParametersURL,
+                raoRunnerClient,
+                fileImporter,
+                fileExporter);
     }
 
-    public GlskDocument importGlskFile(CseValidRequest cseValidRequest) throws IOException {
-        String url = fileImporter.buildGlskFileUrl(cseValidRequest);
-        String file = minioAdapter.generatePreSignedUrl(url);
-        return fileImporter.importGlsk(file);
+    public GlskDocument importGlskFile(CseValidRequest cseValidRequest) {
+        try {
+            String url = fileImporter.buildGlskFileUrl(cseValidRequest); //todo delete et use coreValidRequest.getGlskUrl ??
+            String file = minioAdapter.generatePreSignedUrl(url);
+            return fileImporter.importGlsk(file);
+        } catch (IOException e) {
+            LOGGER.error("Can not import Glsk file", e);
+            throw new CseValidInvalidDataException("Can not import Glsk file");
+        }
     }
 
-    public Network importNetworkFile(CseValidRequest cseValidRequest) throws IOException {
-        String url = fileImporter.buildNetworkFileUrl(cseValidRequest);
-        String fileUrl = minioAdapter.generatePreSignedUrl(url);
-        return fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), fileUrl);
+    public Network importNetworkFile(CseValidRequest cseValidRequest) {
+        try {
+            String url = fileImporter.buildNetworkFileUrl(cseValidRequest);
+            String fileUrl = minioAdapter.generatePreSignedUrl(url);
+            return fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), fileUrl);
+        } catch (IOException e) {
+            LOGGER.error("Can not import Network file", e);
+            throw new CseValidInvalidDataException("Can not import Network file");
+        }
     }
 }

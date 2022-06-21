@@ -6,45 +6,61 @@
  */
 package com.farao_community.farao.cse_valid.app.dichotomy;
 
-import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.api.resource.ProcessType;
+import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.NetworkValidator;
 import com.farao_community.farao.dichotomy.api.exceptions.ValidationException;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
-import com.farao_community.farao.rao_api.parameters.RaoParameters;
 import com.farao_community.farao.rao_runner.api.resource.RaoRequest;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
-import com.farao_community.farao.search_tree_rao.castor.parameters.SearchTreeRaoParameters;
 import com.powsybl.iidm.network.Network;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
  */
 public class RaoValidator implements NetworkValidator<RaoResponse> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RaoValidator.class);
 
+    private final ProcessType processType;
     private final String requestId;
-    private final String networkUrl;
-    private final String cracUrl;
+    private final OffsetDateTime processTargetDateTime;
+    private final String jsonCracUrl;
+    private final String raoParametersUrl;
     private final RaoRunnerClient raoRunnerClient;
     private final FileImporter fileImporter;
+    private final FileExporter fileExporter;
+    private int variantCounter = 0;
 
-    public RaoValidator(CseValidRequest cseValidRequest, RaoRunnerClient raoRunnerClient, FileImporter fileImporter) {
-        this.requestId = cseValidRequest.getId();
-        this.networkUrl = cseValidRequest.getCgm().getUrl();
-        this.cracUrl = cseValidRequest.getCrac().getUrl();
+    public RaoValidator(ProcessType processType, String requestId, OffsetDateTime processTargetDateTime, String jsonCracUrl, String raoParametersUrl, RaoRunnerClient raoRunnerClient, FileImporter fileImporter, FileExporter fileExporter) {
+        this.processType = processType;
+        this.requestId = requestId;
+        this.processTargetDateTime = processTargetDateTime;
+        this.jsonCracUrl = jsonCracUrl;
+        this.raoParametersUrl = raoParametersUrl;
         this.raoRunnerClient = raoRunnerClient;
         this.fileImporter = fileImporter;
+        this.fileExporter = fileExporter;
     }
 
     @Override
     public DichotomyStepResult<RaoResponse> validateNetwork(Network network) throws ValidationException {
-        RaoRequest raoRequest = buildRaoRequest();
+        String scaledNetworkDirPath = generateScaledNetworkDirPath(network);
+        String scaledNetworkName = network.getNameOrId() + ".xiidm";
+        String networkPresignedUrl = fileExporter.saveNetworkInArtifact(network, scaledNetworkDirPath + scaledNetworkName, "", processTargetDateTime, processType);
+        RaoRequest raoRequest = buildRaoRequest(networkPresignedUrl, "CSE/VALID/" + scaledNetworkDirPath);
         try {
+            LOGGER.info("RAO request sent: {}", raoRequest);
             RaoResponse raoResponse = raoRunnerClient.runRao(raoRequest);
+            LOGGER.info("RAO response received: {}", raoResponse);
             RaoResult raoResult = fileImporter.importRaoResult(raoResponse.getRaoResultFileUrl(), fileImporter.importCracFromJson(raoResponse.getCracFileUrl()));
             return DichotomyStepResult.fromNetworkValidationResult(raoResult, raoResponse);
         } catch (RuntimeException | IOException e) {
@@ -52,19 +68,14 @@ public class RaoValidator implements NetworkValidator<RaoResponse> {
         }
     }
 
-    private RaoRequest buildRaoRequest() {
-        return new RaoRequest(requestId, networkUrl, cracUrl, getRaoParameterURL());
+    private RaoRequest buildRaoRequest(String networkPresignedUrl, String scaledNetworkDirPath) {
+        return new RaoRequest(requestId, networkPresignedUrl, jsonCracUrl, raoParametersUrl, scaledNetworkDirPath);
     }
 
-    private String getRaoParameterURL() {
-        RaoParameters raoParameters = getRaoParameters();
-        return fileImporter.saveRaoParametersAndGetUrl(raoParameters);
+    private String generateScaledNetworkDirPath(Network network) {
+        String basePath = fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS);
+        String variantName = network.getVariantManager().getWorkingVariantId();
+        return String.format("%s/%s-%s/", basePath, ++variantCounter, variantName);
     }
 
-    private RaoParameters getRaoParameters() {
-        RaoParameters raoParameters = RaoParameters.load();
-        SearchTreeRaoParameters searchTreeRaoParameters = raoParameters.getExtension(SearchTreeRaoParameters.class);
-        raoParameters.addExtension(SearchTreeRaoParameters.class, searchTreeRaoParameters);
-        return raoParameters;
-    }
 }

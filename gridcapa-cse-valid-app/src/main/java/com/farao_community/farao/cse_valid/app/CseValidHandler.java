@@ -9,10 +9,13 @@ package com.farao_community.farao.cse_valid.app;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
+import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
+import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
+import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -28,14 +31,16 @@ public class CseValidHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CseValidHandler.class);
     private final DichotomyRunner dichotomyRunner;
     private final FileImporter fileImporter;
+    private final FileImporter fileExporter;
     private final MinioAdapter minioAdapter;
     private CseValidRequest cseValidRequest;
     private TcDocumentType tcDocumentType;
     private TcDocumentTypeWriter tcDocumentTypeWriter;
 
-    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, MinioAdapter minioAdapter) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileImporter fileExporter, MinioAdapter minioAdapter) {
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
+        this.fileExporter = fileExporter;
         this.minioAdapter = minioAdapter;
     }
 
@@ -43,9 +48,9 @@ public class CseValidHandler {
         this.cseValidRequest = cseValidRequest;
         this.tcDocumentType = importTTcAdjustmentFile(cseValidRequest);
         if (tcDocumentType != null) {
-            computeEveryTimestamp(tcDocumentType);
+            computeEveryTimestamp(tcDocumentType, cseValidRequest.getProcessType()); //todo need to check the timestamp.get Time and the request timestamp?
         } else {
-            // fill with no ttc adjustment error
+            // todo fill with no ttc adjustment error
         }
         return new CseValidResponse(cseValidRequest.getId());
     }
@@ -56,10 +61,11 @@ public class CseValidHandler {
         return fileImporter.importTtcAdjustment(minioObject);
     }
 
-    private void computeEveryTimestamp(TcDocumentType tcDocumentType) {
+    private void computeEveryTimestamp(TcDocumentType tcDocumentType, ProcessType processType) {
         this.tcDocumentTypeWriter = new TcDocumentTypeWriter();
-        for (TTimestamp timestamp : tcDocumentType.getAdjustmentResults().get(0).getTimestamp()) {
-            TimestampStatus timestampStatus = isComputationNeeded(timestamp);
+        for (TTimestamp timestamp : tcDocumentType.getAdjustmentResults().get(0).getTimestamp()) { //todo filtre le timettamp correspondant a la request
+            //todo check les fichiers dans ttc adjustment sont les meme sque la request sinon quoi??
+            TimestampStatus timestampStatus = isComputationNeeded(timestamp, processType);
             switch (timestampStatus) {
                 case MISSING_DATAS:
                 case NO_COMPUTATION_NEEDED:
@@ -67,7 +73,15 @@ public class CseValidHandler {
                     tcDocumentTypeWriter.writeOneTimestamp(timestamp, timestampStatus);
                     break;
                 case COMPUTATION_NEEDED:
-                    runDichotomy(timestamp);
+                    DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
+                    String finalCgmUrl;
+                    if (dichotomyResult.hasValidStep()) {
+                        /*String finalCgmPath = fileExporter.getFinalNetworkFilePath(cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+                        // todo complete
+                        */
+                    } else {
+                        //todo do something
+                    }
                     break;
                 default:
                     throw new CseValidInvalidDataException("Timestamp Status not supported");
@@ -75,16 +89,12 @@ public class CseValidHandler {
         }
     }
 
-    private void runDichotomy(TTimestamp timestamp) {
-        dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
-    }
-
-    private TimestampStatus isComputationNeeded(TTimestamp timestamp) {
+    private TimestampStatus isComputationNeeded(TTimestamp timestamp, ProcessType processType) {
         if (datasAbsentInTimestamp(timestamp)) {
             return TimestampStatus.MISSING_DATAS;
         } else if (actualMaxImportAugmented(timestamp)) {
             return TimestampStatus.NO_COMPUTATION_NEEDED;
-        } else if (areFilesPresent(timestamp)) {
+        } else if (!areFilesPresent(timestamp, processType)) {
             return TimestampStatus.MISSING_INPUT_FILES;
         } else {
             return TimestampStatus.COMPUTATION_NEEDED;
@@ -111,10 +121,11 @@ public class CseValidHandler {
         return false;
     }
 
-    private boolean areFilesPresent(TTimestamp timestamp) {
-        boolean isCgmFileAvailable = timestamp.getCGMfile() != null && minioAdapter.fileExists("CGMs/" + timestamp.getCGMfile().getV());
-        boolean isCracFileAvailable = timestamp.getCRACfile() != null && minioAdapter.fileExists("CRACs/" + timestamp.getCRACfile().getV());
-        boolean isGlskFileAvailable = timestamp.getGSKfile() != null && minioAdapter.fileExists("GLSKs/" + timestamp.getGSKfile().getV());
+    private boolean areFilesPresent(TTimestamp timestamp, ProcessType processType) {
+        boolean isCgmFileAvailable = timestamp.getCGMfile() != null && minioAdapter.fileExists(processType + "/CGMs/" + timestamp.getCGMfile().getV());
+        //boolean isCracFileAvailable = timestamp.getCRACfile() != null && minioAdapter.fileExists(processType + "/CRACs/" + timestamp.getCRACfile().getV());
+        boolean isCracFileAvailable = true; //todo the crac used should be the crac of the request "_FR"
+        boolean isGlskFileAvailable = timestamp.getGSKfile() != null && minioAdapter.fileExists(processType + "/GLSKs/" + timestamp.getGSKfile().getV());
 
         if (!isCgmFileAvailable || !isCracFileAvailable || !isGlskFileAvailable) {
             LOGGER.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
