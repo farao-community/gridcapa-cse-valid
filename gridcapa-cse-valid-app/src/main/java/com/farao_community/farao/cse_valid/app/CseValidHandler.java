@@ -45,6 +45,7 @@ public class CseValidHandler {
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
+        this.tcDocumentTypeWriter = new TcDocumentTypeWriter();
         this.cseValidRequest = cseValidRequest;
         this.tcDocumentType = importTTcAdjustmentFile(cseValidRequest);
         if (tcDocumentType != null) {
@@ -62,15 +63,16 @@ public class CseValidHandler {
     }
 
     private void computeEveryTimestamp(TcDocumentType tcDocumentType, ProcessType processType) {
-        this.tcDocumentTypeWriter = new TcDocumentTypeWriter();
         for (TTimestamp timestamp : tcDocumentType.getAdjustmentResults().get(0).getTimestamp()) { //todo filtre le timettamp correspondant a la request
             //todo check les fichiers dans ttc adjustment sont les meme sque la request sinon quoi??
             TimestampStatus timestampStatus = isComputationNeeded(timestamp, processType);
             switch (timestampStatus) {
                 case MISSING_DATAS:
+                    tcDocumentTypeWriter.writeTimestamp(timestamp, timestampStatus);
                 case NO_COMPUTATION_NEEDED:
+                    tcDocumentTypeWriter.writeTimestamp(timestamp, timestampStatus);
                 case MISSING_INPUT_FILES:
-                    tcDocumentTypeWriter.writeOneTimestamp(timestamp, timestampStatus);
+                    tcDocumentTypeWriter.writeTimestamp(timestamp, timestampStatus);
                     break;
                 case COMPUTATION_NEEDED:
                     DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
