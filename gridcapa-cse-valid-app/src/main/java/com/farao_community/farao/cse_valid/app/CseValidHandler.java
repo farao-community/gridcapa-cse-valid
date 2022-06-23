@@ -72,9 +72,11 @@ public class CseValidHandler {
         this.tcDocumentTypeWriter = new TcDocumentTypeWriter();
         switch (timestampStatus) {
             case MISSING_DATAS:
+                tcDocumentTypeWriter.writeTimestamp(tTimestamp, timestampStatus);
             case NO_COMPUTATION_NEEDED:
+                tcDocumentTypeWriter.writeTimestamp(tTimestamp, timestampStatus);
             case MISSING_INPUT_FILES:
-                tcDocumentTypeWriter.writeOneTimestamp(tTimestamp, timestampStatus);
+                tcDocumentTypeWriter.writeTimestamp(tTimestamp, timestampStatus);
                 break;
             case COMPUTATION_NEEDED:
                 DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, tTimestamp);
