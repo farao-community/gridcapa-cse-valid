@@ -7,7 +7,6 @@
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
-import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.ObjectFactory;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.data.crac_api.Crac;
@@ -17,7 +16,6 @@ import com.farao_community.farao.data.crac_creation.creator.cse.CseCracImporter;
 import com.farao_community.farao.data.crac_io_api.CracImporters;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.data.rao_result_json.RaoResultImporter;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.glsk.api.io.GlskDocumentImporters;
 import com.powsybl.iidm.import_.Importers;
@@ -37,18 +35,16 @@ import java.time.OffsetDateTime;
  */
 @Service
 public class FileImporter {
-    public static final String ARTIFACTS_S = "artifacts/%s";
-    private static final String RAO_PARAMETERS_FILE_NAME = "raoParameters.json";
-    private final MinioAdapter minioAdapter;
+
     private final UrlValidationService urlValidationService;
 
-    public FileImporter(MinioAdapter minioAdapter, UrlValidationService urlValidationService) {
-        this.minioAdapter = minioAdapter;
+    public FileImporter(UrlValidationService urlValidationService) {
         this.urlValidationService = urlValidationService;
     }
 
-    public TcDocumentType importTtcAdjustment(InputStream inputStream) {
+    public TcDocumentType importTtcAdjustment(String ttcUrl) {
         try {
+            InputStream inputStream = urlValidationService.openUrlStream(ttcUrl);
             JAXBContext jaxbContext = JAXBContext.newInstance(ObjectFactory.class);
             return (TcDocumentType) JAXBIntrospector.getValue(jaxbContext.createUnmarshaller().unmarshal(inputStream));
         } catch (Exception e) {
@@ -75,10 +71,6 @@ public class FileImporter {
     }
 
     public Crac importCrac(CseCrac cseCrac, OffsetDateTime targetProcessDateTime, Network network) {
-        //CracCreationParameters cracCreationParameters = CracCreationParameters.load(); todo specific treatment for gridcapa cse import. Need the same for validation?
-        //CseCracCreationParameters cseCracCreationParameters = new CseCracCreationParameters();
-        //cseCracCreationParameters.setBusBarChangeSwitchesSet(busBarChangeSwitchesSet);
-        //cracCreationParameters.addExtension(CseCracCreationParameters.class, cseCracCreationParameters);
         return CracCreators.createCrac(cseCrac, network, targetProcessDateTime).getCrac();
     }
 
@@ -90,21 +82,4 @@ public class FileImporter {
         }
     }
 
-    public String buildTtcFileUrl(CseValidRequest cseValidRequest) { // todo why not using cseValidRequest.getTtcAdjustment().getUrl() ??
-        return cseValidRequest.getProcessType().toString() +
-                "/TTC_ADJUSTMENT/" +
-                cseValidRequest.getTtcAdjustment().getFilename();
-    }
-
-    public String buildNetworkFileUrl(CseValidRequest cseValidRequest) {
-        return cseValidRequest.getProcessType().toString() +
-                "/CGMs/" +
-                cseValidRequest.getCgm().getFilename();
-    }
-
-    public String buildGlskFileUrl(CseValidRequest cseValidRequest) {
-        return cseValidRequest.getProcessType().toString() +
-                "/GLSKs/" +
-                cseValidRequest.getGlsk().getFilename();
-    }
 }

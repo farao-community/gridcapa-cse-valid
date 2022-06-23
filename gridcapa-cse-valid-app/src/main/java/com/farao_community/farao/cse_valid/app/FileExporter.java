@@ -17,7 +17,6 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 
 import com.farao_community.farao.rao_api.json.JsonRaoParameters;
 import com.farao_community.farao.rao_api.parameters.RaoParameters;
-import com.farao_community.farao.search_tree_rao.castor.parameters.SearchTreeRaoParameters;
 import com.powsybl.commons.datasource.MemDataSource;
 import com.powsybl.iidm.export.Exporters;
 import com.powsybl.iidm.network.Network;
@@ -27,7 +26,6 @@ import java.io.*;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 import java.util.Properties;
 
@@ -37,10 +35,8 @@ import java.util.Properties;
 @Service
 public class FileExporter {
 
-    private static final String NETWORK_FILE_NAME = "network_pre_processed.xiidm";
     private static final String JSON_CRAC_FILE_NAME = "crac.json";
     private static final String RAO_PARAMETERS_FILE_NAME = "raoParameters.json";
-    private static final DateTimeFormatter OUTPUTS_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm");
     private static final String MINIO_SEPARATOR = "/";
     private static final String ZONE_ID = "Europe/Paris"; //todo configure ??
 
@@ -64,11 +60,6 @@ public class FileExporter {
             throw new CseValidInternalException("Error while trying to upload converted CRAC file.", e);
         }
         return minioAdapter.generatePreSignedUrl(cracPath);
-    }
-
-    public String saveNetworkInArtifact(Network network, OffsetDateTime processTargetDateTime, String fileType, ProcessType processType) {
-        String networkPath = makeDestinationMinioPath(processTargetDateTime, processType, FileKind.ARTIFACTS) + NETWORK_FILE_NAME;
-        return saveNetworkInArtifact(network, networkPath, fileType, processTargetDateTime, processType);
     }
 
     public String saveNetworkInArtifact(Network network, String networkFilePath, String fileType, OffsetDateTime processTargetDateTime, ProcessType processType) {
@@ -120,18 +111,13 @@ public class FileExporter {
     }
 
     public String saveRaoParameters(OffsetDateTime offsetDateTime, ProcessType processType) {
-        RaoParameters raoParameters = getRaoParameters();
+        RaoParameters raoParameters = RaoParameters.load();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JsonRaoParameters.write(raoParameters, baos);
         String raoParametersDestinationPath = makeDestinationMinioPath(offsetDateTime, processType, FileKind.ARTIFACTS) + RAO_PARAMETERS_FILE_NAME;
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         minioAdapter.uploadArtifactForTimestamp(raoParametersDestinationPath, bais, processType.toString(), "", offsetDateTime);
         return minioAdapter.generatePreSignedUrl(raoParametersDestinationPath);
-    }
-
-    private RaoParameters getRaoParameters() {
-        RaoParameters raoParameters = RaoParameters.load();
-        return raoParameters;
     }
 
     public enum FileKind {

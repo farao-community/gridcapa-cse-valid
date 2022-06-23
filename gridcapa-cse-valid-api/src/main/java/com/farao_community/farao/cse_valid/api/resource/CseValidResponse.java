@@ -10,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.jasminb.jsonapi.annotations.Id;
 import com.github.jasminb.jsonapi.annotations.Type;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.time.Instant;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -18,13 +21,36 @@ import com.github.jasminb.jsonapi.annotations.Type;
 public class CseValidResponse {
     @Id
     private final String id;
+    private final Instant computationStartInstant;
+    private final Instant computationEndInstant;
+    private final String resultFileUrl;
 
     @JsonCreator
-    public CseValidResponse(@JsonProperty("id") String id) {
+    public CseValidResponse(@JsonProperty("id") String id,  @JsonProperty("resultFileUrl") String resultFileUrl, @JsonProperty("computationStartInstant") Instant computationStartInstant, @JsonProperty("computationEndInstant") Instant computationEndInstant) {
         this.id = id;
+        this.computationStartInstant = computationStartInstant;
+        this.computationEndInstant = computationEndInstant;
+        this.resultFileUrl = resultFileUrl;
     }
 
     public String getId() {
         return id;
+    }
+
+    public Instant getComputationStartInstant() {
+        return computationStartInstant;
+    }
+
+    public Instant getComputationEndInstant() {
+        return computationEndInstant;
+    }
+
+    public String getResultFileUrl() {
+        return resultFileUrl;
+    }
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 }

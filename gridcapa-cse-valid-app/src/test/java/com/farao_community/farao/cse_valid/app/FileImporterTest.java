@@ -34,7 +34,7 @@ class FileImporterTest {
 
     @Test
     void testImportTtcAdjustmentFile() {
-        TcDocumentType document = fileImporter.importTtcAdjustment(getClass().getResourceAsStream("/TTC_Adjustment_20200813_2D4_CSE1_Simple_Import.xml"));
+        TcDocumentType document = fileImporter.importTtcAdjustment(getClass().getResource("/TTC_Adjustment_20200813_2D4_CSE1_Simple_Import.xml").toString());
         assertEquals("TTC_Adjustment_20200813_2D4_CSE", document.getDocumentIdentification().getV());
         assertEquals(1, document.getAdjustmentResults().size());
         assertEquals("2020-08-12T22:30Z", document.getAdjustmentResults().get(0).getTimestamp().get(0).getReferenceCalculationTime().getV());
@@ -43,8 +43,7 @@ class FileImporterTest {
 
     @Test
     void testImportTtcNonExistingFile() {
-        InputStream resourceAsStream = getClass().getResourceAsStream("/DoesNotExist.xml");
-        assertThrows(CseValidInvalidDataException.class, () -> fileImporter.importTtcAdjustment(resourceAsStream));
+        assertThrows(CseValidInvalidDataException.class, () -> fileImporter.importTtcAdjustment("/DoesNotExist.xml"));
     }
 
     @Test

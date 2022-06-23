@@ -1,6 +1,6 @@
 logback:
   amqp:
-    exchange: task-manager-logs-exchange
+    exchange: cse-valid-idcc-task-manager-logs-exchange
     routing-key: "#"
 spring:
   banner:
@@ -35,7 +35,7 @@ cse-valid-runner:
 
 minio-adapter:
   bucket: gridcapa
-  base-path: CSE/VALID/
+  base-path: CSE/VALID
   access-key: gridcapa
   secret-key: gridcapa
   url: http://localhost:9000/
