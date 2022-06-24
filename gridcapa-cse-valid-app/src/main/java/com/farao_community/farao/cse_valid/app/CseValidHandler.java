@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.StringJoiner;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -31,14 +32,15 @@ public class CseValidHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(CseValidHandler.class);
     private final DichotomyRunner dichotomyRunner;
     private final FileImporter fileImporter;
-    private final FileImporter fileExporter;
+    private final FileExporter fileExporter;
     private final MinioAdapter minioAdapter;
     private TcDocumentTypeWriter tcDocumentTypeWriter;
     private TimestampStatus timestampStatus;
-    private Instant computationStartInstant;
-    private Instant computationEndInstant;
+    private boolean isCracFileAvailable = true; // todo check by default true or false ?
+    private boolean isCgmFileAvailable = true;
+    private boolean isGlskFileAvailable = true;
 
-    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileImporter fileExporter, MinioAdapter minioAdapter) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter, MinioAdapter minioAdapter) {
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
@@ -46,37 +48,39 @@ public class CseValidHandler {
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
-        computationStartInstant = Instant.now();
+        Instant computationStartInstant = Instant.now();
         TcDocumentType tcDocumentType = fileImporter.importTtcAdjustment(cseValidRequest.getTtcAdjustment().getUrl());
+        tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest);
         if (tcDocumentType != null) {
             TTimestamp timestampData = getTimestampData(tcDocumentType);
             if (timestampData != null) {
-                timestampStatus = isComputationNeeded(timestampData, cseValidRequest.getProcessType());
-                computeTimestamp(cseValidRequest, timestampData, cseValidRequest.getProcessType());
+                timestampStatus = getTimestampStatus(timestampData, cseValidRequest.getProcessType());
+                computeTimestamp(cseValidRequest, timestampData);
             } else {
                 // todo fill with no ttc adjustment error
             }
         } else {
             // todo fill with no ttc adjustment error
         }
-        computationEndInstant = Instant.now();
-        return new CseValidResponse(cseValidRequest.getId(), "result-url", computationStartInstant, computationEndInstant);
+        String ttcValidationUrl = fileExporter.saveTtcValidation(tcDocumentTypeWriter, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+        Instant computationEndInstant = Instant.now();
+        return new CseValidResponse(cseValidRequest.getId(), ttcValidationUrl, computationStartInstant, computationEndInstant);
     }
 
     TTimestamp getTimestampData(TcDocumentType tcDocumentType) {
-        //todo filtre le timestamp correspondant a la request
+        // todo filtre le timestamp correspondant a la request
         return tcDocumentType.getAdjustmentResults().get(0).getTimestamp().get(0);
     }
 
-    private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp tTimestamp, ProcessType processType) {
-        this.tcDocumentTypeWriter = new TcDocumentTypeWriter();
+    private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp tTimestamp) {
         switch (timestampStatus) {
             case MISSING_DATAS:
-                tcDocumentTypeWriter.writeTimestamp(tTimestamp, timestampStatus);
+                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, "Process fail during TSO validation phase: Missing datas.");
             case NO_COMPUTATION_NEEDED:
-                tcDocumentTypeWriter.writeTimestamp(tTimestamp, timestampStatus);
+                tcDocumentTypeWriter.fillTimestampNoComputationNeeded(tTimestamp);
             case MISSING_INPUT_FILES:
-                tcDocumentTypeWriter.writeTimestamp(tTimestamp, timestampStatus);
+                String redFlagError = redFlagReasonError(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
+                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, redFlagError);
                 break;
             case COMPUTATION_NEEDED:
                 DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, tTimestamp);
@@ -94,7 +98,7 @@ public class CseValidHandler {
         }
     }
 
-    private TimestampStatus isComputationNeeded(TTimestamp timestamp, ProcessType processType) {
+    private TimestampStatus getTimestampStatus(TTimestamp timestamp, ProcessType processType) {
         if (datasAbsentInTimestamp(timestamp)) {
             return TimestampStatus.MISSING_DATAS;
         } else if (actualMaxImportAugmented(timestamp)) {
@@ -127,16 +131,33 @@ public class CseValidHandler {
     }
 
     private boolean areFilesPresent(TTimestamp timestamp, ProcessType processType) { // todo how to configure this in case of automatic run?
-        boolean isCgmFileAvailable = timestamp.getCGMfile() != null && minioAdapter.fileExists(processType + "/CGMs/" + timestamp.getCGMfile().getV());
+        isCgmFileAvailable = timestamp.getCGMfile() != null && minioAdapter.fileExists(processType + "/CGMs/" + timestamp.getCGMfile().getV());
         //boolean isCracFileAvailable = timestamp.getCRACfile() != null && minioAdapter.fileExists(processType + "/CRACs/" + timestamp.getCRACfile().getV());
-        boolean isCracFileAvailable = true; // todo the crac used should be the crac of the request "_FR"
-        boolean isGlskFileAvailable = timestamp.getGSKfile() != null && minioAdapter.fileExists(processType + "/GLSKs/" + timestamp.getGSKfile().getV());
+        isCracFileAvailable = true; // todo the crac used should be the crac of the request "_FR"
+        isGlskFileAvailable = timestamp.getGSKfile() != null && minioAdapter.fileExists(processType + "/GLSKs/" + timestamp.getGSKfile().getV());
 
         if (!isCgmFileAvailable || !isCracFileAvailable || !isGlskFileAvailable) {
             LOGGER.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
+
             return false;
         }
         return true;
+    }
+
+    private String redFlagReasonError(boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
+        StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
+
+        if (!isCgmFileAvailable) {
+            stringJoiner.add("CGM file");
+        }
+        if (!isCracFileAvailable) {
+            stringJoiner.add("CRAC file");
+        }
+        if (!isGlskFileAvailable) {
+            stringJoiner.add("GLSK file");
+        }
+
+        return stringJoiner.toString();
     }
 
 }

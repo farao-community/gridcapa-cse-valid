@@ -1,29 +1,44 @@
+/*
+ * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ *  This Source Code Form is subject to the terms of the Mozilla Public
+ *  License, v. 2.0. If a copy of the MPL was not distributed with this
+ *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
-import xsd.etso_code_lists.CodingSchemeType;
-import xsd.etso_code_lists.MessageTypeList;
-import xsd.etso_code_lists.ProcessTypeList;
-import xsd.etso_code_lists.RoleTypeList;
+import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import xsd.etso_code_lists.*;
 import xsd.etso_core_cmpts.*;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.GregorianCalendar;
-import java.util.Locale;
+import java.util.*;
+
+import static com.farao_community.farao.cse_valid.app.Constants.*;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 public class TcDocumentTypeWriter {
-    public static final String SENDER_IDENTIFICATION = "10XFR-RTE------Q";
-    public static final String RECEIVER_IDENTIFICATION = "10XFR-RTE------Q";
-    public static final String DOMAIN = "10YDOM-1001A061T";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TcDocumentTypeWriter.class);
+    private final CseValidRequest processStartRequest;
     private final TcDocumentType tcDocumentType;
     private final DateTimeFormatter isoInstantFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
     private final LongIdentificationType documentIdentification;
@@ -38,7 +53,8 @@ public class TcDocumentTypeWriter {
     private final AreaType domainAreaType;
     private final TimeIntervalType timeIntervalType;
 
-    public TcDocumentTypeWriter() {
+    public TcDocumentTypeWriter(CseValidRequest processRequest) {
+        this.processStartRequest = processRequest;
         this.tcDocumentType = new TcDocumentType();
         this.documentIdentification = new LongIdentificationType();
         this.versionType = new VersionType();
@@ -52,6 +68,21 @@ public class TcDocumentTypeWriter {
         this.domainAreaType = new AreaType();
         this.timeIntervalType = new TimeIntervalType();
         fillHeaders();
+    }
+
+    public InputStream buildTcDocumentType() {
+        StringWriter sw = new StringWriter();
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(TcDocumentType.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            JAXBElement<TcDocumentType> root = new JAXBElement<>(new QName("TTC_rtevalidation_document"), TcDocumentType.class, tcDocumentType);
+            jaxbMarshaller.marshal(root, sw);
+        } catch (JAXBException e) {
+            LOGGER.error("Error while writing TTC validation result document ", e);
+            throw new CseValidInternalException("Error while writing TTC validation result document ", e);
+        }
+        return new ByteArrayInputStream(sw.toString().getBytes());
     }
 
     private void fillHeaders() {
@@ -106,25 +137,98 @@ public class TcDocumentTypeWriter {
         }
     }
 
-    public void writeTimestamp(TTimestamp timestamp, TimestampStatus status) {
+    public synchronized void fillTimestampWithMissingInputFiles(TTimestamp timestampData, String redFlagError) {
+        fillEmptyValidationResults(); //todo necessary to delete old results? or use clear
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+        TTimestamp ts = initializeTimestampResult(timestampData);
+
+        TNumber status = new TNumber();
+        status.setV(BigInteger.ZERO);
+        ts.setSTATUS(status);
+
+        TextType errorMessage = new TextType();
+        errorMessage.setV(redFlagError);
+        ts.setRedFlagReason(errorMessage);
+
+        listTimestamps.add(ts);
+    }
+
+    public synchronized void fillTimestampNoComputationNeeded(TTimestamp initialTs) {
+        fillEmptyValidationResults();
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+        TTimestamp ts = new TTimestamp();
+        ts.setReferenceCalculationTime(initialTs.getReferenceCalculationTime());
+
+        QuantityType mnii = new QuantityType();
+        mnii.setV(initialTs.getMiBNII().getV().subtract(initialTs.getANTCFinal().getV()));
+
+        ts.setTimeInterval(initialTs.getTimeInterval());
+        ts.setTime(initialTs.getTime());
+
+        TNumber status = new TNumber();
+        status.setV(BigInteger.TWO);
+        ts.setSTATUS(status);
+        ts.setMNII(mnii);
+        ts.setTTCLimitedBy(initialTs.getTTCLimitedBy());
+        ts.setCRACfile(initialTs.getCRACfile());
+        ts.setCGMfile(initialTs.getCGMfile());
+        ts.setGSKfile(initialTs.getGSKfile());
+        ts.setBASECASEfile(initialTs.getBASECASEfile());
+        ts.setLimitingElement(initialTs.getLimitingElement());
+
+        listTimestamps.add(ts);
 
     }
 
+    private void fillEmptyValidationResults() {
+        List<TResultTimeseries> listResultTimeseries = tcDocumentType.getValidationResults();
+        listResultTimeseries.clear();
+        TResultTimeseries tResultTimeseries = new TResultTimeseries();
 
+        IdentificationType timeSeriesIdentification = new IdentificationType();
+        timeSeriesIdentification.setV(processStartRequest.getTimestamp().format(DateTimeFormatter.ofPattern(TIMESERIES_IDENTIFICATION_PATTERN, Locale.FRANCE)));
 
-    private void writeTimestampNoTTCAdjustmentFile() {
-        TcDocumentTypeWriter output = new TcDocumentTypeWriter();
+        BusinessType businessType = new BusinessType();
+        businessType.setV(BusinessTypeList.A_81);
+
+        EnergyProductType energyProductType = new EnergyProductType();
+        energyProductType.setV(PRODUCT);
+
+        AreaType inArea = new AreaType();
+        inArea.setV(IN_AREA);
+        inArea.setCodingScheme(CodingSchemeType.A_01);
+
+        AreaType outArea = new AreaType();
+        outArea.setV(OUT_AREA);
+        outArea.setCodingScheme(CodingSchemeType.A_01);
+
+        UnitOfMeasureType unitOfMeasureType = new UnitOfMeasureType();
+        unitOfMeasureType.setV(UnitOfMeasureTypeList.MAW);
+
+        tResultTimeseries.setTimeSeriesIdentification(timeSeriesIdentification);
+        tResultTimeseries.setBusinessType(businessType);
+        tResultTimeseries.setProduct(energyProductType);
+        tResultTimeseries.setInArea(inArea);
+        tResultTimeseries.setOutArea(outArea);
+        tResultTimeseries.setMeasureUnit(unitOfMeasureType);
+
+        listResultTimeseries.add(tResultTimeseries);
     }
 
-    private void writeTimestampMissingInputsFiles(TTimestamp timestamp) {
+    private TTimestamp initializeTimestampResult(TTimestamp timestampData) {
+        TTimestamp ts = new TTimestamp();
 
-    }
+        TTime time = new TTime();
+        time.setV(timestampData.getTime().getV());
 
-    private void writeTimestampMissingDatas(TTimestamp timestamp) {
+        TimeIntervalType timeInterval = new TimeIntervalType();
+        timeInterval.setV(timestampData.getTimeInterval().getV());
 
-    }
+        ts.setReferenceCalculationTime(time);
 
-    private void writeTimestampNoComputationNeeded(TTimestamp timestamp) {
+        ts.setTimeInterval(timeInterval);
+        ts.setTime(time);
 
+        return ts;
     }
 }

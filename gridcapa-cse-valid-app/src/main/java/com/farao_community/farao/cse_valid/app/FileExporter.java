@@ -120,6 +120,16 @@ public class FileExporter {
         return minioAdapter.generatePreSignedUrl(raoParametersDestinationPath);
     }
 
+    public String saveTtcValidation(TcDocumentTypeWriter tcDocumentTypeWriter, OffsetDateTime offsetDateTime, ProcessType processType) {
+        String dateTime = ""; //todo choose timestamp format
+        String version = "1"; //todo check version with minio
+        String ttcValidationFileName = String.format("TTC_RTEValidation_%s_%s_%s.xml", dateTime, processType.getCode(), version); //todo replace with correct regex
+        String ttcValidationDestinationPath = makeDestinationMinioPath(offsetDateTime, processType, FileKind.OUTPUTS) + ttcValidationFileName;
+        InputStream ttcValidationIs = tcDocumentTypeWriter.buildTcDocumentType();
+        minioAdapter.uploadOutputForTimestamp(ttcValidationDestinationPath, ttcValidationIs, processType.toString(), "TTC-VALIDATION", offsetDateTime);
+        return minioAdapter.generatePreSignedUrl(ttcValidationDestinationPath);
+    }
+
     public enum FileKind {
         ARTIFACTS,
         OUTPUTS
