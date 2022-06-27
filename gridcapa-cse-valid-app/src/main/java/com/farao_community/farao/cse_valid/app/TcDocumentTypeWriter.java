@@ -8,7 +8,12 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
+import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.*;
+import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
+import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
+import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xsd.etso_code_lists.*;
@@ -25,6 +30,7 @@ import javax.xml.namespace.QName;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -52,9 +58,11 @@ public class TcDocumentTypeWriter {
     private final MessageDateTimeType creationTime;
     private final AreaType domainAreaType;
     private final TimeIntervalType timeIntervalType;
+    private final NetPositionService netPositionService;
 
-    public TcDocumentTypeWriter(CseValidRequest processRequest) {
+    public TcDocumentTypeWriter(CseValidRequest processRequest, NetPositionService netPositionService) {
         this.processStartRequest = processRequest;
+        this.netPositionService = netPositionService;
         this.tcDocumentType = new TcDocumentType();
         this.documentIdentification = new LongIdentificationType();
         this.versionType = new VersionType();
@@ -230,5 +238,59 @@ public class TcDocumentTypeWriter {
         ts.setTime(time);
 
         return ts;
+    }
+
+    public synchronized void fillTimestampWithDichotomyResponse(TTimestamp timestampData, DichotomyResult<RaoResponse> dichotomyResult) {
+        fillEmptyValidationResults();
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+
+        TTimestamp ts = initializeTimestampResult(timestampData);
+
+        TNumber status = new TNumber();
+        status.setV(BigInteger.TWO);
+
+        BigDecimal mibniiValue = timestampData.getMiBNII().getV().subtract(timestampData.getANTCFinal().getV());
+        QuantityType mibnii = new QuantityType();
+        mibnii.setV(mibniiValue);
+
+        BigDecimal mniiValue = computeMnii(dichotomyResult).map(Math::round).map(BigDecimal::valueOf).orElse(mibniiValue);
+        QuantityType mnii = new QuantityType();
+        mnii.setV(mniiValue);
+
+        ts.setSTATUS(status);
+        ts.setMNII(mnii);
+        ts.setMiBNII(mibnii);
+        ts.setTTCLimitedBy(timestampData.getTTCLimitedBy());
+        ts.setCRACfile(timestampData.getCRACfile());
+        ts.setCGMfile(timestampData.getCGMfile());
+        ts.setGSKfile(timestampData.getGSKfile());
+
+        DichotomyStepResult<RaoResponse> stepToAnalyse = Optional.ofNullable(dichotomyResult.getHighestValidStep()).orElse(dichotomyResult.getLowestInvalidStep());
+        /*CracParserRequest cracParserRequest = new CracParserRequest(timestampId,
+                new CracParserFileResources(stepToAnalyse.getCracResult().getFilename(), stepToAnalyse.getCracResult().getUrl()),
+                new CracParserFileResources(stepToAnalyse.getRaoResult().getFilename(), stepToAnalyse.getRaoResult().getUrl()),
+                new CracParserFileResources(stepToAnalyse.getNetworkWithPra().getFilename(), stepToAnalyse.getNetworkWithPra().getUrl()));
+
+        CracParserResponse cracParserResponse = cracParserClient.runParser(cracParserRequest);
+
+        ts.setLimitingElement(fillLimitingElement(cracParserResponse));*/ // TODO: add limiting elements
+
+        listTimestamps.add(ts);
+
+        listTimestamps.sort(Comparator.comparing(c -> OffsetDateTime.parse(c.getTime().getV())));
+    }
+
+    private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
+        if (dichotomyResult.getHighestValidStep() == null) {
+            return Optional.empty();
+        }
+        String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
+        NetPositionReport netPositionReport = netPositionService.generateNetPositionReport(finalNetworkWithPraUrl);
+        Map<String, Double> italianBordersExchange = netPositionReport.getAreasReport().get("IT").getBordersExchanges();
+        double italianCseNetPosition = italianBordersExchange.get("FR") +
+                italianBordersExchange.get("CH") +
+                italianBordersExchange.get("AT") +
+                italianBordersExchange.get("SI");
+        return Optional.of(-italianCseNetPosition);
     }
 }

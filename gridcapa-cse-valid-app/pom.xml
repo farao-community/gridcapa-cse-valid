@@ -120,6 +120,10 @@
             <artifactId>logstash-logback-encoder</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
@@ -188,6 +192,11 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>com.rte-france.powsybl</groupId>
+            <artifactId>powsybl-hades2-integration</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-iidm-impl</artifactId>
             <scope>runtime</scope>
@@ -197,11 +206,15 @@
             <artifactId>powsybl-ucte-converter</artifactId>
             <scope>runtime</scope>
         </dependency>
-
         <!-- TEST DEPENDENCIES -->
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-config-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>powsybl-open-loadflow</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -27,6 +27,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBIntrospector;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.OffsetDateTime;
 
@@ -56,6 +57,15 @@ public class FileImporter {
         return GlskDocumentImporters.importGlsk(urlValidationService.openUrlStream(glskUrl));
     }
 
+    public Network importNetwork(String cgmUrl) {
+        try {
+            String filename = getFilenameFromUrl(cgmUrl);
+            return importNetwork(filename, cgmUrl);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Cannot import Network from url %s", cgmUrl), e);
+        }
+    }
+
     public Network importNetwork(String filename, String cgmUrl) throws IOException {
         return Importers.loadNetwork(filename, urlValidationService.openUrlStream(cgmUrl));
     }
@@ -79,6 +89,14 @@ public class FileImporter {
             return CracImporters.importCrac(FilenameUtils.getName(new URL(cracUrl).getPath()), cracResultStream);
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Cannot import crac from JSON : %s", cracUrl));
+        }
+    }
+
+    private static String getFilenameFromUrl(String url) {
+        try {
+            return FilenameUtils.getName(new URL(url).getPath());
+        } catch (MalformedURLException e) {
+            throw new CseValidInvalidDataException(String.format("URL is invalid: %s", url));
         }
     }
 
