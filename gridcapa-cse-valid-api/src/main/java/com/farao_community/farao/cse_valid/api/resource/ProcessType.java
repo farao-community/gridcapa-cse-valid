@@ -10,8 +10,8 @@ package com.farao_community.farao.cse_valid.api.resource;
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 public enum ProcessType {
-    D2CC("ID"),
-    IDCC("2D");
+    D2CC("2D"),
+    IDCC("ID");
 
     private final String code;
 

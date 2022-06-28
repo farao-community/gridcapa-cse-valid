@@ -12,7 +12,6 @@ import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.*;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
-import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,7 +145,7 @@ public class TcDocumentTypeWriter {
     }
 
     public synchronized void fillTimestampWithMissingInputFiles(TTimestamp timestampData, String redFlagError) {
-        fillEmptyValidationResults(); //todo necessary to delete old results? or use clear
+        fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeTimestampResult(timestampData);
 
@@ -265,7 +264,7 @@ public class TcDocumentTypeWriter {
         ts.setCGMfile(timestampData.getCGMfile());
         ts.setGSKfile(timestampData.getGSKfile());
 
-        DichotomyStepResult<RaoResponse> stepToAnalyse = Optional.ofNullable(dichotomyResult.getHighestValidStep()).orElse(dichotomyResult.getLowestInvalidStep());
+        //DichotomyStepResult<RaoResponse> stepToAnalyse = Optional.ofNullable(dichotomyResult.getHighestValidStep()).orElse(dichotomyResult.getLowestInvalidStep());
         /*CracParserRequest cracParserRequest = new CracParserRequest(timestampId,
                 new CracParserFileResources(stepToAnalyse.getCracResult().getFilename(), stepToAnalyse.getCracResult().getUrl()),
                 new CracParserFileResources(stepToAnalyse.getRaoResult().getFilename(), stepToAnalyse.getRaoResult().getUrl()),

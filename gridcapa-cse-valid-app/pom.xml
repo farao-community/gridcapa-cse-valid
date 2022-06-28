@@ -192,11 +192,6 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.rte-france.powsybl</groupId>
-            <artifactId>powsybl-hades2-integration</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-iidm-impl</artifactId>
             <scope>runtime</scope>
@@ -204,6 +199,11 @@
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-ucte-converter</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.rte-france.powsybl</groupId>
+            <artifactId>powsybl-hades2-integration</artifactId>
             <scope>runtime</scope>
         </dependency>
         <!-- TEST DEPENDENCIES -->

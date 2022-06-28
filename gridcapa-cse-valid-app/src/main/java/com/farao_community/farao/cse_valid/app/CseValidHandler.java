@@ -118,7 +118,8 @@ public class CseValidHandler {
 
     private boolean datasAbsentInTimestamp(TTimestamp timestamp) {
         if (timestamp.getMNII() == null || timestamp.getMiBNII() == null || timestamp.getANTCFinal() == null
-                || (timestamp.getMiBNII().getV().intValue() == 0 && timestamp.getANTCFinal().getV().intValue() == 0)) {
+                || (timestamp.getMiBNII().getV().intValue() == 0 && timestamp.getANTCFinal().getV().intValue() == 0)
+                || timestamp.getMNII().getV() == null || timestamp.getMiBNII().getV() == null || timestamp.getANTCFinal().getV() == null) {
             LOGGER.info("Missing datas in TTC Adjustment");
             return true;
         }
