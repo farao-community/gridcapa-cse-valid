@@ -12,6 +12,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
@@ -23,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.StringJoiner;
 
 /**
@@ -56,7 +59,7 @@ public class CseValidHandler {
         TcDocumentType tcDocumentType = fileImporter.importTtcAdjustment(cseValidRequest.getTtcAdjustment().getUrl());
         tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest, netPositionService);
         if (tcDocumentType != null) {
-            TTimestamp timestampData = getTimestampData(tcDocumentType);
+            TTimestamp timestampData = getTimestampData(cseValidRequest, tcDocumentType);
             if (timestampData != null) {
                 timestampStatus = getTimestampStatus(timestampData, cseValidRequest.getProcessType());
                 computeTimestamp(cseValidRequest, timestampData);
@@ -70,9 +73,16 @@ public class CseValidHandler {
         return new CseValidResponse(cseValidRequest.getId(), ttcValidationUrl, computationStartInstant, computationEndInstant);
     }
 
-    TTimestamp getTimestampData(TcDocumentType tcDocumentType) {
-        // todo filtre le timestamp correspondant a la request
-        return tcDocumentType.getAdjustmentResults().get(0).getTimestamp().get(0);
+    private TTimestamp getTimestampData(CseValidRequest cseValidRequest, TcDocumentType tcDocumentType) {
+        String requestTs = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(cseValidRequest.getTimestamp());
+        return tcDocumentType.getAdjustmentResults().get(0).getTimestamp().stream()
+                .filter(t -> formatTimestampTime(t.getTime()).equals(requestTs))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String formatTimestampTime(TTime time) {
+        return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.parse(time.getV(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'")));
     }
 
     private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp tTimestamp) {

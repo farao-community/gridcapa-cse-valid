@@ -45,7 +45,6 @@ public class TcDocumentTypeWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(TcDocumentTypeWriter.class);
     private final CseValidRequest processStartRequest;
     private final TcDocumentType tcDocumentType;
-    private final DateTimeFormatter isoInstantFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
     private final LongIdentificationType documentIdentification;
     private final VersionType versionType;
     private final MessageType messageTypedocumentType;
@@ -111,7 +110,7 @@ public class TcDocumentTypeWriter {
         tcDocumentType.setDtdVersion("1");
         tcDocumentType.setDtdRelease("1");
 
-        documentIdentification.setV("document identification"); // todo
+        documentIdentification.setV(getDocumentIdentification());
 
         versionType.setV(1);
 
@@ -131,8 +130,19 @@ public class TcDocumentTypeWriter {
         domainAreaType.setCodingScheme(CodingSchemeType.A_01);
         domainAreaType.setV(DOMAIN);
 
-        timeIntervalType.setV("todo"); // todo
+        timeIntervalType.setV(getTimeInterval());
         creationTime.setV(calendarFromDateTime(OffsetDateTime.now()));
+    }
+
+    private String getDocumentIdentification() {
+        String pattern = String.format("'TTC_RTEValidation_'yyyyMMdd'_%s'e", processStartRequest.getProcessType().getCode());
+        return processStartRequest.getTimestamp().format(DateTimeFormatter.ofPattern(pattern, Locale.FRANCE));
+    }
+
+    private String getTimeInterval() {
+        OffsetDateTime startTime = processStartRequest.getTimestamp().toLocalDate().atStartOfDay().atZone(EUROPE_BRUSSELS_ZONE_ID).toOffsetDateTime();
+        OffsetDateTime endTime = startTime.plusDays(1);
+        return String.format("%s/%s", startTime.format(DateTimeFormatter.ISO_INSTANT), endTime.format(DateTimeFormatter.ISO_INSTANT));
     }
 
     private XMLGregorianCalendar calendarFromDateTime(OffsetDateTime offsetDateTime) {
@@ -184,7 +194,6 @@ public class TcDocumentTypeWriter {
         ts.setLimitingElement(initialTs.getLimitingElement());
 
         listTimestamps.add(ts);
-
     }
 
     private void fillEmptyValidationResults() {
