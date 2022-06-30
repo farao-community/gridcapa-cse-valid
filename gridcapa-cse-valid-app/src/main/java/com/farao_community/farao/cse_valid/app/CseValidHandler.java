@@ -74,7 +74,7 @@ public class CseValidHandler {
     }
 
     private TTimestamp getTimestampData(CseValidRequest cseValidRequest, TcDocumentType tcDocumentType) {
-        String requestTs = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(cseValidRequest.getTimestamp());
+        String requestTs = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(cseValidRequest.getTimestamp().withNano(0));
         return tcDocumentType.getAdjustmentResults().get(0).getTimestamp().stream()
                 .filter(t -> formatTimestampTime(t.getTime()).equals(requestTs))
                 .findFirst()

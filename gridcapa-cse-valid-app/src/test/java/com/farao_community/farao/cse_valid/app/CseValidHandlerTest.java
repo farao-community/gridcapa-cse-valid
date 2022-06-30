@@ -16,8 +16,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,7 +33,7 @@ class CseValidHandlerTest {
     @Autowired
     CseValidHandler cseValidHandler;
 
-    //@MockBean
+    @MockBean
     MinioAdapter minioAdapter;
 
     //@MockBean
@@ -56,7 +58,7 @@ class CseValidHandlerTest {
         String ttcFileName = "TTC_Adjustment_20200813_2D4_CSE1_no_calcul.xml";
         cseValidRequest = new CseValidRequest("id",
                 ProcessType.D2CC,
-                OffsetDateTime.now(),
+                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC),
                 createFileResource(ttcFileName),
                 new CseValidFileResource("crac.xml", "file://crac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
