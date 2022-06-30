@@ -20,7 +20,7 @@ public final class Constants {
     public static final String IN_AREA = "10YIT-GRTN-----B";
     public static final String OUT_AREA = "10YDOM-1001A061T";
     public static final String PRODUCT = "8716867000016";
-    public static final String STATUS_ERROR_MESSAGE = "Process fail during TSO validation phase: Missing TTC_adjustment file";
+    public static final String STATUS_ERROR_MESSAGE = "Process fail during TSO validation phase: Missing TTC_adjustment file.";
     public static final List<String> LIMITED_BY_STATUSES_TO_BE_CALCULATED = List.of("Critical Branch", "Minimum Margin");
     public static final ZoneId EUROPE_BRUSSELS_ZONE_ID = ZoneId.of("Europe/Brussels");
 

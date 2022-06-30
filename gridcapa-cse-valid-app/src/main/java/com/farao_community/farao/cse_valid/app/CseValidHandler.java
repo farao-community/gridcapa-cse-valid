@@ -7,6 +7,7 @@
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
@@ -56,7 +57,7 @@ public class CseValidHandler {
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
         Instant computationStartInstant = Instant.now();
-        TcDocumentType tcDocumentType = fileImporter.importTtcAdjustment(cseValidRequest.getTtcAdjustment().getUrl());
+        TcDocumentType tcDocumentType = importTtcAdjustmentFile(cseValidRequest.getTtcAdjustment());
         tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest, netPositionService);
         if (tcDocumentType != null) {
             TTimestamp timestampData = getTimestampData(cseValidRequest, tcDocumentType);
@@ -64,13 +65,18 @@ public class CseValidHandler {
                 timestampStatus = getTimestampStatus(timestampData, cseValidRequest.getProcessType());
                 computeTimestamp(cseValidRequest, timestampData);
             } else {
-                // todo fill with no ttc adjustment error
+                tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
             }
         } else {
+            tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
         }
         String ttcValidationUrl = fileExporter.saveTtcValidation(tcDocumentTypeWriter, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
         Instant computationEndInstant = Instant.now();
         return new CseValidResponse(cseValidRequest.getId(), ttcValidationUrl, computationStartInstant, computationEndInstant);
+    }
+
+    private TcDocumentType importTtcAdjustmentFile(CseValidFileResource ttcAdjustmentFile) {
+        return ttcAdjustmentFile != null ? fileImporter.importTtcAdjustment(ttcAdjustmentFile.getUrl()) : null;
     }
 
     private TTimestamp getTimestampData(CseValidRequest cseValidRequest, TcDocumentType tcDocumentType) {
@@ -88,16 +94,20 @@ public class CseValidHandler {
     private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp tTimestamp) {
         switch (timestampStatus) {
             case MISSING_DATAS:
+                LOGGER.info("Missing datas");
                 tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, "Process fail during TSO validation phase: Missing datas.");
                 break;
             case NO_COMPUTATION_NEEDED:
+                LOGGER.info("no computation needed");
                 tcDocumentTypeWriter.fillTimestampNoComputationNeeded(tTimestamp);
                 break;
             case MISSING_INPUT_FILES:
+                LOGGER.info("Missing input files");
                 String redFlagError = redFlagReasonError(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
                 tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, redFlagError);
                 break;
             case COMPUTATION_NEEDED:
+                LOGGER.info("Run dichotomy");
                 DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, tTimestamp);
                 String finalCgmUrl;
                 if (dichotomyResult.hasValidStep()) { //todo no need to fiter here??

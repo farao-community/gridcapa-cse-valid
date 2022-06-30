@@ -43,6 +43,7 @@ import static com.farao_community.farao.cse_valid.app.Constants.*;
 public class TcDocumentTypeWriter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TcDocumentTypeWriter.class);
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
     private final CseValidRequest processStartRequest;
     private final TcDocumentType tcDocumentType;
     private final LongIdentificationType documentIdentification;
@@ -154,7 +155,7 @@ public class TcDocumentTypeWriter {
         }
     }
 
-    public synchronized void fillTimestampWithMissingInputFiles(TTimestamp timestampData, String redFlagError) {
+    public void fillTimestampWithMissingInputFiles(TTimestamp timestampData, String redFlagError) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeTimestampResult(timestampData);
@@ -170,7 +171,35 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
     }
 
-    public synchronized void fillTimestampNoComputationNeeded(TTimestamp initialTs) {
+    public void fillNoTtcAdjustmentError(CseValidRequest cseValidRequest) {
+        fillEmptyValidationResults();
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+        TTimestamp ts = new TTimestamp();
+
+        TTime time = new TTime();
+        time.setV(cseValidRequest.getTimestamp().toLocalDateTime().atZone(EUROPE_BRUSSELS_ZONE_ID).toOffsetDateTime().format(DATE_TIME_FORMATTER));
+
+        TimeIntervalType timeInterval = new TimeIntervalType();
+        timeInterval.setV(cseValidRequest.getTimestamp().withMinute(0).format(DATE_TIME_FORMATTER) + "/" + cseValidRequest.getTimestamp().withMinute(0).plusHours(1).format(DATE_TIME_FORMATTER));
+
+        ts.setReferenceCalculationTime(time);
+
+        ts.setTimeInterval(timeInterval);
+        ts.setTime(time);
+
+        TextType textTypeRedFlagReason = new TextType();
+        textTypeRedFlagReason.setV(STATUS_ERROR_MESSAGE);
+
+        TNumber statusNumber = new TNumber();
+        statusNumber.setV(BigInteger.ZERO);
+
+        ts.setSTATUS(statusNumber);
+        ts.setRedFlagReason(textTypeRedFlagReason);
+
+        listTimestamps.add(ts);
+    }
+
+    public void fillTimestampNoComputationNeeded(TTimestamp initialTs) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = new TTimestamp();
