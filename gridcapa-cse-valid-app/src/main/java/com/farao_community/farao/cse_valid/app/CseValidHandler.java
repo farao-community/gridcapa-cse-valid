@@ -12,14 +12,15 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
+import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElement;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
-import com.powsybl.iidm.network.Network;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -46,13 +47,15 @@ public class CseValidHandler {
     private boolean isCgmFileAvailable = true;
     private boolean isGlskFileAvailable = true;
     private final NetPositionService netPositionService;
+    private final LimitingElement limitingElement;
 
-    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter, MinioAdapter minioAdapter, NetPositionService netPositionService) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter, MinioAdapter minioAdapter, NetPositionService netPositionService, LimitingElement limitingElement) {
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.minioAdapter = minioAdapter;
         this.netPositionService = netPositionService;
+        this.limitingElement = limitingElement;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
@@ -94,27 +97,21 @@ public class CseValidHandler {
     private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp tTimestamp) {
         switch (timestampStatus) {
             case MISSING_DATAS:
-                LOGGER.info("Missing datas");
                 tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, "Process fail during TSO validation phase: Missing datas.");
                 break;
             case NO_COMPUTATION_NEEDED:
-                LOGGER.info("no computation needed");
                 tcDocumentTypeWriter.fillTimestampNoComputationNeeded(tTimestamp);
                 break;
             case MISSING_INPUT_FILES:
-                LOGGER.info("Missing input files");
                 String redFlagError = redFlagReasonError(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
                 tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, redFlagError);
                 break;
             case COMPUTATION_NEEDED:
-                LOGGER.info("Run dichotomy");
                 DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, tTimestamp);
-                String finalCgmUrl;
+
                 if (dichotomyResult.hasValidStep()) { //todo no need to fiter here??
-                    //String finalCgmPath = fileExporter.getFinalNetworkFilePath(cseValidRequest.getTimestamp(), cseValidRequest.getProcessType()); todo if necessary to add cgm to the output directory
-                    Network finalNetwork = fileImporter.importNetwork(dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl());
-                    //finalCgmUrl = fileExporter.exportAndUploadNetwork(finalNetwork, "UCTE", GridcapaFileGroup.OUTPUT, finalCgmPath, processConfiguration.getFinalCgm(), cseRequest.getTargetProcessDateTime(), cseRequest.getProcessType());
-                    tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(tTimestamp, dichotomyResult);
+                    TLimitingElement tLimitingElement = this.limitingElement.getLimitingElement(dichotomyResult.getHighestValidStep());
+                    tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(tTimestamp, dichotomyResult, tLimitingElement);
                 } else {
                     //tcDocumentTypeWriter.fillWithError(tTimestamp); todo case failure dichotomy
                 }

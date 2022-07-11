@@ -277,7 +277,7 @@ public class TcDocumentTypeWriter {
         return ts;
     }
 
-    public synchronized void fillTimestampWithDichotomyResponse(TTimestamp timestampData, DichotomyResult<RaoResponse> dichotomyResult) {
+    public synchronized void fillTimestampWithDichotomyResponse(TTimestamp timestampData, DichotomyResult<RaoResponse> dichotomyResult, TLimitingElement tLimitingElement) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
 
@@ -302,15 +302,7 @@ public class TcDocumentTypeWriter {
         ts.setCGMfile(timestampData.getCGMfile());
         ts.setGSKfile(timestampData.getGSKfile());
 
-        //DichotomyStepResult<RaoResponse> stepToAnalyse = Optional.ofNullable(dichotomyResult.getHighestValidStep()).orElse(dichotomyResult.getLowestInvalidStep());
-        /*CracParserRequest cracParserRequest = new CracParserRequest(timestampId,
-                new CracParserFileResources(stepToAnalyse.getCracResult().getFilename(), stepToAnalyse.getCracResult().getUrl()),
-                new CracParserFileResources(stepToAnalyse.getRaoResult().getFilename(), stepToAnalyse.getRaoResult().getUrl()),
-                new CracParserFileResources(stepToAnalyse.getNetworkWithPra().getFilename(), stepToAnalyse.getNetworkWithPra().getUrl()));
-
-        CracParserResponse cracParserResponse = cracParserClient.runParser(cracParserRequest);
-
-        ts.setLimitingElement(fillLimitingElement(cracParserResponse));*/ // TODO: add limiting elements
+        ts.setLimitingElement(tLimitingElement);
 
         listTimestamps.add(ts);
 

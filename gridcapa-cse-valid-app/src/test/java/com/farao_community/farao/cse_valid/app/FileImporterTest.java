@@ -69,7 +69,7 @@ class FileImporterTest {
     }
 
     @Test
-    void testImportCracFromJson() throws IOException {
+    void testImportCracFromJson() {
         Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.1.json")).toString());
         assertNotNull(crac);
     }
