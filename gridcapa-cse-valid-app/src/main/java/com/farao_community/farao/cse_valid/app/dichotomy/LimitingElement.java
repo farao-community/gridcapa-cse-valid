@@ -132,7 +132,7 @@ public class LimitingElement {
             elementName = tieLine.getProperty("elementName_1", "");
             id = tieLine.getHalf1().getId();
         } else {
-            elementName = branch.getProperty("elementName", "");
+            elementName = branch.getProperty("elementName", ""); // todo check si c'est le bon nom
             id = branch.getId();
         }
 

@@ -8,13 +8,11 @@
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
-
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_io_api.CracExporters;
 import com.farao_community.farao.minio_adapter.starter.GridcapaFileGroup;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
-
 import com.farao_community.farao.rao_api.json.JsonRaoParameters;
 import com.farao_community.farao.rao_api.parameters.RaoParameters;
 import com.powsybl.commons.datasource.MemDataSource;
@@ -26,7 +24,7 @@ import java.io.*;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-
+import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
 /**
@@ -101,16 +99,6 @@ public class FileExporter {
         }
     }
 
-    public String makeDestinationMinioPath(OffsetDateTime offsetDateTime, ProcessType processType, FileKind filekind) {
-        ZonedDateTime targetDateTime = offsetDateTime.atZoneSameInstant(ZoneId.of(ZONE_ID));
-        return processType + MINIO_SEPARATOR
-                + targetDateTime.getYear() + MINIO_SEPARATOR
-                + String.format("%02d", targetDateTime.getMonthValue()) + MINIO_SEPARATOR
-                + String.format("%02d", targetDateTime.getDayOfMonth()) + MINIO_SEPARATOR
-                + String.format("%02d", targetDateTime.getHour()) + "_30" + MINIO_SEPARATOR
-                + filekind + MINIO_SEPARATOR;
-    }
-
     public String saveRaoParameters(OffsetDateTime offsetDateTime, ProcessType processType) {
         RaoParameters raoParameters = RaoParameters.load();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -122,13 +110,46 @@ public class FileExporter {
     }
 
     public String saveTtcValidation(TcDocumentTypeWriter tcDocumentTypeWriter, OffsetDateTime offsetDateTime, ProcessType processType) {
-        String dateTime = ""; //todo choose timestamp format
-        String version = "1"; //todo check version with minio
-        String ttcValidationFileName = String.format("TTC_RTEValidation_%s_%s_%s.xml", dateTime, processType.getCode(), version); //todo replace with correct regex
-        String ttcValidationDestinationPath = makeDestinationMinioPath(offsetDateTime, processType, FileKind.OUTPUTS) + ttcValidationFileName;
+        String ttcValidationDestinationPath = makeDestinationMinioPath(offsetDateTime, processType, FileKind.OUTPUTS);
+        String ttcValidationFileName = getTTCValidationFilename(processType, offsetDateTime, ttcValidationDestinationPath);
         InputStream ttcValidationIs = tcDocumentTypeWriter.buildTcDocumentType();
-        minioAdapter.uploadOutputForTimestamp(ttcValidationDestinationPath, ttcValidationIs, processType.toString(), "TTC-VALIDATION", offsetDateTime);
+        minioAdapter.uploadOutputForTimestamp(ttcValidationFileName, ttcValidationIs, processType.toString(), "TTC-VALIDATION", offsetDateTime);
         return minioAdapter.generatePreSignedUrl(ttcValidationDestinationPath);
+    }
+
+    public String makeDestinationMinioPath(OffsetDateTime offsetDateTime, ProcessType processType, FileKind filekind) {
+        ZonedDateTime targetDateTime = offsetDateTime.atZoneSameInstant(ZoneId.of(ZONE_ID));
+        return processType + MINIO_SEPARATOR
+                + targetDateTime.getYear() + MINIO_SEPARATOR
+                + String.format("%02d", targetDateTime.getMonthValue()) + MINIO_SEPARATOR
+                + String.format("%02d", targetDateTime.getDayOfMonth()) + MINIO_SEPARATOR
+                + String.format("%02d", targetDateTime.getHour()) + "_30" + MINIO_SEPARATOR
+                + filekind + MINIO_SEPARATOR;
+    }
+
+    private String getTTCValidationFilename(ProcessType processType, OffsetDateTime offsetDateTime, String ttcValidationDestinationPath) {
+        String dateTime = formatDate(offsetDateTime);
+        String processCode = getProcessCode(processType, offsetDateTime);
+        String ttcValidationFileName = ttcValidationDestinationPath + String.format("TTC_RTEValidation_%s_%s_[v].xml", dateTime, processCode);
+        return getLatestFileVersion(ttcValidationFileName);
+    }
+
+    private String formatDate(OffsetDateTime offsetDateTime) {
+        return DateTimeFormatter.BASIC_ISO_DATE.format(offsetDateTime.toLocalDate());
+    }
+
+    private String getProcessCode(ProcessType processType, OffsetDateTime offsetDateTime) {
+        return processType.getCode() + offsetDateTime.getDayOfWeek().getValue();
+    }
+
+    private String getLatestFileVersion(String ttcValidationFileName) {
+        String fileVersionned = ttcValidationFileName.replace("[v]", "1");
+
+        for (int versionNumber = 1; minioAdapter.fileExists(fileVersionned) && versionNumber <= 99; versionNumber++) {
+            fileVersionned = ttcValidationFileName.replace("[v]", String.valueOf(versionNumber));
+        }
+
+        return fileVersionned;
     }
 
     public enum FileKind {

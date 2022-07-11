@@ -277,7 +277,7 @@ public class TcDocumentTypeWriter {
         return ts;
     }
 
-    public synchronized void fillTimestampWithDichotomyResponse(TTimestamp timestampData, DichotomyResult<RaoResponse> dichotomyResult, TLimitingElement tLimitingElement) {
+    public void fillTimestampWithDichotomyResponse(TTimestamp timestampData, DichotomyResult<RaoResponse> dichotomyResult, TLimitingElement tLimitingElement) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
 
@@ -307,6 +307,23 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
 
         listTimestamps.sort(Comparator.comparing(c -> OffsetDateTime.parse(c.getTime().getV())));
+    }
+
+    public void fillDichotomyError(TTimestamp timestampData) {
+        fillEmptyValidationResults();
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+
+        TTimestamp ts = initializeTimestampResult(timestampData);
+
+        TNumber status = new TNumber();
+        status.setV(BigInteger.ONE);
+        ts.setSTATUS(status);
+
+        TextType errorMessage = new TextType();
+        errorMessage.setV("Process fail during TSO validation phase.");
+        ts.setRedFlagReason(errorMessage);
+
+        listTimestamps.add(ts);
     }
 
     private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {

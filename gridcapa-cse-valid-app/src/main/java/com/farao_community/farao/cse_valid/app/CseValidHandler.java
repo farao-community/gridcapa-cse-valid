@@ -108,12 +108,11 @@ public class CseValidHandler {
                 break;
             case COMPUTATION_NEEDED:
                 DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, tTimestamp);
-
-                if (dichotomyResult.hasValidStep()) { //todo no need to fiter here??
+                if (dichotomyResult.hasValidStep()) {
                     TLimitingElement tLimitingElement = this.limitingElement.getLimitingElement(dichotomyResult.getHighestValidStep());
                     tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(tTimestamp, dichotomyResult, tLimitingElement);
                 } else {
-                    //tcDocumentTypeWriter.fillWithError(tTimestamp); todo case failure dichotomy
+                    tcDocumentTypeWriter.fillDichotomyError(tTimestamp);
                 }
                 break;
             default:
