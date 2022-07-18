@@ -6,9 +6,9 @@
  */
 package com.farao_community.farao.cse_valid.app;
 
-import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.data.crac_api.Crac;
+import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
 import com.farao_community.farao.data.crac_io_api.CracImporters;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.powsybl.glsk.api.GlskDocument;
@@ -43,7 +43,7 @@ class FileImporterTest {
 
     @Test
     void testImportTtcNonExistingFile() {
-        assertThrows(CseValidInvalidDataException.class, () -> fileImporter.importTtcAdjustment("/DoesNotExist.xml"));
+        assertNull(fileImporter.importTtcAdjustment("/DoesNotExist.xml"));
     }
 
     @Test
@@ -61,7 +61,6 @@ class FileImporterTest {
     @Test
     void testImportRaoResult() throws IOException {
         InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.1.json");
-        InputStream raoResultInputStream = getClass().getResourceAsStream("/rao-result-v1.1.json");
         assertNotNull(cracInputStream);
         Crac crac = CracImporters.importCrac("crac.json", cracInputStream);
         RaoResult raoResult = fileImporter.importRaoResult(Objects.requireNonNull(getClass().getResource("/rao-result-v1.1.json")).toString(), crac);
@@ -72,5 +71,11 @@ class FileImporterTest {
     void testImportCracFromJson() {
         Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.1.json")).toString());
         assertNotNull(crac);
+    }
+
+    @Test
+    void testImportCseCracFromJson() throws IOException {
+        CseCrac cseCrac = fileImporter.importCseCrac(Objects.requireNonNull(getClass().getResource("/20211125_0030_2D4_CRAC_FR1.xml")).toString());
+        assertNotNull(cseCrac);
     }
 }

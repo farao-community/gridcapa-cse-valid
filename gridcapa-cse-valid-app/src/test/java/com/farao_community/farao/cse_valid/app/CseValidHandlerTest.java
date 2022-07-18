@@ -6,13 +6,12 @@
  */
 package com.farao_community.farao.cse_valid.app;
 
-import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
-import org.junit.jupiter.api.Assertions;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapterProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +22,9 @@ import java.time.ZoneOffset;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -70,7 +72,7 @@ class CseValidHandlerTest {
         //assertEquals("", cseValidResponse.getResultFileUrl());
     }
 
-    @Test //todo correct test
+    @Test
     void simpleTestWithNonExistingTtcAdjustmentFile() {
         cseValidRequest = new CseValidRequest("id",
                 ProcessType.D2CC,
@@ -79,9 +81,13 @@ class CseValidHandlerTest {
                 new CseValidFileResource("crac.xml", "file://crac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
                 new CseValidFileResource("glsk.xml", "file://glsk.xml"));
-        //when(minioAdapter.getProperties()).thenReturn(new MinioAdapterProperties("bucket", "basepath", "url", "accesskey", "secretkey"));
-        //when(minioAdapter.getFile(any())).thenReturn(getClass().getResourceAsStream("/doesNotExist.xml"));
-        Assertions.assertThrows(CseValidInvalidDataException.class, () -> cseValidHandler.handleCseValidRequest(cseValidRequest));
+        when(minioAdapter.getProperties()).thenReturn(new MinioAdapterProperties("bucket", "basepath", "url", "accesskey", "secretkey"));
+        when(minioAdapter.getFile(any())).thenReturn(getClass().getResourceAsStream("/doesNotExist.xml"));
+        when(minioAdapter.generatePreSignedUrl(any())).thenReturn("/output.xml");
+        CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
+        assertNotNull(cseValidResponse);
+        assertEquals("id", cseValidResponse.getId());
+        assertEquals("/output.xml", cseValidResponse.getResultFileUrl());
     }
 
     private CseValidFileResource createFileResource(String filename) {

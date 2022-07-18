@@ -44,12 +44,11 @@ public class FileImporter {
     }
 
     public TcDocumentType importTtcAdjustment(String ttcUrl) {
-        try {
-            InputStream inputStream = urlValidationService.openUrlStream(ttcUrl);
+        try (InputStream inputStream = urlValidationService.openUrlStream(ttcUrl)) {
             JAXBContext jaxbContext = JAXBContext.newInstance(ObjectFactory.class);
             return (TcDocumentType) JAXBIntrospector.getValue(jaxbContext.createUnmarshaller().unmarshal(inputStream));
         } catch (Exception e) {
-            throw new CseValidInvalidDataException("Cannot import file, it might not exist or it might not follow the xsd rules", e);
+            return null;
         }
     }
 
