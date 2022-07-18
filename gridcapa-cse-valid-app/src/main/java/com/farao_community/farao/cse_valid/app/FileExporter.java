@@ -37,7 +37,6 @@ public class FileExporter {
     private static final String RAO_PARAMETERS_FILE_NAME = "raoParameters.json";
     private static final String MINIO_SEPARATOR = "/";
     private static final String ZONE_ID = "Europe/Paris"; //todo configure ??
-    public static final String XIIDM = "XIIDM";
 
     private final MinioAdapter minioAdapter;
 
@@ -62,7 +61,7 @@ public class FileExporter {
     }
 
     public String saveNetworkInArtifact(Network network, String networkFilePath, String fileType, OffsetDateTime processTargetDateTime, ProcessType processType) {
-        exportAndUploadNetwork(network, XIIDM, GridcapaFileGroup.ARTIFACT, networkFilePath, fileType, processTargetDateTime, processType);
+        exportAndUploadNetwork(network, "XIIDM", GridcapaFileGroup.ARTIFACT, networkFilePath, fileType, processTargetDateTime, processType);
         return minioAdapter.generatePreSignedUrl(networkFilePath);
     }
 
@@ -77,7 +76,6 @@ public class FileExporter {
                     break;
                 default:
                     throw new UnsupportedOperationException(String.format("File group %s not supported", fileGroup));
-
             }
         } catch (IOException e) {
             throw new CseValidInternalException("Error while trying to save network", e);
@@ -91,8 +89,8 @@ public class FileExporter {
             case "UCTE":
                 Exporters.export("UCTE", network, new Properties(), memDataSource);
                 return memDataSource.newInputStream("", "uct");
-            case XIIDM:
-                Exporters.export(XIIDM, network, new Properties(), memDataSource);
+            case "XIIDM":
+                Exporters.export("XIIDM", network, new Properties(), memDataSource);
                 return memDataSource.newInputStream("", "xiidm");
             default:
                 throw new UnsupportedOperationException(String.format("Network format %s not supported", format));
