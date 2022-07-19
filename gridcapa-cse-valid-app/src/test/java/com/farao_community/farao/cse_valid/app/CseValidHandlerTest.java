@@ -38,27 +38,10 @@ class CseValidHandlerTest {
     @MockBean
     MinioAdapter minioAdapter;
 
-    //@MockBean
-    private FileImporter fileImporter;
-
-    private static CseValidRequest cseValidRequest;
-
-    /*@BeforeAll //todo delete?
-    static void setUp() {
-
-        cseValidRequest = new CseValidRequest("id",
-                ProcessType.D2CC,
-                OffsetDateTime.now(),
-                createFileResource(ttcFileName),
-                createFileResource("crac.xml"),
-                createFileResource("cgm.xml"),
-                createFileResource("glsk.xml"));
-    }*/
-
     @Test
     void simpleTestWithExistingTtcAdjustmentFile() {
         String ttcFileName = "TTC_Adjustment_20200813_2D4_CSE1_no_calcul.xml";
-        cseValidRequest = new CseValidRequest("id",
+        CseValidRequest cseValidRequest = new CseValidRequest("id",
                 ProcessType.D2CC,
                 OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC),
                 createFileResource(ttcFileName),
@@ -68,13 +51,13 @@ class CseValidHandlerTest {
         //when(minioAdapter.getProperties()).thenReturn(new MinioAdapterProperties("bucket", "basepath", "url", "accesskey", "secretkey"));
         //when(minioAdapter.getFile(any())).thenReturn(getClass().getResourceAsStream("/" + ttcFileName));
         CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
-        assertEquals("id", cseValidResponse.getId()); //todo add check with result file
+        assertEquals("id", cseValidResponse.getId());
         //assertEquals("", cseValidResponse.getResultFileUrl());
     }
 
     @Test
     void simpleTestWithNonExistingTtcAdjustmentFile() {
-        cseValidRequest = new CseValidRequest("id",
+        CseValidRequest cseValidRequest = new CseValidRequest("id",
                 ProcessType.D2CC,
                 OffsetDateTime.now(),
                 new CseValidFileResource("ttc.xml", "file://ttc.xml"),

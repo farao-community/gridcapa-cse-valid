@@ -12,7 +12,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
-import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElement;
+import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
@@ -43,19 +43,19 @@ public class CseValidHandler {
     private final MinioAdapter minioAdapter;
     private TcDocumentTypeWriter tcDocumentTypeWriter;
     private TimestampStatus timestampStatus;
-    private boolean isCracFileAvailable = true; // todo check by default true or false ?
-    private boolean isCgmFileAvailable = true;
-    private boolean isGlskFileAvailable = true;
+    private boolean isCracFileAvailable = false;
+    private boolean isCgmFileAvailable = false;
+    private boolean isGlskFileAvailable = false;
     private final NetPositionService netPositionService;
-    private final LimitingElement limitingElement;
+    private final LimitingElementService limitingElementService;
 
-    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter, MinioAdapter minioAdapter, NetPositionService netPositionService, LimitingElement limitingElement) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter, MinioAdapter minioAdapter, NetPositionService netPositionService, LimitingElementService limitingElementService) {
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.minioAdapter = minioAdapter;
         this.netPositionService = netPositionService;
-        this.limitingElement = limitingElement;
+        this.limitingElementService = limitingElementService;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
@@ -65,7 +65,7 @@ public class CseValidHandler {
         if (tcDocumentType != null) {
             TTimestamp timestampData = getTimestampData(cseValidRequest, tcDocumentType);
             if (timestampData != null) {
-                timestampStatus = getTimestampStatus(timestampData, cseValidRequest.getProcessType());
+                timestampStatus = getTimestampStatus(timestampData, cseValidRequest);
                 computeTimestamp(cseValidRequest, timestampData);
             } else {
                 tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
@@ -109,7 +109,7 @@ public class CseValidHandler {
             case COMPUTATION_NEEDED:
                 DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, tTimestamp);
                 if (dichotomyResult.hasValidStep()) {
-                    TLimitingElement tLimitingElement = this.limitingElement.getLimitingElement(dichotomyResult.getHighestValidStep());
+                    TLimitingElement tLimitingElement = this.limitingElementService.getLimitingElement(dichotomyResult.getHighestValidStep());
                     tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(tTimestamp, dichotomyResult, tLimitingElement);
                 } else {
                     tcDocumentTypeWriter.fillDichotomyError(tTimestamp);
@@ -120,12 +120,12 @@ public class CseValidHandler {
         }
     }
 
-    private TimestampStatus getTimestampStatus(TTimestamp timestamp, ProcessType processType) {
+    private TimestampStatus getTimestampStatus(TTimestamp timestamp, CseValidRequest cseValidRequest) {
         if (datasAbsentInTimestamp(timestamp)) {
             return TimestampStatus.MISSING_DATAS;
         } else if (actualMaxImportAugmented(timestamp)) {
             return TimestampStatus.NO_COMPUTATION_NEEDED;
-        } else if (!areFilesPresent(timestamp, processType)) {
+        } else if (!areFilesPresent(timestamp, cseValidRequest)) {
             return TimestampStatus.MISSING_INPUT_FILES;
         } else {
             return TimestampStatus.COMPUTATION_NEEDED;
@@ -153,18 +153,20 @@ public class CseValidHandler {
         return false;
     }
 
-    private boolean areFilesPresent(TTimestamp timestamp, ProcessType processType) { // todo how to configure this in case of automatic run?
-        isCgmFileAvailable = timestamp.getCGMfile() != null && minioAdapter.fileExists(processType + "/CGMs/" + timestamp.getCGMfile().getV());
-        //boolean isCracFileAvailable = timestamp.getCRACfile() != null && minioAdapter.fileExists(processType + "/CRACs/" + timestamp.getCRACfile().getV());
-        isCracFileAvailable = true; // todo the crac used should be the crac of the request "_FR"
-        isGlskFileAvailable = timestamp.getGSKfile() != null && minioAdapter.fileExists(processType + "/GLSKs/" + timestamp.getGSKfile().getV());
+    private boolean areFilesPresent(TTimestamp timestamp, CseValidRequest cseValidRequest) {
+        isCgmFileAvailable = minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CGMs", cseValidRequest.getCgm().getFilename()));
+        isCracFileAvailable = minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CRACs", cseValidRequest.getCrac().getFilename()));
+        isGlskFileAvailable = minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest.getGlsk().getFilename()));
 
         if (!isCgmFileAvailable || !isCracFileAvailable || !isGlskFileAvailable) {
             LOGGER.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
-
             return false;
         }
         return true;
+    }
+
+    private String buildMinioPath(ProcessType processType, String filetype, String filename) {
+        return processType.name() + "/" + filetype + "/" + filename;
     }
 
     private String redFlagReasonError(boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {

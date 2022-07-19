@@ -18,9 +18,7 @@ import com.farao_community.farao.data.rao_result_api.OptimizationState;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
-import com.powsybl.iidm.network.Branch;
-import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.TieLine;
+import com.powsybl.iidm.network.*;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.stereotype.Service;
 import xsd.etso_core_cmpts.TextType;
@@ -33,13 +31,13 @@ import java.util.Optional;
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 @Service
-public class LimitingElement {
+public class LimitingElementService {
     private final FileImporter fileImporter;
     private Crac crac;
     private Network network;
     private RaoResult raoResult;
 
-    public LimitingElement(FileImporter fileImporter) {
+    public LimitingElementService(FileImporter fileImporter) {
         this.fileImporter = fileImporter;
     }
 
@@ -132,7 +130,7 @@ public class LimitingElement {
             elementName = tieLine.getProperty("elementName_1", "");
             id = tieLine.getHalf1().getId();
         } else {
-            elementName = branch.getProperty("elementName", ""); // todo check si c'est le bon nom
+            elementName = branch.getProperty("elementName", "");
             id = branch.getId();
         }
 
@@ -161,12 +159,16 @@ public class LimitingElement {
 
         String areaFrom = null;
 
-        if (branch.getTerminal1().getVoltageLevel().getSubstation().isPresent()) {
-            areaFrom = branch.getTerminal1().getVoltageLevel().getSubstation().get().getCountry().map(Enum::toString).orElse("No Country");
+        Optional<Substation> substation = branch.getTerminal1().getVoltageLevel().getSubstation();
+
+        if (substation.isPresent()) {
+            Optional<Country> country = substation.get().getCountry();
+            if (country.isPresent()) {
+                areaFrom = country.get().toString();
+            }
         }
 
         tAreaFrom.setV(areaFrom);
-
         return tAreaFrom;
     }
 
@@ -175,12 +177,16 @@ public class LimitingElement {
 
         String areaTo = null;
 
-        if (branch.getTerminal2().getVoltageLevel().getSubstation().isPresent()) {
-            areaTo = branch.getTerminal2().getVoltageLevel().getSubstation().get().getCountry().map(Enum::toString).orElse("No Country");
+        Optional<Substation> substation = branch.getTerminal2().getVoltageLevel().getSubstation();
+
+        if (substation.isPresent()) {
+            Optional<Country> country = substation.get().getCountry();
+            if (country.isPresent()) {
+                areaTo = country.get().toString();
+            }
         }
 
         tAreaTo.setV(areaTo);
-
         return tAreaTo;
     }
 }

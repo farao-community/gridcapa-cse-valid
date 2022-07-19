@@ -36,7 +36,7 @@ public class FileExporter {
     private static final String JSON_CRAC_FILE_NAME = "crac.json";
     private static final String RAO_PARAMETERS_FILE_NAME = "raoParameters.json";
     private static final String MINIO_SEPARATOR = "/";
-    private static final String ZONE_ID = "Europe/Paris"; //todo configure ??
+    private static final String ZONE_ID = "Europe/Paris";
 
     private final MinioAdapter minioAdapter;
 
