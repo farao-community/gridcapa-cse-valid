@@ -154,9 +154,9 @@ public class CseValidHandler {
     }
 
     private boolean areFilesPresent(TTimestamp timestamp, CseValidRequest cseValidRequest) {
-        isCgmFileAvailable = minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CGMs", cseValidRequest.getCgm().getFilename()));
-        isCracFileAvailable = minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CRACs", cseValidRequest.getCrac().getFilename()));
-        isGlskFileAvailable = minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest.getGlsk().getFilename()));
+        isCgmFileAvailable = cseValidRequest.getCgm() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CGMs", cseValidRequest.getCgm().getFilename()));
+        isCracFileAvailable = cseValidRequest.getCrac() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CRACs", cseValidRequest.getCrac().getFilename()));
+        isGlskFileAvailable = cseValidRequest.getGlsk() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest.getGlsk().getFilename()));
 
         if (!isCgmFileAvailable || !isCracFileAvailable || !isGlskFileAvailable) {
             LOGGER.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());

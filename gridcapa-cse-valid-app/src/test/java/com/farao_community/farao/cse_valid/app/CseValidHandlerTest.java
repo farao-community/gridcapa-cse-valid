@@ -48,11 +48,8 @@ class CseValidHandlerTest {
                 new CseValidFileResource("crac.xml", "file://crac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
                 new CseValidFileResource("glsk.xml", "file://glsk.xml"));
-        //when(minioAdapter.getProperties()).thenReturn(new MinioAdapterProperties("bucket", "basepath", "url", "accesskey", "secretkey"));
-        //when(minioAdapter.getFile(any())).thenReturn(getClass().getResourceAsStream("/" + ttcFileName));
         CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
         assertEquals("id", cseValidResponse.getId());
-        //assertEquals("", cseValidResponse.getResultFileUrl());
     }
 
     @Test
