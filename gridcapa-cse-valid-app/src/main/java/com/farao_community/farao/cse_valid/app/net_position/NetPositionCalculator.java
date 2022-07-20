@@ -6,15 +6,19 @@
  */
 package com.farao_community.farao.cse_valid.app.net_position;
 
-import com.powsybl.iidm.network.Branch;
-import com.powsybl.iidm.network.Country;
-import com.powsybl.iidm.network.DanglingLine;
-import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.*;
+
+import java.util.Optional;
 
 /**
  * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
  */
-public class NetPositionCalculator {
+public final class NetPositionCalculator {
+
+    private NetPositionCalculator() {
+        throw new IllegalStateException("Utility class");
+    }
+
     public static NetPositionReport generateNetPositionReport(Network network) {
         NetPositionReportBuilder reportBuilder = new NetPositionReportBuilder();
         network.getBranchStream()
@@ -27,16 +31,37 @@ public class NetPositionCalculator {
     }
 
     private static void addBorder(Branch<?> branch, NetPositionReportBuilder reportBuilder) {
-        // Countries nullity checked previously in isCountryBorder() method
-        String area1 = branch.getTerminal1().getVoltageLevel().getSubstation().get().getNullableCountry().toString();
-        String area2 = branch.getTerminal2().getVoltageLevel().getSubstation().get().getNullableCountry().toString();
+        String area1 = null;
+        String area2 = null;
+
+        Optional<Substation> substationTerminal1 = branch.getTerminal1().getVoltageLevel().getSubstation();
+        if (substationTerminal1.isPresent()) {
+            area1 = substationTerminal1.get().getNullableCountry().toString();
+        }
+
+        Optional<Substation> substationTerminal2 = branch.getTerminal2().getVoltageLevel().getSubstation();
+        if (substationTerminal2.isPresent()) {
+            area2 = substationTerminal2.get().getNullableCountry().toString();
+        }
+
         double directMiddleFlow = getDirectMiddleFlow(branch);
         reportBuilder.addBorderResult(area1, area2, directMiddleFlow);
     }
 
     private static boolean isCountryBorder(Branch<?> branch) {
-        Country countrySide1 = branch.getTerminal1().getVoltageLevel().getSubstation().get().getNullableCountry();
-        Country countrySide2 = branch.getTerminal2().getVoltageLevel().getSubstation().get().getNullableCountry();
+        Country countrySide1 = null;
+        Country countrySide2 = null;
+
+        Optional<Substation> substationTerminal1 = branch.getTerminal1().getVoltageLevel().getSubstation();
+        if (substationTerminal1.isPresent()) {
+            countrySide1 = substationTerminal1.get().getNullableCountry();
+        }
+
+        Optional<Substation> substationTerminal2 = branch.getTerminal2().getVoltageLevel().getSubstation();
+        if (substationTerminal2.isPresent()) {
+            countrySide2 = substationTerminal2.get().getNullableCountry();
+        }
+
         if (countrySide1 == null || countrySide2 == null) {
             return false;
         }
@@ -50,14 +75,20 @@ public class NetPositionCalculator {
     }
 
     private static void addBorder(DanglingLine danglingLine, NetPositionReportBuilder reportBuilder) {
-        // Countries nullity checked previously in isCountryBorder() method
-        String area = danglingLine.getTerminal().getVoltageLevel().getSubstation().get().getNullableCountry().toString();
+        String area = null;
+
+        Optional<Substation> substation = danglingLine.getTerminal().getVoltageLevel().getSubstation();
+        if (substation.isPresent()) {
+            area = substation.get().getNullableCountry().toString();
+        }
+
         double directMiddleFlow = getDirectMiddleFlow(danglingLine);
         reportBuilder.addBorderResult(area, "XX", directMiddleFlow);
     }
 
     private static boolean isCountryBorder(DanglingLine danglingLine) {
-        return danglingLine.getTerminal().getVoltageLevel().getSubstation().get().getCountry().isPresent();
+        Optional<Substation> substation = danglingLine.getTerminal().getVoltageLevel().getSubstation();
+        return substation.map(value -> value.getCountry().isPresent()).orElse(false);
     }
 
     private static double getDirectMiddleFlow(DanglingLine danglingLine) {
