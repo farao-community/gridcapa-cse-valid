@@ -112,7 +112,7 @@ public class FileExporter {
         String ttcValidationFileName = getTTCValidationFilename(processType, offsetDateTime, ttcValidationDestinationPath);
         InputStream ttcValidationIs = tcDocumentTypeWriter.buildTcDocumentType();
         minioAdapter.uploadOutputForTimestamp(ttcValidationFileName, ttcValidationIs, processType.toString(), "TTC-VALIDATION", offsetDateTime);
-        return minioAdapter.generatePreSignedUrl(ttcValidationDestinationPath);
+        return minioAdapter.generatePreSignedUrl(ttcValidationFileName);
     }
 
     public String makeDestinationMinioPath(OffsetDateTime offsetDateTime, ProcessType processType, FileKind filekind) {
