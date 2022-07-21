@@ -79,6 +79,7 @@ public class CseValidListener implements MessageListener {
             LOGGER.info("Cse valid request received: {}", cseValidRequest);
             streamBridge.send(TASK_STATUS_UPDATE, new TaskStatusUpdate(UUID.fromString(cseValidRequest.getId()), TaskStatus.RUNNING));
             CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
+            LOGGER.info("Cse response sent: {}", cseValidResponse);
             sendCseValidResponse(cseValidResponse, replyTo, correlationId);
         } catch (AbstractCseValidException e) {
             LOGGER.error("Cse valid exception occured", e);

@@ -6,10 +6,29 @@
  */
 package com.farao_community.farao.cse_valid.app;
 
+import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
-import com.farao_community.farao.cse_valid.app.configuration.MinioAdapter;
+import com.farao_community.farao.cse_valid.api.resource.ProcessType;
+import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
+import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
+import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
+import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
+import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
+import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.StringJoiner;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -17,13 +36,153 @@ import org.springframework.stereotype.Component;
 @Component
 public class CseValidHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CseValidHandler.class);
+    private final DichotomyRunner dichotomyRunner;
+    private final FileImporter fileImporter;
+    private final FileExporter fileExporter;
     private final MinioAdapter minioAdapter;
+    private TcDocumentTypeWriter tcDocumentTypeWriter;
+    private TimestampStatus timestampStatus;
+    private boolean isCracFileAvailable = false;
+    private boolean isCgmFileAvailable = false;
+    private boolean isGlskFileAvailable = false;
+    private final NetPositionService netPositionService;
+    private final LimitingElementService limitingElementService;
 
-    public CseValidHandler(MinioAdapter minioAdapter) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter, MinioAdapter minioAdapter, NetPositionService netPositionService, LimitingElementService limitingElementService) {
+        this.dichotomyRunner = dichotomyRunner;
+        this.fileImporter = fileImporter;
+        this.fileExporter = fileExporter;
         this.minioAdapter = minioAdapter;
+        this.netPositionService = netPositionService;
+        this.limitingElementService = limitingElementService;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
-        return new CseValidResponse(cseValidRequest.getId());
+        Instant computationStartInstant = Instant.now();
+        TcDocumentType tcDocumentType = importTtcAdjustmentFile(cseValidRequest.getTtcAdjustment());
+        tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest, netPositionService);
+        if (tcDocumentType != null) {
+            TTimestamp timestampData = getTimestampData(cseValidRequest, tcDocumentType);
+            if (timestampData != null) {
+                timestampStatus = getTimestampStatus(timestampData, cseValidRequest);
+                computeTimestamp(cseValidRequest, timestampData);
+            } else {
+                tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
+            }
+        } else {
+            tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
+        }
+        String ttcValidationUrl = fileExporter.saveTtcValidation(tcDocumentTypeWriter, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+        Instant computationEndInstant = Instant.now();
+        return new CseValidResponse(cseValidRequest.getId(), ttcValidationUrl, computationStartInstant, computationEndInstant);
     }
+
+    private TcDocumentType importTtcAdjustmentFile(CseValidFileResource ttcAdjustmentFile) {
+        return ttcAdjustmentFile != null ? fileImporter.importTtcAdjustment(ttcAdjustmentFile.getUrl()) : null;
+    }
+
+    private TTimestamp getTimestampData(CseValidRequest cseValidRequest, TcDocumentType tcDocumentType) {
+        String requestTs = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(cseValidRequest.getTimestamp().withNano(0));
+        return tcDocumentType.getAdjustmentResults().get(0).getTimestamp().stream()
+                .filter(t -> formatTimestampTime(t.getTime()).equals(requestTs))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String formatTimestampTime(TTime time) {
+        return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.parse(time.getV(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'")));
+    }
+
+    private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp tTimestamp) {
+        switch (timestampStatus) {
+            case MISSING_DATAS:
+                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, "Process fail during TSO validation phase: Missing datas.");
+                break;
+            case NO_COMPUTATION_NEEDED:
+                tcDocumentTypeWriter.fillTimestampNoComputationNeeded(tTimestamp);
+                break;
+            case MISSING_INPUT_FILES:
+                String redFlagError = redFlagReasonError(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
+                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, redFlagError);
+                break;
+            case COMPUTATION_NEEDED:
+                DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, tTimestamp);
+                if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
+                    TLimitingElement tLimitingElement = this.limitingElementService.getLimitingElement(dichotomyResult.getHighestValidStep());
+                    tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(tTimestamp, dichotomyResult, tLimitingElement);
+                } else {
+                    tcDocumentTypeWriter.fillDichotomyError(tTimestamp);
+                }
+                break;
+            default:
+                throw new CseValidInvalidDataException("Timestamp Status not supported");
+        }
+    }
+
+    private TimestampStatus getTimestampStatus(TTimestamp timestamp, CseValidRequest cseValidRequest) {
+        if (datasAbsentInTimestamp(timestamp)) {
+            return TimestampStatus.MISSING_DATAS;
+        } else if (actualMaxImportAugmented(timestamp)) {
+            return TimestampStatus.NO_COMPUTATION_NEEDED;
+        } else if (!areFilesPresent(timestamp, cseValidRequest)) {
+            return TimestampStatus.MISSING_INPUT_FILES;
+        } else {
+            return TimestampStatus.COMPUTATION_NEEDED;
+        }
+    }
+
+    private boolean datasAbsentInTimestamp(TTimestamp timestamp) {
+        if (timestamp.getMNII() == null || timestamp.getMiBNII() == null || timestamp.getANTCFinal() == null
+                || (timestamp.getMiBNII().getV().intValue() == 0 && timestamp.getANTCFinal().getV().intValue() == 0)
+                || timestamp.getMNII().getV() == null || timestamp.getMiBNII().getV() == null || timestamp.getANTCFinal().getV() == null) {
+            LOGGER.info("Missing datas in TTC Adjustment");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean actualMaxImportAugmented(TTimestamp timestamp) {
+        int mibniiMinusAntc = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
+        int mnii = timestamp.getMNII().getV().intValue();
+        if (mibniiMinusAntc >= mnii) {
+            LOGGER.info("Timestamp '{}' NTC has not been augmented by adjustment process, no computation needed.", timestamp.getTime().getV());
+            return true;
+        }
+        LOGGER.info("Timestamp '{}' augmented NTC must be validated.", timestamp.getTime().getV());
+        return false;
+    }
+
+    private boolean areFilesPresent(TTimestamp timestamp, CseValidRequest cseValidRequest) {
+        isCgmFileAvailable = cseValidRequest.getCgm() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CGMs", cseValidRequest.getCgm().getFilename()));
+        isCracFileAvailable = cseValidRequest.getCrac() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CRACs", cseValidRequest.getCrac().getFilename()));
+        isGlskFileAvailable = cseValidRequest.getGlsk() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest.getGlsk().getFilename()));
+
+        if (!isCgmFileAvailable || !isCracFileAvailable || !isGlskFileAvailable) {
+            LOGGER.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
+            return false;
+        }
+        return true;
+    }
+
+    private String buildMinioPath(ProcessType processType, String filetype, String filename) {
+        return processType.name() + "/" + filetype + "/" + filename;
+    }
+
+    private String redFlagReasonError(boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
+        StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
+
+        if (!isCgmFileAvailable) {
+            stringJoiner.add("CGM file");
+        }
+        if (!isCracFileAvailable) {
+            stringJoiner.add("CRAC file");
+        }
+        if (!isGlskFileAvailable) {
+            stringJoiner.add("GLSK file");
+        }
+
+        return stringJoiner.toString();
+    }
+
 }

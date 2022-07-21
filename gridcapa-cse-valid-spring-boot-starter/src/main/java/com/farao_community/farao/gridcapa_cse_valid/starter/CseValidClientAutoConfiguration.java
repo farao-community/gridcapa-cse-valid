@@ -24,7 +24,7 @@ public class CseValidClientAutoConfiguration {
     }
 
     @Bean
-    public CseValidClient coreValidClient(AmqpTemplate amqpTemplate) {
+    public CseValidClient cseValidClient(AmqpTemplate amqpTemplate) {
         return new CseValidClient(amqpTemplate, clientProperties);
     }
 }

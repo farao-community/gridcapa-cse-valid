@@ -9,6 +9,8 @@ package com.farao_communityfarao.cse_valid.api.resource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -18,9 +20,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class CseValidResponseTest {
 
     @Test
-    void checkDCoreValidResponse() {
-        CseValidResponse coreValidResponse = new CseValidResponse("id");
+    void checkCoreValidResponse() {
+        Instant computationStartInstant = Instant.parse("2021-01-01T00:30:00Z");
+        Instant computationEndInstant = Instant.parse("2021-01-01T00:35:00Z");
+        String resultFileUrl = "testUrl";
+        CseValidResponse coreValidResponse = new CseValidResponse("id", resultFileUrl, computationStartInstant, computationEndInstant);
         assertNotNull(coreValidResponse);
         assertEquals("id", coreValidResponse.getId());
+        assertEquals(resultFileUrl, coreValidResponse.getResultFileUrl());
+        assertEquals("2021-01-01T00:30:00Z", coreValidResponse.getComputationStartInstant().toString());
+        assertEquals("2021-01-01T00:35:00Z", coreValidResponse.getComputationEndInstant().toString());
     }
 }

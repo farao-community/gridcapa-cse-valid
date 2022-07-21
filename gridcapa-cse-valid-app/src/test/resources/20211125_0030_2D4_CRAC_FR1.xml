@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- édité avec XMLSpy v2017 rel. 3 sp1 (x64) (http://www.altova.com) par RTE (RTE) -->
+<CRACDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" DtdRelease="0" DtdVersion="1" xsi:noNamespaceSchemaLocation="crac-document.xsd">
+	<DocumentIdentification v="20211125_0030_2D4_CRAC_FR"/>
+	<DocumentVersion v="1"/>
+	<DocumentType v="B15"/>
+	<ProcessType v="A48"/>
+	<SenderIdentification codingScheme="A01" v="10XFR-RTE------Q"/>
+	<SenderRole v="A04"/>
+	<ReceiverIdentification codingScheme="A01" v="22XCORESO------S"/>
+	<ReceiverRole v="A36"/>
+	<CreationDateTime v="2021-11-23T15:51:33Z"/>
+	<TimeInterval v="2021-11-24T23:00Z/2021-11-25T00:00Z"/>
+	<Domain codingScheme="A01" v="10YDOM-1001A061T"/>
+	<CRACSeries>
+		<Outages/>
+		<RemedialActions/>
+		<CriticalBranches/>
+		<CostlyRemedialActions/>
+	</CRACSeries>
+</CRACDocument>
