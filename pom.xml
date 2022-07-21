@@ -60,7 +60,7 @@
         <logstash.version>7.0.1</logstash.version>
         <maven.jaxb2.version>0.14.0</maven.jaxb2.version>
         <org.glassfish.jaxb.version>2.3.2</org.glassfish.jaxb.version>
-        <task-manager.version>1.2.0</task-manager.version>
+        <task-manager.version>1.4.1</task-manager.version>
     </properties>
 
     <build>
