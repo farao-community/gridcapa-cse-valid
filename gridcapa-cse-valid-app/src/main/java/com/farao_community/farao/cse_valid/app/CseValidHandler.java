@@ -15,7 +15,6 @@ import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
@@ -26,8 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.StringJoiner;
 
 /**
@@ -68,6 +67,7 @@ public class CseValidHandler {
                 timestampStatus = getTimestampStatus(timestampData, cseValidRequest);
                 computeTimestamp(cseValidRequest, timestampData);
             } else {
+                LOGGER.warn("No timestamp available in ttc adjustment for time {} and reference calculation time {}", formatTimestamp(cseValidRequest.getTime()), formatTimestamp(cseValidRequest.getTimestamp()));
                 tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
             }
         } else {
@@ -83,15 +83,20 @@ public class CseValidHandler {
     }
 
     private TTimestamp getTimestampData(CseValidRequest cseValidRequest, TcDocumentType tcDocumentType) {
-        String requestTs = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(cseValidRequest.getTimestamp().withNano(0));
-        return tcDocumentType.getAdjustmentResults().get(0).getTimestamp().stream()
-                .filter(t -> formatTimestampTime(t.getTime()).equals(requestTs))
-                .findFirst()
-                .orElse(null);
+        if (tcDocumentType.getAdjustmentResults().get(0) != null) {
+            return tcDocumentType.getAdjustmentResults().get(0).getTimestamp().stream()
+                    .filter(t -> t.getReferenceCalculationTime().getV().equals(formatTimestamp(cseValidRequest.getTimestamp()))
+                                    && t.getTime().getV().equals(formatTimestamp(cseValidRequest.getTime())))
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            return null;
+        }
     }
 
-    private String formatTimestampTime(TTime time) {
-        return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.parse(time.getV(), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'")));
+    private String formatTimestamp(OffsetDateTime offsetDateTime) {
+        // format to "yyy-MM-ddThh:mmZ"
+        return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC).toString();
     }
 
     private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp tTimestamp) {
