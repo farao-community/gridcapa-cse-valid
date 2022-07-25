@@ -58,17 +58,17 @@
         <jaxb.impl.version>4.0.0</jaxb.impl.version>
         <jsonapi.converter.version>0.11</jsonapi.converter.version>
         <logstash.version>7.0.1</logstash.version>
-        <maven.jaxb2.version>0.15.1</maven.jaxb2.version>
-        <org.glassfish.jaxb.version>4.0.0</org.glassfish.jaxb.version>
+        <maven.jaxb2.version>3.1.0</maven.jaxb2.version>
         <task-manager.version>1.4.1</task-manager.version>
+        <jakarta.activation-api.version>2.1.0</jakarta.activation-api.version>
     </properties>
 
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.jvnet.jaxb2.maven2</groupId>
-                    <artifactId>maven-jaxb2-plugin</artifactId>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jaxb2-maven-plugin</artifactId>
                     <version>${maven.jaxb2.version}</version>
                 </plugin>
             </plugins>
@@ -132,6 +132,11 @@
                 <artifactId>jaxb-impl</artifactId>
                 <version>${jaxb.impl.version}</version>
                 <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>${jakarta.activation-api.version}</version>
             </dependency>
 
             <!-- IMPORTED DEPENDENCIES -->
