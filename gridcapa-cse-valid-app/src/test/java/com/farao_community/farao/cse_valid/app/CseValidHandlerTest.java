@@ -51,7 +51,8 @@ class CseValidHandlerTest {
                 createFileResource(ttcFileName),
                 new CseValidFileResource("crac.xml", "file://crac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"));
+                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
+                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
         CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
         assertEquals("id", cseValidResponse.getId());
     }
@@ -65,7 +66,8 @@ class CseValidHandlerTest {
                 createFileResource(ttcFileName),
                 new CseValidFileResource("crac.xml", "file://crac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"));
+                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
+                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
         CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
         assertEquals("id", cseValidResponse.getId());
     }
@@ -79,7 +81,8 @@ class CseValidHandlerTest {
                 createFileResource(ttcFileName),
                 new CseValidFileResource("crac.xml", "file://crac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"));
+                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
+                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
         CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
         assertEquals("id", cseValidResponse.getId());
     }
@@ -93,7 +96,8 @@ class CseValidHandlerTest {
                 createFileResource(ttcFileName),
                 new CseValidFileResource("crac.xml", "file://crac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"));
+                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
+                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
         when(minioAdapter.fileExists(any())).thenReturn(true);
         when(dichotomyRunner.runDichotomy(any(), any())).thenReturn(null);
         CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
@@ -108,7 +112,8 @@ class CseValidHandlerTest {
                 new CseValidFileResource("ttc.xml", "file://ttc.xml"),
                 new CseValidFileResource("crac.xml", "file://crac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"));
+                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
+                OffsetDateTime.now());
         when(minioAdapter.getProperties()).thenReturn(new MinioAdapterProperties("bucket", "basepath", "url", "accesskey", "secretkey"));
         when(minioAdapter.getFile(any())).thenReturn(getClass().getResourceAsStream("/doesNotExist.xml"));
         when(minioAdapter.generatePreSignedUrl(any())).thenReturn("/output.xml");

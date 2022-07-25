@@ -32,6 +32,7 @@ import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -177,10 +178,11 @@ public class TcDocumentTypeWriter {
         TTimestamp ts = new TTimestamp();
 
         TTime time = new TTime();
-        time.setV(cseValidRequest.getTimestamp().toLocalDateTime().atZone(EUROPE_BRUSSELS_ZONE_ID).toOffsetDateTime().format(DATE_TIME_FORMATTER));
+        time.setV(cseValidRequest.getTime().withOffsetSameInstant(ZoneOffset.UTC).format(DATE_TIME_FORMATTER));
 
         TimeIntervalType timeInterval = new TimeIntervalType();
-        timeInterval.setV(cseValidRequest.getTimestamp().withMinute(0).format(DATE_TIME_FORMATTER) + "/" + cseValidRequest.getTimestamp().withMinute(0).plusHours(1).format(DATE_TIME_FORMATTER));
+        timeInterval.setV(cseValidRequest.getTimestamp().withOffsetSameInstant(ZoneOffset.UTC).withMinute(0).format(DATE_TIME_FORMATTER)
+                + "/" + cseValidRequest.getTimestamp().withOffsetSameInstant(ZoneOffset.UTC).withMinute(0).plusHours(1).format(DATE_TIME_FORMATTER));
 
         ts.setReferenceCalculationTime(time);
 

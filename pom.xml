@@ -71,13 +71,6 @@
                     <artifactId>jaxb2-maven-plugin</artifactId>
                     <version>${maven.jaxb2.version}</version>
                 </plugin>
-                <plugin>
-                  <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-javadoc-plugin</artifactId>
-                  <configuration>
-                           <excludePackageNames>com.farao_community.farao.cse_valid.app.ttc_adjustment</excludePackageNames>
-                  </configuration>
-            </plugin>
             </plugins>
         </pluginManagement>
     </build>
