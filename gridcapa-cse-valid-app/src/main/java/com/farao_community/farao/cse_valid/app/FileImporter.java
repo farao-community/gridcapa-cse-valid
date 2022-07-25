@@ -20,11 +20,12 @@ import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.glsk.api.io.GlskDocumentImporters;
 import com.powsybl.iidm.import_.Importers;
 import com.powsybl.iidm.network.Network;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBIntrospector;
+import jakarta.xml.bind.Unmarshaller;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBIntrospector;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -46,7 +47,8 @@ public class FileImporter {
     public TcDocumentType importTtcAdjustment(String ttcUrl) {
         try (InputStream inputStream = urlValidationService.openUrlStream(ttcUrl)) {
             JAXBContext jaxbContext = JAXBContext.newInstance(ObjectFactory.class);
-            return (TcDocumentType) JAXBIntrospector.getValue(jaxbContext.createUnmarshaller().unmarshal(inputStream));
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            return (TcDocumentType) JAXBIntrospector.getValue(unmarshaller.unmarshal(inputStream));
         } catch (Exception e) {
             return null;
         }
