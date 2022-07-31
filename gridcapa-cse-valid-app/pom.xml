@@ -95,11 +95,11 @@
         </dependency>
         <dependency>
             <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-crac-creator-api</artifactId>
+            <artifactId>farao-crac-creator-cse</artifactId>
         </dependency>
         <dependency>
             <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-crac-creator-cse</artifactId>
+            <artifactId>farao-crac-creator-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.farao-community.farao</groupId>
