@@ -129,7 +129,7 @@ public class CseValidHandler {
     }
 
     private TimestampStatus getTimestampStatus(TTimestamp timestamp, CseValidRequest cseValidRequest) {
-        if (!valuesAreRevelant(timestamp)) {
+        if (valuesAreNotRevelant(timestamp)) {
             return TimestampStatus.NO_VERIFICATION_NEEDED;
         } else if (datasAbsentInTimestamp(timestamp)) {
             return TimestampStatus.MISSING_DATAS;
@@ -158,9 +158,11 @@ public class CseValidHandler {
         return false;
     }
 
-    private boolean valuesAreRevelant(TTimestamp ts) {
-        return (ts.getMiBNII() != null || ts.getANTCFinal() != null) &&
-                (ts.getMiBNII().getV().intValue() != 0 || ts.getANTCFinal().getV().intValue() != 0);
+    private boolean valuesAreNotRevelant(TTimestamp ts) {
+        // case both values are absent or both values are equal to zero
+        return (ts.getMiBNII() == null && ts.getANTCFinal() == null) ||
+                ((ts.getMiBNII() != null && ts.getMiBNII().getV() != null && ts.getMiBNII().getV().intValue() == 0)
+                        && (ts.getANTCFinal() != null && ts.getANTCFinal().getV() != null && ts.getANTCFinal().getV().intValue() == 0));
     }
 
     private boolean areFilesPresent(TTimestamp timestamp, CseValidRequest cseValidRequest) {
