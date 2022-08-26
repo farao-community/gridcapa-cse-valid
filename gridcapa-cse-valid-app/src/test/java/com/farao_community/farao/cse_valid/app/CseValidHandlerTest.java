@@ -44,64 +44,27 @@ class CseValidHandlerTest {
 
     @Test
     void existingTtcAdjustmentFileWithoutCalcul() {
-        String ttcFileName = "TTC_Adjustment_20200813_2D4_CSE1_no_calcul.xml";
-        CseValidRequest cseValidRequest = new CseValidRequest("id",
-                ProcessType.D2CC,
-                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC),
-                createFileResource(ttcFileName),
-                new CseValidFileResource("crac.xml", "file://crac.xml"),
-                new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
-                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
-        CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
-        assertEquals("id", cseValidResponse.getId());
+        launchRequest("TTC_Adjustment_20200813_2D4_CSE1_no_calcul.xml");
     }
 
     @Test
     void existingTtcAdjustmentFileMissingDatas() {
-        String ttcFileName = "TTC_Adjustment_20200813_2D4_CSE1_missing_datas.xml";
-        CseValidRequest cseValidRequest = new CseValidRequest("id",
-                ProcessType.D2CC,
-                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC),
-                createFileResource(ttcFileName),
-                new CseValidFileResource("crac.xml", "file://crac.xml"),
-                new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
-                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
-        CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
-        assertEquals("id", cseValidResponse.getId());
+        launchRequest("TTC_Adjustment_20200813_2D4_CSE1_missing_datas.xml");
     }
 
     @Test
     void existingTtcAdjustmentFileMissingInputFiles() {
-        String ttcFileName = "TTC_Adjustment_20200813_2D4_CSE1_missing_input_files.xml";
-        CseValidRequest cseValidRequest = new CseValidRequest("id",
-                ProcessType.D2CC,
-                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC),
-                createFileResource(ttcFileName),
-                new CseValidFileResource("crac.xml", "file://crac.xml"),
-                new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
-                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
-        CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
-        assertEquals("id", cseValidResponse.getId());
+        launchRequest("TTC_Adjustment_20200813_2D4_CSE1_missing_input_files.xml");
     }
 
     @Test
     void existingTtcAdjustmentFileComputationNeededNoResponse() {
-        String ttcFileName = "TTC_Adjustment_20200813_2D4_CSE1_missing_input_files.xml";
-        CseValidRequest cseValidRequest = new CseValidRequest("id",
-                ProcessType.D2CC,
-                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC),
-                createFileResource(ttcFileName),
-                new CseValidFileResource("crac.xml", "file://crac.xml"),
-                new CseValidFileResource("cgm.xml", "file://cgm.xml"),
-                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
-                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
-        when(minioAdapter.fileExists(any())).thenReturn(true);
-        when(dichotomyRunner.runDichotomy(any(), any())).thenReturn(null);
-        CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
-        assertEquals("id", cseValidResponse.getId());
+        launchRequest("TTC_Adjustment_20200813_2D4_CSE1_missing_input_files.xml");
+    }
+
+    @Test
+    void valuesAreNotRelevant() {
+        launchRequest("TTC_Adjustment_20200813_2D4_CSE1_values_not_relevant.xml");
     }
 
     @Test
@@ -121,6 +84,21 @@ class CseValidHandlerTest {
         assertNotNull(cseValidResponse);
         assertEquals("id", cseValidResponse.getId());
         assertEquals("/output.xml", cseValidResponse.getResultFileUrl());
+    }
+
+    private void launchRequest(String ttcAdjustmentFilename) {
+        CseValidRequest cseValidRequest = new CseValidRequest("id",
+                ProcessType.D2CC,
+                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC),
+                createFileResource(ttcAdjustmentFilename),
+                new CseValidFileResource("crac.xml", "file://crac.xml"),
+                new CseValidFileResource("cgm.xml", "file://cgm.xml"),
+                new CseValidFileResource("glsk.xml", "file://glsk.xml"),
+                OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
+        when(minioAdapter.fileExists(any())).thenReturn(true);
+        when(dichotomyRunner.runDichotomy(any(), any())).thenReturn(null);
+        CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
+        assertEquals("id", cseValidResponse.getId());
     }
 
     private CseValidFileResource createFileResource(String filename) {

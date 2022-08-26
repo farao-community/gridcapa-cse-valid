@@ -210,6 +210,26 @@ public class TcDocumentTypeWriter {
         QuantityType mnii = new QuantityType();
         mnii.setV(initialTs.getMiBNII().getV().subtract(initialTs.getANTCFinal().getV()));
 
+        completeFillingWithStatusSuccess(ts, initialTs, mnii);
+
+        listTimestamps.add(ts);
+    }
+
+    public void fillTimestampNoVerificationNeeded(TTimestamp initialTs) {
+        fillEmptyValidationResults();
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+        TTimestamp ts = new TTimestamp();
+        ts.setReferenceCalculationTime(initialTs.getReferenceCalculationTime());
+
+        QuantityType mnii = new QuantityType();
+        mnii.setV(initialTs.getMNII().getV());
+
+        completeFillingWithStatusSuccess(ts, initialTs, mnii);
+
+        listTimestamps.add(ts);
+    }
+
+    private void completeFillingWithStatusSuccess(TTimestamp ts, TTimestamp initialTs, QuantityType mnii) {
         ts.setTimeInterval(initialTs.getTimeInterval());
         ts.setTime(initialTs.getTime());
 
@@ -223,8 +243,6 @@ public class TcDocumentTypeWriter {
         ts.setGSKfile(initialTs.getGSKfile());
         ts.setBASECASEfile(initialTs.getBASECASEfile());
         ts.setLimitingElement(initialTs.getLimitingElement());
-
-        listTimestamps.add(ts);
     }
 
     private void fillEmptyValidationResults() {

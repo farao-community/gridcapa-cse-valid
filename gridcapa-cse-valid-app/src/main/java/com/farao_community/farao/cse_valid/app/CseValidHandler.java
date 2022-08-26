@@ -86,7 +86,7 @@ public class CseValidHandler {
         if (tcDocumentType.getAdjustmentResults().get(0) != null) {
             return tcDocumentType.getAdjustmentResults().get(0).getTimestamp().stream()
                     .filter(t -> t.getReferenceCalculationTime().getV().equals(formatTimestamp(cseValidRequest.getTimestamp()))
-                                    && t.getTime().getV().equals(formatTimestamp(cseValidRequest.getTime())))
+                            && t.getTime().getV().equals(formatTimestamp(cseValidRequest.getTime())))
                     .findFirst()
                     .orElse(null);
         } else {
@@ -99,25 +99,28 @@ public class CseValidHandler {
         return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC).toString();
     }
 
-    private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp tTimestamp) {
+    private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp timestamp) {
         switch (timestampStatus) {
             case MISSING_DATAS:
-                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, "Process fail during TSO validation phase: Missing datas.");
+                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(timestamp, "Process fail during TSO validation phase: Missing datas.");
                 break;
             case NO_COMPUTATION_NEEDED:
-                tcDocumentTypeWriter.fillTimestampNoComputationNeeded(tTimestamp);
+                tcDocumentTypeWriter.fillTimestampNoComputationNeeded(timestamp);
+                break;
+            case NO_VERIFICATION_NEEDED:
+                tcDocumentTypeWriter.fillTimestampNoVerificationNeeded(timestamp);
                 break;
             case MISSING_INPUT_FILES:
                 String redFlagError = redFlagReasonError(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
-                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(tTimestamp, redFlagError);
+                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(timestamp, redFlagError);
                 break;
             case COMPUTATION_NEEDED:
-                DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, tTimestamp);
+                DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
                 if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
                     TLimitingElement tLimitingElement = this.limitingElementService.getLimitingElement(dichotomyResult.getHighestValidStep());
-                    tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(tTimestamp, dichotomyResult, tLimitingElement);
+                    tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(timestamp, dichotomyResult, tLimitingElement);
                 } else {
-                    tcDocumentTypeWriter.fillDichotomyError(tTimestamp);
+                    tcDocumentTypeWriter.fillDichotomyError(timestamp);
                 }
                 break;
             default:
@@ -126,7 +129,9 @@ public class CseValidHandler {
     }
 
     private TimestampStatus getTimestampStatus(TTimestamp timestamp, CseValidRequest cseValidRequest) {
-        if (datasAbsentInTimestamp(timestamp)) {
+        if (valuesAreNotRevelant(timestamp)) {
+            return TimestampStatus.NO_VERIFICATION_NEEDED;
+        } else if (datasAbsentInTimestamp(timestamp)) {
             return TimestampStatus.MISSING_DATAS;
         } else if (actualMaxImportAugmented(timestamp)) {
             return TimestampStatus.NO_COMPUTATION_NEEDED;
@@ -138,13 +143,8 @@ public class CseValidHandler {
     }
 
     private boolean datasAbsentInTimestamp(TTimestamp timestamp) {
-        if (timestamp.getMNII() == null || timestamp.getMiBNII() == null || timestamp.getANTCFinal() == null
-                || (timestamp.getMiBNII().getV().intValue() == 0 && timestamp.getANTCFinal().getV().intValue() == 0)
-                || timestamp.getMNII().getV() == null || timestamp.getMiBNII().getV() == null || timestamp.getANTCFinal().getV() == null) {
-            LOGGER.info("Missing datas in TTC Adjustment");
-            return true;
-        }
-        return false;
+        return (timestamp.getMNII() == null || timestamp.getMNII().getV() == null) ||
+                ((timestamp.getMiBNII() == null || timestamp.getANTCFinal() == null) || (timestamp.getMiBNII().getV() == null || timestamp.getANTCFinal().getV() == null));
     }
 
     private boolean actualMaxImportAugmented(TTimestamp timestamp) {
@@ -156,6 +156,13 @@ public class CseValidHandler {
         }
         LOGGER.info("Timestamp '{}' augmented NTC must be validated.", timestamp.getTime().getV());
         return false;
+    }
+
+    private boolean valuesAreNotRevelant(TTimestamp ts) {
+        // case both values are absent or both values are equal to zero
+        return (ts.getMiBNII() == null && ts.getANTCFinal() == null) ||
+                ((ts.getMiBNII() != null && ts.getMiBNII().getV() != null && ts.getMiBNII().getV().intValue() == 0)
+                        && (ts.getANTCFinal() != null && ts.getANTCFinal().getV() != null && ts.getANTCFinal().getV().intValue() == 0));
     }
 
     private boolean areFilesPresent(TTimestamp timestamp, CseValidRequest cseValidRequest) {
