@@ -37,6 +37,7 @@ public class FileExporter {
     private static final String RAO_PARAMETERS_FILE_NAME = "raoParameters.json";
     private static final String MINIO_SEPARATOR = "/";
     private static final String ZONE_ID = "Europe/Paris";
+    private static final String PROCESS_TYPE_PREFIX = "CSE_VALID_";
 
     private final MinioAdapter minioAdapter;
 
@@ -69,10 +70,10 @@ public class FileExporter {
         try (InputStream is = getNetworkInputStream(network, format)) {
             switch (fileGroup) {
                 case OUTPUT:
-                    minioAdapter.uploadOutputForTimestamp(filePath, is, processType.toString(), fileType, offsetDateTime);
+                    minioAdapter.uploadOutputForTimestamp(filePath, is, adaptTargetProcessName(processType), fileType, offsetDateTime);
                     break;
                 case ARTIFACT:
-                    minioAdapter.uploadArtifactForTimestamp(filePath, is, processType.toString(), fileType, offsetDateTime);
+                    minioAdapter.uploadArtifactForTimestamp(filePath, is, adaptTargetProcessName(processType), fileType, offsetDateTime);
                     break;
                 default:
                     throw new UnsupportedOperationException(String.format("File group %s not supported", fileGroup));
@@ -111,7 +112,7 @@ public class FileExporter {
         String ttcValidationDestinationPath = makeDestinationMinioPath(offsetDateTime, processType, FileKind.OUTPUTS);
         String ttcValidationFileName = getTTCValidationFilename(processType, offsetDateTime, ttcValidationDestinationPath);
         InputStream ttcValidationIs = tcDocumentTypeWriter.buildTcDocumentType();
-        minioAdapter.uploadOutputForTimestamp(ttcValidationFileName, ttcValidationIs, processType.toString(), "TTC-VALIDATION", offsetDateTime);
+        minioAdapter.uploadOutputForTimestamp(ttcValidationFileName, ttcValidationIs, adaptTargetProcessName(processType), "TTC-VALIDATION", offsetDateTime);
         return minioAdapter.generatePreSignedUrl(ttcValidationFileName);
     }
 
@@ -150,8 +151,13 @@ public class FileExporter {
         return fileVersionned;
     }
 
+    private String adaptTargetProcessName(ProcessType processType) {
+        return PROCESS_TYPE_PREFIX + processType;
+    }
+
     public enum FileKind {
         ARTIFACTS,
         OUTPUTS
+
     }
 }
