@@ -8,15 +8,15 @@ package com.farao_community.farao.gridcapa_cse_valid.starter;
 
 import com.farao_community.farao.cse_valid.api.JsonApiConverter;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
-import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -32,10 +32,14 @@ class CseValidClientTest {
         Message responseMessage = Mockito.mock(Message.class);
 
         Mockito.when(responseMessage.getBody()).thenReturn(getClass().getResourceAsStream("/cseValidResponse.json").readAllBytes());
-        Mockito.when(amqpTemplate.sendAndReceive(Mockito.same("my-queue"), Mockito.any())).thenReturn(responseMessage);
-        CseValidResponse response = client.run(request);
+        AtomicBoolean messageSent = new AtomicBoolean(false);
+        Mockito.doAnswer(invocation -> {
+            messageSent.set(true);
+            return null;
+        }).when(amqpTemplate).send(Mockito.same("my-queue"), Mockito.any());
 
-        assertEquals("test", response.getId());
+        client.run(request);
+        assertTrue(messageSent.get());
     }
 
     private CseValidClientProperties buildProperties() {
