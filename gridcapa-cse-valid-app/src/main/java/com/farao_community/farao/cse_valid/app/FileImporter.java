@@ -24,6 +24,8 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBIntrospector;
 import jakarta.xml.bind.Unmarshaller;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -37,6 +39,7 @@ import java.time.OffsetDateTime;
  */
 @Service
 public class FileImporter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileImporter.class);
 
     private final UrlValidationService urlValidationService;
 
@@ -50,6 +53,7 @@ public class FileImporter {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             return (TcDocumentType) JAXBIntrospector.getValue(unmarshaller.unmarshal(inputStream));
         } catch (Exception e) {
+            LOGGER.error("Impossible to import TTC adjustment file: {}", ttcUrl, e);
             return null;
         }
     }
