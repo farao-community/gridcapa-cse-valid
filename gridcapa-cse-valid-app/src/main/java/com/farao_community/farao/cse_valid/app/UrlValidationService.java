@@ -8,6 +8,8 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.app.configuration.UrlWhitelistConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -19,6 +21,7 @@ import java.net.URL;
  */
 @Component
 public class UrlValidationService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UrlValidationService.class);
     private final UrlWhitelistConfiguration urlWhitelistConfiguration;
 
     public UrlValidationService(UrlWhitelistConfiguration urlWhitelistConfiguration) {
@@ -27,7 +30,9 @@ public class UrlValidationService {
 
     public InputStream openUrlStream(String urlString) throws IOException {
         if (urlWhitelistConfiguration.getWhitelist().stream().noneMatch(urlString::startsWith)) {
-            throw new CseValidInvalidDataException(String.format("URL '%s' is not part of application's whitelisted url's.", urlString));
+            String msg = String.format("URL '%s' is not part of application's whitelisted url's.", urlString);
+            LOGGER.error(msg);
+            throw new CseValidInvalidDataException(msg);
         }
         URL url = new URL(urlString);
         return url.openStream(); // NOSONAR Usage of whitelist not triggered by Sonar quality assessment, even if listed as a solution to the vulnerability
