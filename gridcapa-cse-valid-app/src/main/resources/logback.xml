@@ -4,7 +4,7 @@
     <springProperty scope="context" name="rabbitMQPort" source="spring.rabbitmq.port" defaultValue="5672"/>
     <springProperty scope="context" name="rabbitMQUserName" source="spring.rabbitmq.username" defaultValue="guest" />
     <springProperty scope="context" name="rabbitMQPassword" source="spring.rabbitmq.password" defaultValue="guest" />
-    <springProperty scope="context" name="rabbitMQExchangeName" source="logback.amqp.exchange" defaultValue="task-manager-logs-exchange"/>
+    <springProperty scope="context" name="rabbitMQExchangeName" source="logback.amqp.exchange" defaultValue="task-manager-events"/>
     <springProperty scope="context" name="rabbitMQRoutingKey" source="logback.amqp.routing-key" defaultValue="#"/>
     <springProperty scope="context" name="serviceName" source="spring.application.name" defaultValue="gridcapa-back-end" />
 
@@ -45,9 +45,16 @@
     <logger name="BUSINESS_LOGGER" additivity="false" level="INFO">
         <appender-ref ref="amqp-business-events"/>
     </logger>
+    <logger name="com.farao_community.farao.dichotomy.api.logging.DichotomyBusinessLogs" level="INFO">
+        <appender-ref ref="amqp-business-events"/>
+    </logger>
+    <logger name="com.farao_community.farao.dichotomy.api.logging.DichotomyBusinessWarns" level="WARN">
+        <appender-ref ref="amqp-business-events"/>
+    </logger>
+    <logger name="com.farao_community.farao.dichotomy.api.logging.TechnicalLogs" level="OFF">
+        <appender-ref ref="amqp-business-events"/>
+    </logger>
 
-
-    <!-- appender to display all execution logs on console except those bound to "amqp-business-events" appender -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -59,5 +66,4 @@
 
     <logger name="com.powsybl" level="OFF"/>
     <logger name="com.rte_france.powsybl" level="OFF"/>
-
 </configuration>

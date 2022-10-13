@@ -7,7 +7,6 @@
 package com.farao_community.farao.cse_valid.app.dichotomy;
 
 import com.farao_community.farao.commons.Unit;
-import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.*;
 import com.farao_community.farao.data.crac_api.Contingency;
@@ -23,7 +22,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.stereotype.Service;
 import xsd.etso_core_cmpts.TextType;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,13 +50,9 @@ public class LimitingElementService {
     }
 
     private void importFiles(DichotomyStepResult<RaoResponse> stepResult) {
-        try {
-            this.crac = fileImporter.importCracFromJson(stepResult.getValidationData().getCracFileUrl());
-            this.network = fileImporter.importNetwork(stepResult.getValidationData().getNetworkWithPraFileUrl());
-            this.raoResult = fileImporter.importRaoResult(stepResult.getValidationData().getRaoResultFileUrl(), crac);
-        } catch (IOException e) {
-            throw new CseValidInvalidDataException("Could not import result files", e);
-        }
+        this.crac = fileImporter.importCracFromJson(stepResult.getValidationData().getCracFileUrl());
+        this.network = fileImporter.importNetwork(stepResult.getValidationData().getNetworkWithPraFileUrl());
+        this.raoResult = fileImporter.importRaoResult(stepResult.getValidationData().getRaoResultFileUrl(), crac);
     }
 
     private ImmutablePair<FlowCnec, Double> getWorstCnecInMW() {

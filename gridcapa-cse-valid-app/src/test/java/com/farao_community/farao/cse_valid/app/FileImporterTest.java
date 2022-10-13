@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 
@@ -47,19 +46,19 @@ class FileImporterTest {
     }
 
     @Test
-    void testImportGlsk() throws IOException {
+    void testImportGlsk() {
         GlskDocument glskDocument = fileImporter.importGlsk(Objects.requireNonNull(getClass().getResource("/20211125_1930_2D4_CO_GSK_CSE1.xml")).toString());
         assertNotNull(glskDocument);
     }
 
     @Test
-    void testImportNetwork() throws IOException {
+    void testImportNetwork() {
         Network network = fileImporter.importNetwork("cgm.uct", Objects.requireNonNull(getClass().getResource("/20211125_1930_2D4_CO_Final_CSE1.uct")).toString());
         assertNotNull(network);
     }
 
     @Test
-    void testImportRaoResult() throws IOException {
+    void testImportRaoResult() {
         InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.1.json");
         assertNotNull(cracInputStream);
         Crac crac = CracImporters.importCrac("crac.json", cracInputStream);
@@ -74,7 +73,7 @@ class FileImporterTest {
     }
 
     @Test
-    void testImportCseCracFromJson() throws IOException {
+    void testImportCseCracFromJson() {
         CseCrac cseCrac = fileImporter.importCseCrac(Objects.requireNonNull(getClass().getResource("/20211125_0030_2D4_CRAC_FR1.xml")).toString());
         assertNotNull(cseCrac);
     }

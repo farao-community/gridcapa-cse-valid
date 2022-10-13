@@ -37,6 +37,9 @@ class CseValidHandlerTest {
     CseValidHandler cseValidHandler;
 
     @MockBean
+    FileImporter fileImporter;
+
+    @MockBean
     DichotomyRunner dichotomyRunner;
 
     @MockBean
