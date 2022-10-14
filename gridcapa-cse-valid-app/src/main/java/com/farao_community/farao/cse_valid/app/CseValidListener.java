@@ -79,7 +79,8 @@ public class CseValidListener implements MessageListener {
 
     private void sendErrorResponse(Exception e, String replyTo, String correlationId) {
         AbstractCseValidException wrappingException = new CseValidInternalException(String.format("CSE run failed: %s", e.getMessage()), e);
-        businessLogger.error(wrappingException.getDetails(), wrappingException);
+        LOGGER.error(String.format("CSE run failed: %s", e.getMessage()), e);
+        businessLogger.error(String.format("CSE run failed: %s", wrappingException.getDetails()));
         if (replyTo != null) {
             amqpTemplate.send(replyTo, createErrorResponse(wrappingException, correlationId));
         } else {
