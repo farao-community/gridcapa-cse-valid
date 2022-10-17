@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.OffsetDateTime;
 
@@ -71,7 +72,11 @@ public class FileImporter {
     }
 
     public Network importNetwork(String cgmUrl) {
-        return importNetwork(getFilenameFromUrl(cgmUrl), cgmUrl);
+        try {
+            return importNetwork(getFilenameFromUrl(cgmUrl), cgmUrl);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing network at %s", cgmUrl), e);
+        }
     }
 
     public Network importNetwork(String filename, String cgmUrl) {
@@ -122,12 +127,8 @@ public class FileImporter {
         }
     }
 
-    private String getFilenameFromUrl(String stringUrl) {
-        try {
-            URL url = new URL(stringUrl);
-            return FilenameUtils.getName(url.getPath());
-        } catch (IOException e) {
-            throw new CseValidInvalidDataException(String.format("Exception occurred while retrieving file name from URL : %s", stringUrl), e);
-        }
+    private String getFilenameFromUrl(String stringUrl) throws MalformedURLException {
+        URL url = new URL(stringUrl);
+        return FilenameUtils.getName(url.getPath());
     }
 }
