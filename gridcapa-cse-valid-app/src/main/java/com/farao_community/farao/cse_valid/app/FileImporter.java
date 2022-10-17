@@ -26,6 +26,7 @@ import jakarta.xml.bind.JAXBIntrospector;
 import jakarta.xml.bind.Unmarshaller;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -38,6 +39,8 @@ import java.time.OffsetDateTime;
  */
 @Service
 public class FileImporter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileImporter.class);
+
     private final UrlWhitelistConfiguration urlWhitelistConfiguration;
     private final Logger businessLogger;
 
@@ -47,18 +50,24 @@ public class FileImporter {
     }
 
     public TcDocumentType importTtcAdjustment(String ttcUrl) {
-        try {
+        try (InputStream is = openUrlStream(ttcUrl)) {
             JAXBContext jaxbContext = JAXBContext.newInstance(ObjectFactory.class);
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            return (TcDocumentType) JAXBIntrospector.getValue(unmarshaller.unmarshal(openUrlStream(ttcUrl)));
+            return (TcDocumentType) JAXBIntrospector.getValue(unmarshaller.unmarshal(is));
         } catch (Exception e) {
-            businessLogger.error("Impossible to import TTC adjustment file: {}", ttcUrl, e);
+            String msg = String.format("Error importing TTC adjustment file %s", getFilenameFromUrl(ttcUrl));
+            LOGGER.warn(msg, e);
+            businessLogger.warn(msg);
             return null;
         }
     }
 
     public GlskDocument importGlsk(String glskUrl) {
-        return GlskDocumentImporters.importGlsk(openUrlStream(glskUrl));
+        try (InputStream is = openUrlStream(glskUrl)) {
+            return GlskDocumentImporters.importGlsk(is);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing GLSK file %s", getFilenameFromUrl(glskUrl)), e);
+        }
     }
 
     public Network importNetwork(String cgmUrl) {
@@ -66,16 +75,27 @@ public class FileImporter {
     }
 
     public Network importNetwork(String filename, String cgmUrl) {
-        return Importers.loadNetwork(filename, openUrlStream(cgmUrl));
+        try (InputStream is = openUrlStream(cgmUrl)) {
+            return Importers.loadNetwork(filename, is);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing network %s", getFilenameFromUrl(cgmUrl)), e);
+        }
     }
 
     public RaoResult importRaoResult(String raoResultUrl, Crac crac) {
-        return new RaoResultImporter().importRaoResult(openUrlStream(raoResultUrl), crac);
+        try (InputStream is = openUrlStream(raoResultUrl)) {
+            return new RaoResultImporter().importRaoResult(is, crac);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing RAO result %s", getFilenameFromUrl(raoResultUrl)), e);
+        }
     }
 
     public CseCrac importCseCrac(String cracUrl) {
-        CseCracImporter cseCracImporter = new CseCracImporter();
-        return cseCracImporter.importNativeCrac(openUrlStream(cracUrl));
+        try (InputStream is = openUrlStream(cracUrl)) {
+            return new CseCracImporter().importNativeCrac(is);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing native CRAC %s", getFilenameFromUrl(cracUrl)), e);
+        }
     }
 
     public Crac importCrac(CseCrac cseCrac, OffsetDateTime targetProcessDateTime, Network network) {
@@ -83,7 +103,11 @@ public class FileImporter {
     }
 
     public Crac importCracFromJson(String cracUrl) {
-        return CracImporters.importCrac(getFilenameFromUrl(cracUrl), openUrlStream(cracUrl));
+        try (InputStream is = openUrlStream(cracUrl)) {
+            return CracImporters.importCrac(getFilenameFromUrl(cracUrl), is);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing CRAC from JSON %s", getFilenameFromUrl(cracUrl)), e);
+        }
     }
 
     private InputStream openUrlStream(String urlString) {
@@ -106,5 +130,4 @@ public class FileImporter {
             throw new CseValidInvalidDataException(String.format("Exception occurred while retrieving file name from URL : %s", stringUrl), e);
         }
     }
-
 }
