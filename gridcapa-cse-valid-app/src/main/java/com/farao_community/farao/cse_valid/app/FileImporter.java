@@ -7,6 +7,7 @@
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.farao_community.farao.cse_valid.app.configuration.UrlWhitelistConfiguration;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.ObjectFactory;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.data.crac_api.Crac;
@@ -41,48 +42,65 @@ import java.time.OffsetDateTime;
 public class FileImporter {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileImporter.class);
 
-    private final UrlValidationService urlValidationService;
+    private final UrlWhitelistConfiguration urlWhitelistConfiguration;
+    private final Logger businessLogger;
 
-    public FileImporter(UrlValidationService urlValidationService) {
-        this.urlValidationService = urlValidationService;
+    public FileImporter(UrlWhitelistConfiguration urlWhitelistConfiguration, Logger businessLogger) {
+        this.urlWhitelistConfiguration = urlWhitelistConfiguration;
+        this.businessLogger = businessLogger;
     }
 
     public TcDocumentType importTtcAdjustment(String ttcUrl) {
-        try (InputStream inputStream = urlValidationService.openUrlStream(ttcUrl)) {
+        try (InputStream is = openUrlStream(ttcUrl)) {
             JAXBContext jaxbContext = JAXBContext.newInstance(ObjectFactory.class);
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            return (TcDocumentType) JAXBIntrospector.getValue(unmarshaller.unmarshal(inputStream));
+            return (TcDocumentType) JAXBIntrospector.getValue(unmarshaller.unmarshal(is));
         } catch (Exception e) {
-            LOGGER.error("Impossible to import TTC adjustment file: {}", ttcUrl, e);
+            String msg = String.format("Error importing TTC adjustment file at %s", ttcUrl);
+            LOGGER.warn(msg, e);
+            businessLogger.warn("{}. Nested cause: {}", msg, e.getMessage());
             return null;
         }
     }
 
-    public GlskDocument importGlsk(String glskUrl) throws IOException {
-        return GlskDocumentImporters.importGlsk(urlValidationService.openUrlStream(glskUrl));
+    public GlskDocument importGlsk(String glskUrl) {
+        try (InputStream is = openUrlStream(glskUrl)) {
+            return GlskDocumentImporters.importGlsk(is);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing GLSK file at %s", glskUrl), e);
+        }
     }
 
     public Network importNetwork(String cgmUrl) {
         try {
-            String filename = getFilenameFromUrl(cgmUrl);
-            return importNetwork(filename, cgmUrl);
+            return importNetwork(getFilenameFromUrl(cgmUrl), cgmUrl);
         } catch (IOException e) {
-            throw new CseValidInvalidDataException(String.format("Cannot import Network from url %s", cgmUrl), e);
+            throw new CseValidInvalidDataException(String.format("Error importing network at %s", cgmUrl), e);
         }
     }
 
-    public Network importNetwork(String filename, String cgmUrl) throws IOException {
-        return Importers.loadNetwork(filename, urlValidationService.openUrlStream(cgmUrl));
+    public Network importNetwork(String filename, String cgmUrl) {
+        try (InputStream is = openUrlStream(cgmUrl)) {
+            return Importers.loadNetwork(filename, is);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing network at %s", cgmUrl), e);
+        }
     }
 
-    public RaoResult importRaoResult(String raoResultUrl, Crac crac) throws IOException {
-        return new RaoResultImporter().importRaoResult(urlValidationService.openUrlStream(raoResultUrl), crac);
+    public RaoResult importRaoResult(String raoResultUrl, Crac crac) {
+        try (InputStream is = openUrlStream(raoResultUrl)) {
+            return new RaoResultImporter().importRaoResult(is, crac);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing RAO result at %s", raoResultUrl), e);
+        }
     }
 
-    public CseCrac importCseCrac(String cracUrl) throws IOException {
-        InputStream cracInputStream = urlValidationService.openUrlStream(cracUrl);
-        CseCracImporter cseCracImporter = new CseCracImporter();
-        return cseCracImporter.importNativeCrac(cracInputStream);
+    public CseCrac importCseCrac(String cracUrl) {
+        try (InputStream is = openUrlStream(cracUrl)) {
+            return new CseCracImporter().importNativeCrac(is);
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error importing native CRAC at %s", cracUrl), e);
+        }
     }
 
     public Crac importCrac(CseCrac cseCrac, OffsetDateTime targetProcessDateTime, Network network) {
@@ -90,19 +108,27 @@ public class FileImporter {
     }
 
     public Crac importCracFromJson(String cracUrl) {
-        try (InputStream cracResultStream = urlValidationService.openUrlStream(cracUrl)) {
-            return CracImporters.importCrac(FilenameUtils.getName(new URL(cracUrl).getPath()), cracResultStream);
+        try (InputStream is = openUrlStream(cracUrl)) {
+            return CracImporters.importCrac(getFilenameFromUrl(cracUrl), is);
         } catch (IOException e) {
-            throw new CseValidInvalidDataException(String.format("Cannot import crac from JSON : %s", cracUrl));
+            throw new CseValidInvalidDataException(String.format("Error importing CRAC from JSON at %s", cracUrl), e);
         }
     }
 
-    private static String getFilenameFromUrl(String url) {
+    private InputStream openUrlStream(String urlString) {
         try {
-            return FilenameUtils.getName(new URL(url).getPath());
-        } catch (MalformedURLException e) {
-            throw new CseValidInvalidDataException(String.format("URL is invalid: %s", url));
+            if (urlWhitelistConfiguration.getWhitelist().stream().noneMatch(urlString::startsWith)) {
+                throw new CseValidInvalidDataException(String.format("URL '%s' is not part of application's whitelisted url's.", urlString));
+            }
+            URL url = new URL(urlString);
+            return url.openStream(); // NOSONAR Usage of whitelist not triggered by Sonar quality assessment, even if listed as a solution to the vulnerability
+        } catch (IOException e) {
+            throw new CseValidInvalidDataException(String.format("Error while retrieving content of URL : %s, Link may have expired.", urlString), e);
         }
     }
 
+    private String getFilenameFromUrl(String stringUrl) throws MalformedURLException {
+        URL url = new URL(stringUrl);
+        return FilenameUtils.getName(url.getPath());
+    }
 }

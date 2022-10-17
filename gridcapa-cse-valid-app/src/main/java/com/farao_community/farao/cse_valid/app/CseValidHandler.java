@@ -21,7 +21,6 @@ import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -34,27 +33,30 @@ import java.util.StringJoiner;
  */
 @Component
 public class CseValidHandler {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CseValidHandler.class);
     private final DichotomyRunner dichotomyRunner;
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final MinioAdapter minioAdapter;
+    private final NetPositionService netPositionService;
+    private final LimitingElementService limitingElementService;
+    private final Logger businessLogger;
+
     private TcDocumentTypeWriter tcDocumentTypeWriter;
     private TimestampStatus timestampStatus;
     private boolean isCracFileAvailable = false;
     private boolean isCgmFileAvailable = false;
     private boolean isGlskFileAvailable = false;
-    private final NetPositionService netPositionService;
-    private final LimitingElementService limitingElementService;
 
-    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter, MinioAdapter minioAdapter, NetPositionService netPositionService, LimitingElementService limitingElementService) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter,
+                           MinioAdapter minioAdapter, NetPositionService netPositionService,
+                           LimitingElementService limitingElementService, Logger businessLogger) {
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.minioAdapter = minioAdapter;
         this.netPositionService = netPositionService;
         this.limitingElementService = limitingElementService;
+        this.businessLogger = businessLogger;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
@@ -67,7 +69,7 @@ public class CseValidHandler {
                 timestampStatus = getTimestampStatus(timestampData, cseValidRequest);
                 computeTimestamp(cseValidRequest, timestampData);
             } else {
-                LOGGER.warn("No timestamp available in ttc adjustment for time {} and reference calculation time {}", formatTimestamp(cseValidRequest.getTime()), formatTimestamp(cseValidRequest.getTimestamp()));
+                businessLogger.warn("No timestamp available in ttc adjustment for time {} and reference calculation time {}", formatTimestamp(cseValidRequest.getTime()), formatTimestamp(cseValidRequest.getTimestamp()));
                 tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
             }
         } else {
@@ -151,10 +153,10 @@ public class CseValidHandler {
         int mibniiMinusAntc = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
         int mnii = timestamp.getMNII().getV().intValue();
         if (mibniiMinusAntc >= mnii) {
-            LOGGER.info("Timestamp '{}' NTC has not been augmented by adjustment process, no computation needed.", timestamp.getTime().getV());
+            businessLogger.info("Timestamp '{}' NTC has not been augmented by adjustment process, no computation needed.", timestamp.getTime().getV());
             return true;
         }
-        LOGGER.info("Timestamp '{}' augmented NTC must be validated.", timestamp.getTime().getV());
+        businessLogger.info("Timestamp '{}' augmented NTC must be validated.", timestamp.getTime().getV());
         return false;
     }
 
@@ -171,7 +173,7 @@ public class CseValidHandler {
         isGlskFileAvailable = cseValidRequest.getGlsk() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest.getGlsk().getFilename()));
 
         if (!isCgmFileAvailable || !isCracFileAvailable || !isGlskFileAvailable) {
-            LOGGER.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
+            businessLogger.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
             return false;
         }
         return true;

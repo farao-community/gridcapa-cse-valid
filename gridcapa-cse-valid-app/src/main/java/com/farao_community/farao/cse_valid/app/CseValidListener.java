@@ -9,7 +9,6 @@ package com.farao_community.farao.cse_valid.app;
 import com.farao_community.farao.cse_valid.api.JsonApiConverter;
 import com.farao_community.farao.cse_valid.api.exception.AbstractCseValidException;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
-import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.app.configuration.AmqpMessagesConfiguration;
@@ -17,10 +16,12 @@ import com.farao_community.farao.gridcapa.task_manager.api.TaskStatus;
 import com.farao_community.farao.gridcapa.task_manager.api.TaskStatusUpdate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.amqp.core.*;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -28,8 +29,8 @@ import java.util.UUID;
  */
 @Component
 public class CseValidListener implements MessageListener {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(CseValidListener.class);
+    private static final String CSE_RUN_FAILED = "CSE run failed: %s";
     private static final String APPLICATION_ID = "cse-valid-runner";
     private static final String CONTENT_ENCODING = "UTF-8";
     private static final String CONTENT_TYPE = "application/vnd.api+json";
@@ -41,11 +42,15 @@ public class CseValidListener implements MessageListener {
     private final CseValidHandler cseValidHandler;
     private final AmqpMessagesConfiguration amqpMessagesConfiguration;
     private final StreamBridge streamBridge;
+    private final Logger businessLogger;
 
-    public CseValidListener(AmqpTemplate amqpTemplate, CseValidHandler cseValidHandler, AmqpMessagesConfiguration amqpMessagesConfiguration, StreamBridge streamBridge) {
+    public CseValidListener(AmqpTemplate amqpTemplate, CseValidHandler cseValidHandler,
+                            AmqpMessagesConfiguration amqpMessagesConfiguration, StreamBridge streamBridge,
+                            Logger businessLogger) {
         this.amqpTemplate = amqpTemplate;
         this.cseValidHandler = cseValidHandler;
         this.streamBridge = streamBridge;
+        this.businessLogger = businessLogger;
         this.jsonApiConverter = new JsonApiConverter();
         this.amqpMessagesConfiguration = amqpMessagesConfiguration;
     }
@@ -54,60 +59,46 @@ public class CseValidListener implements MessageListener {
     public void onMessage(Message message) {
         String replyTo = message.getMessageProperties().getReplyTo();
         String correlationId = message.getMessageProperties().getCorrelationId();
-        try {
-            CseValidRequest cseValidRequest = jsonApiConverter.fromJsonMessage(message.getBody(), CseValidRequest.class);
-            runCseValidRequest(cseValidRequest, replyTo, correlationId);
-        } catch (AbstractCseValidException e) {
-            LOGGER.error("Cse valid exception occured", e);
-            sendRequestErrorResponse(e, replyTo, correlationId);
-        } catch (RuntimeException e) {
-            AbstractCseValidException wrappingException = new CseValidInvalidDataException("Unhandled exception: " + e.getMessage(), e);
-            sendRequestErrorResponse(wrappingException, replyTo, correlationId);
-        }
-    }
 
-    private void sendRequestErrorResponse(AbstractCseValidException e, String replyTo, String correlationId) {
-        if (replyTo != null) {
-            amqpTemplate.send(replyTo, createErrorResponse(e, correlationId));
-        } else {
-            amqpTemplate.send(amqpMessagesConfiguration.cseValidResponseExchange().getName(), "", createErrorResponse(e, correlationId));
-        }
-    }
-
-    private void runCseValidRequest(CseValidRequest cseValidRequest, String replyTo, String correlationId) {
+        CseValidRequest cseValidRequest = null;
         try {
+            cseValidRequest = jsonApiConverter.fromJsonMessage(message.getBody(), CseValidRequest.class);
+            // propagate in logs MDC the task id as an extra field to be able to match microservices logs with calculation tasks.
+            // This should be done only once, as soon as the information to add in mdc is available.
+            MDC.put("gridcapa-task-id", cseValidRequest.getId());
             LOGGER.info("Cse valid request received: {}", cseValidRequest);
-            streamBridge.send(TASK_STATUS_UPDATE, new TaskStatusUpdate(UUID.fromString(cseValidRequest.getId()), TaskStatus.RUNNING));
+            sendStatusUpdate(cseValidRequest.getId(), TaskStatus.RUNNING);
             CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
-            LOGGER.info("Cse response sent: {}", cseValidResponse);
+            sendStatusUpdate(cseValidRequest.getId(), TaskStatus.SUCCESS);
             sendCseValidResponse(cseValidResponse, replyTo, correlationId);
-        } catch (AbstractCseValidException e) {
-            LOGGER.error("Cse valid exception occured", e);
-            sendErrorResponse(cseValidRequest.getId(), e, replyTo, correlationId);
-        } catch (RuntimeException e) {
-            LOGGER.error("Unknown exception occured", e);
-            AbstractCseValidException wrappingException = new CseValidInternalException("Unknown exception", e);
-            sendErrorResponse(cseValidRequest.getId(), wrappingException, replyTo, correlationId);
+            LOGGER.info("Cse valid response sent: {}", cseValidResponse);
+        } catch (Exception e) {
+            Optional.ofNullable(cseValidRequest).ifPresent(request -> sendStatusUpdate(request.getId(), TaskStatus.ERROR));
+            LOGGER.error(String.format(CSE_RUN_FAILED, e.getMessage()), e); // It enables to retrieve stack trace, impossible with business logger
+            sendErrorResponse(e, replyTo, correlationId);
         }
     }
 
-    private void sendErrorResponse(String requestId, AbstractCseValidException e, String replyTo, String correlationId) {
-        streamBridge.send(TASK_STATUS_UPDATE, new TaskStatusUpdate(UUID.fromString(requestId), TaskStatus.ERROR));
+    private void sendStatusUpdate(String requestId, TaskStatus taskStatus) {
+        streamBridge.send(TASK_STATUS_UPDATE, new TaskStatusUpdate(UUID.fromString(requestId), taskStatus));
+    }
+
+    private void sendErrorResponse(Exception e, String replyTo, String correlationId) {
+        AbstractCseValidException wrappingException = new CseValidInternalException(String.format(CSE_RUN_FAILED, e.getMessage()), e);
+        businessLogger.error(String.format(CSE_RUN_FAILED, wrappingException.getDetails()));
         if (replyTo != null) {
-            amqpTemplate.send(replyTo, createErrorResponse(e, correlationId));
+            amqpTemplate.send(replyTo, createErrorResponse(wrappingException, correlationId));
         } else {
-            amqpTemplate.send(amqpMessagesConfiguration.cseValidResponseExchange().getName(), "", createErrorResponse(e, correlationId));
+            amqpTemplate.send(amqpMessagesConfiguration.cseValidResponseExchange().getName(), "", createErrorResponse(wrappingException, correlationId));
         }
     }
 
     private void sendCseValidResponse(CseValidResponse cseValidResponse, String replyTo, String correlationId) {
-        streamBridge.send(TASK_STATUS_UPDATE, new TaskStatusUpdate(UUID.fromString(cseValidResponse.getId()), TaskStatus.SUCCESS));
         if (replyTo != null) {
             amqpTemplate.send(replyTo, createMessageResponse(cseValidResponse, correlationId));
         } else {
             amqpTemplate.send(amqpMessagesConfiguration.cseValidResponseExchange().getName(), "", createMessageResponse(cseValidResponse, correlationId));
         }
-        LOGGER.info("Cse valid response sent: {}", cseValidResponse);
     }
 
     private Message createMessageResponse(CseValidResponse cseValidResponse, String correlationId) {

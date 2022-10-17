@@ -20,7 +20,6 @@ import com.powsybl.iidm.network.Network;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 
 /**
@@ -63,8 +62,8 @@ public class RaoValidator implements NetworkValidator<RaoResponse> {
             LOGGER.info("RAO response received: {}", raoResponse);
             RaoResult raoResult = fileImporter.importRaoResult(raoResponse.getRaoResultFileUrl(), fileImporter.importCracFromJson(raoResponse.getCracFileUrl()));
             return DichotomyStepResult.fromNetworkValidationResult(raoResult, raoResponse);
-        } catch (RuntimeException | IOException e) {
-            throw new ValidationException("RAO run failed. Nested exception: " + e.getMessage());
+        } catch (RuntimeException e) {
+            throw new ValidationException("RAO run failed: " + e.getMessage());
         }
     }
 
