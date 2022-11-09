@@ -27,6 +27,10 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.StringJoiner;
+import java.util.function.Supplier;
+
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -40,12 +44,6 @@ public class CseValidHandler {
     private final NetPositionService netPositionService;
     private final LimitingElementService limitingElementService;
     private final Logger businessLogger;
-
-    private TcDocumentTypeWriter tcDocumentTypeWriter;
-    private TimestampStatus timestampStatus;
-    private boolean isCracFileAvailable = false;
-    private boolean isCgmFileAvailable = false;
-    private boolean isGlskFileAvailable = false;
 
     public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter,
                            MinioAdapter minioAdapter, NetPositionService netPositionService,
@@ -62,14 +60,15 @@ public class CseValidHandler {
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
         Instant computationStartInstant = Instant.now();
         TcDocumentType tcDocumentType = importTtcAdjustmentFile(cseValidRequest.getTtcAdjustment());
-        tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest, netPositionService);
+        TcDocumentTypeWriter tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest, netPositionService);
         if (tcDocumentType != null) {
             TTimestamp timestampData = getTimestampData(cseValidRequest, tcDocumentType);
             if (timestampData != null) {
-                timestampStatus = getTimestampStatus(timestampData, cseValidRequest);
-                computeTimestamp(cseValidRequest, timestampData);
+                computeTimestamp(timestampData, cseValidRequest, tcDocumentTypeWriter);
             } else {
-                businessLogger.warn("No timestamp available in ttc adjustment for time {} and reference calculation time {}", formatTimestamp(cseValidRequest.getTime()), formatTimestamp(cseValidRequest.getTimestamp()));
+                String ttcAdjTimestamp = formatTimestamp(cseValidRequest.getTime());
+                String refCalcTimestamp = formatTimestamp(cseValidRequest.getTimestamp());
+                businessLogger.warn("No timestamp available in ttc adjustment for time {} and reference calculation time {}", ttcAdjTimestamp, refCalcTimestamp);
                 tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
             }
         } else {
@@ -101,58 +100,87 @@ public class CseValidHandler {
         return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC).toString();
     }
 
-    private void computeTimestamp(CseValidRequest cseValidRequest, TTimestamp timestamp) {
-        switch (timestampStatus) {
-            case MISSING_DATAS:
-                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(timestamp, "Process fail during TSO validation phase: Missing datas.");
-                break;
-            case NO_COMPUTATION_NEEDED:
-                tcDocumentTypeWriter.fillTimestampNoComputationNeeded(timestamp);
-                break;
-            case NO_VERIFICATION_NEEDED:
-                tcDocumentTypeWriter.fillTimestampNoVerificationNeeded(timestamp);
-                break;
-            case MISSING_INPUT_FILES:
-                String redFlagError = redFlagReasonError(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
-                tcDocumentTypeWriter.fillTimestampWithMissingInputFiles(timestamp, redFlagError);
-                break;
-            case COMPUTATION_NEEDED:
-                DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
-                if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
-                    TLimitingElement tLimitingElement = this.limitingElementService.getLimitingElement(dichotomyResult.getHighestValidStep());
-                    tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(timestamp, dichotomyResult, tLimitingElement);
-                } else {
-                    tcDocumentTypeWriter.fillDichotomyError(timestamp);
-                }
-                break;
-            default:
-                throw new CseValidInvalidDataException("Timestamp Status not supported");
-        }
-    }
-
-    private TimestampStatus getTimestampStatus(TTimestamp timestamp, CseValidRequest cseValidRequest) {
-        if (valuesAreNotRevelant(timestamp)) {
-            return TimestampStatus.NO_VERIFICATION_NEEDED;
-        } else if (datasAbsentInTimestamp(timestamp)) {
-            return TimestampStatus.MISSING_DATAS;
-        } else if (actualMaxImportAugmented(timestamp)) {
-            return TimestampStatus.NO_COMPUTATION_NEEDED;
-        } else if (!areFilesPresent(timestamp, cseValidRequest)) {
-            return TimestampStatus.MISSING_INPUT_FILES;
+    private void computeTimestamp(TTimestamp timestamp, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+        if (missingMniiMnieMiecInTimestamp(timestamp)) {
+            tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
+        } else if (contradictoryDataInTimestamp(timestamp)) {
+            tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_CONTRADICTORY_DATA);
+        } else if (isMniiInTimestamp(timestamp)) {
+            computeTimestampForFullImport(timestamp, cseValidRequest, tcDocumentTypeWriter);
+        } else if (isMiecInTimestamp(timestamp)) {
+            tcDocumentTypeWriter.fillTimestampForExportCorner(timestamp); // Temporary filler for export corner, should be replaced
+        } else if (isMnieInTimestamp(timestamp)) {
+            tcDocumentTypeWriter.fillTimestampNoComputationNeededForFullExport(timestamp);
         } else {
-            return TimestampStatus.COMPUTATION_NEEDED;
+            throw new CseValidInvalidDataException("Timestamp Status not supported");
         }
     }
 
-    private boolean datasAbsentInTimestamp(TTimestamp timestamp) {
-        return (timestamp.getMNII() == null || timestamp.getMNII().getV() == null) ||
-                ((timestamp.getMiBNII() == null || timestamp.getANTCFinal() == null) || (timestamp.getMiBNII().getV() == null || timestamp.getANTCFinal().getV() == null));
+    private void computeTimestampForFullImport(TTimestamp timestamp, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+        if (irrelevantValuesInTimestampForFullImport(timestamp)) {
+            tcDocumentTypeWriter.fillTimestampNoVerificationNeededForFullImport(timestamp);
+        } else if (missingDataInTimestampForFullImport(timestamp)) {
+            tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
+        } else if (actualNtcAboveTarget(timestamp)) {
+            tcDocumentTypeWriter.fillTimestampNoComputationNeededForFullImport(timestamp);
+        } else {
+            final boolean isCgmFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "CGMs", cseValidRequest::getCgm);
+            final boolean isCracFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "CRACs", cseValidRequest::getCrac);
+            final boolean isGlskFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest::getGlsk);
+            final boolean areAllFilesAvailable = isCgmFileAvailable && isCracFileAvailable && isGlskFileAvailable;
+
+            if (!areAllFilesAvailable) {
+                handleMissingFiles(timestamp, tcDocumentTypeWriter, isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
+            } else {
+                runDichotomyForFullImport(timestamp, cseValidRequest, tcDocumentTypeWriter);
+            }
+        }
     }
 
-    private boolean actualMaxImportAugmented(TTimestamp timestamp) {
-        int mibniiMinusAntc = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
-        int mnii = timestamp.getMNII().getV().intValue();
-        if (mibniiMinusAntc >= mnii) {
+    private static boolean isMniiInTimestamp(TTimestamp timestamp) {
+        return timestamp.getMNII() != null && timestamp.getMNII().getV() != null;
+    }
+
+    private static boolean isMnieInTimestamp(TTimestamp timestamp) {
+        return timestamp.getMNIE() != null && timestamp.getMNIE().getV() != null;
+    }
+
+    private static boolean isMiecInTimestamp(TTimestamp timestamp) {
+        return timestamp.getMIEC() != null && timestamp.getMIEC().getV() != null;
+    }
+
+    private static boolean missingMniiMnieMiecInTimestamp(TTimestamp timestamp) {
+        return !isMniiInTimestamp(timestamp) && !isMnieInTimestamp(timestamp) && !isMiecInTimestamp(timestamp);
+    }
+
+    private static boolean contradictoryDataInTimestamp(TTimestamp timestamp) {
+        // simultaneous presence of at least two values among MNII (full import), MIEC (export-corner) and MNIE (full export)
+        return (isMniiInTimestamp(timestamp) && isMnieInTimestamp(timestamp))
+                || (isMniiInTimestamp(timestamp) && isMiecInTimestamp(timestamp))
+                || (isMnieInTimestamp(timestamp) && isMiecInTimestamp(timestamp));
+    }
+
+    private static boolean irrelevantValuesInTimestampForFullImport(TTimestamp timestamp) {
+        // MNII is present but both values MiBNII and ANTCFinal are absent or both values are equal to zero
+        final boolean mibniiAndAntcfinalAbsent = timestamp.getMiBNII() == null && timestamp.getANTCFinal() == null;
+        final boolean mibniiIsZero = timestamp.getMiBNII() != null && timestamp.getMiBNII().getV() != null && timestamp.getMiBNII().getV().intValue() == 0;
+        final boolean antcfinalIsZero = timestamp.getANTCFinal() != null && timestamp.getANTCFinal().getV() != null && timestamp.getANTCFinal().getV().intValue() == 0;
+
+        return mibniiAndAntcfinalAbsent || (mibniiIsZero && antcfinalIsZero);
+    }
+
+    private static boolean missingDataInTimestampForFullImport(TTimestamp timestamp) {
+        // MNII is present but one of the required data (MiBNII or ANTCFinal) is missing
+        final boolean mibniiAbsent = timestamp.getMiBNII() == null || timestamp.getMiBNII().getV() == null;
+        final boolean antcfinalAbsent = timestamp.getANTCFinal() == null || timestamp.getANTCFinal().getV() == null;
+
+        return mibniiAbsent || antcfinalAbsent;
+    }
+
+    private boolean actualNtcAboveTarget(TTimestamp timestamp) {
+        final int actualNtc = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
+        final int targetNtc = timestamp.getMNII().getV().intValue();
+        if (actualNtc >= targetNtc) {
             businessLogger.info("Timestamp '{}' NTC has not been augmented by adjustment process, no computation needed.", timestamp.getTime().getV());
             return true;
         }
@@ -160,30 +188,21 @@ public class CseValidHandler {
         return false;
     }
 
-    private boolean valuesAreNotRevelant(TTimestamp ts) {
-        // case both values are absent or both values are equal to zero
-        return (ts.getMiBNII() == null && ts.getANTCFinal() == null) ||
-                ((ts.getMiBNII() != null && ts.getMiBNII().getV() != null && ts.getMiBNII().getV().intValue() == 0)
-                        && (ts.getANTCFinal() != null && ts.getANTCFinal().getV() != null && ts.getANTCFinal().getV().intValue() == 0));
+    private boolean checkFileAvailability(ProcessType processType, String filetype, Supplier<CseValidFileResource> fileSupplier) {
+        return fileSupplier.get() != null && minioAdapter.fileExists(buildMinioPath(processType, filetype, fileSupplier.get().getFilename()));
     }
 
-    private boolean areFilesPresent(TTimestamp timestamp, CseValidRequest cseValidRequest) {
-        isCgmFileAvailable = cseValidRequest.getCgm() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CGMs", cseValidRequest.getCgm().getFilename()));
-        isCracFileAvailable = cseValidRequest.getCrac() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "CRACs", cseValidRequest.getCrac().getFilename()));
-        isGlskFileAvailable = cseValidRequest.getGlsk() != null && minioAdapter.fileExists(buildMinioPath(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest.getGlsk().getFilename()));
-
-        if (!isCgmFileAvailable || !isCracFileAvailable || !isGlskFileAvailable) {
-            businessLogger.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
-            return false;
-        }
-        return true;
-    }
-
-    private String buildMinioPath(ProcessType processType, String filetype, String filename) {
+    private static String buildMinioPath(ProcessType processType, String filetype, String filename) {
         return processType.name() + "/" + filetype + "/" + filename;
     }
 
-    private String redFlagReasonError(boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
+    private void handleMissingFiles(TTimestamp timestamp, TcDocumentTypeWriter tcDocumentTypeWriter, boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
+        businessLogger.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
+        String redFlagError = redFlagReasonError(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
+        tcDocumentTypeWriter.fillTimestampError(timestamp, redFlagError);
+    }
+
+    private static String redFlagReasonError(boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
         StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
 
         if (!isCgmFileAvailable) {
@@ -199,4 +218,13 @@ public class CseValidHandler {
         return stringJoiner.toString();
     }
 
+    private void runDichotomyForFullImport(TTimestamp timestamp, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
+        if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
+            TLimitingElement tLimitingElement = this.limitingElementService.getLimitingElement(dichotomyResult.getHighestValidStep());
+            tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(timestamp, dichotomyResult, tLimitingElement);
+        } else {
+            tcDocumentTypeWriter.fillDichotomyError(timestamp);
+        }
+    }
 }
