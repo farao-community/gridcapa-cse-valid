@@ -100,7 +100,7 @@ public class CseValidHandler {
         return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC).toString();
     }
 
-    private void computeTimestamp(TTimestamp timestamp, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+    void computeTimestamp(TTimestamp timestamp, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         if (missingMniiMnieMiecInTimestamp(timestamp)) {
             tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
         } else if (contradictoryDataInTimestamp(timestamp)) {

@@ -315,9 +315,9 @@ public class TcDocumentTypeWriter {
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
 
-        QuantityType mnie = new QuantityType();
-        mnie.setV(initialTs.getMNIE().getV());
-        ts.setMNII(mnie);
+        QuantityType miec = new QuantityType();
+        miec.setV(initialTs.getMIEC().getV());
+        ts.setMIEC(miec);
 
         completeFillingWithStatusSuccess(ts, initialTs);
         ts.setBASECASEfile(initialTs.getBASECASEfile());
