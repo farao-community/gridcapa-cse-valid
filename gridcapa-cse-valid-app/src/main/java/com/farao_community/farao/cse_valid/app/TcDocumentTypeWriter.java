@@ -8,19 +8,39 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.*;
-import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TNumber;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TResultTimeseries;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xsd.etso_code_lists.*;
-import xsd.etso_core_cmpts.*;
+import xsd.etso_code_lists.BusinessTypeList;
+import xsd.etso_code_lists.CodingSchemeType;
+import xsd.etso_code_lists.MessageTypeList;
+import xsd.etso_code_lists.ProcessTypeList;
+import xsd.etso_code_lists.RoleTypeList;
+import xsd.etso_code_lists.UnitOfMeasureTypeList;
+import xsd.etso_core_cmpts.AreaType;
+import xsd.etso_core_cmpts.BusinessType;
+import xsd.etso_core_cmpts.EnergyProductType;
+import xsd.etso_core_cmpts.IdentificationType;
+import xsd.etso_core_cmpts.LongIdentificationType;
+import xsd.etso_core_cmpts.MessageDateTimeType;
+import xsd.etso_core_cmpts.MessageType;
+import xsd.etso_core_cmpts.PartyType;
+import xsd.etso_core_cmpts.ProcessType;
+import xsd.etso_core_cmpts.QuantityType;
+import xsd.etso_core_cmpts.RoleType;
+import xsd.etso_core_cmpts.TextType;
+import xsd.etso_core_cmpts.TimeIntervalType;
+import xsd.etso_core_cmpts.UnitOfMeasureType;
+import xsd.etso_core_cmpts.VersionType;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -34,7 +54,11 @@ import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Comparator;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.BiConsumer;
 
 import static com.farao_community.farao.cse_valid.app.Constants.*;
 
@@ -44,7 +68,8 @@ import static com.farao_community.farao.cse_valid.app.Constants.*;
 public class TcDocumentTypeWriter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TcDocumentTypeWriter.class);
-    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
+
     private final CseValidRequest processStartRequest;
     private final TcDocumentType tcDocumentType;
     private final LongIdentificationType documentIdentification;
@@ -58,11 +83,9 @@ public class TcDocumentTypeWriter {
     private final MessageDateTimeType creationTime;
     private final AreaType domainAreaType;
     private final TimeIntervalType timeIntervalType;
-    private final NetPositionService netPositionService;
 
-    public TcDocumentTypeWriter(CseValidRequest processRequest, NetPositionService netPositionService) {
+    public TcDocumentTypeWriter(CseValidRequest processRequest) {
         this.processStartRequest = processRequest;
-        this.netPositionService = netPositionService;
         this.tcDocumentType = new TcDocumentType();
         this.documentIdentification = new LongIdentificationType();
         this.versionType = new VersionType();
@@ -156,22 +179,6 @@ public class TcDocumentTypeWriter {
         }
     }
 
-    public void fillTimestampWithMissingInputFiles(TTimestamp timestampData, String redFlagError) {
-        fillEmptyValidationResults();
-        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
-        TTimestamp ts = initializeTimestampResult(timestampData);
-
-        TNumber status = new TNumber();
-        status.setV(BigInteger.ZERO);
-        ts.setSTATUS(status);
-
-        TextType errorMessage = new TextType();
-        errorMessage.setV(redFlagError);
-        ts.setRedFlagReason(errorMessage);
-
-        listTimestamps.add(ts);
-    }
-
     public void fillNoTtcAdjustmentError(CseValidRequest cseValidRequest) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
@@ -184,64 +191,111 @@ public class TcDocumentTypeWriter {
         timeInterval.setV(cseValidRequest.getTimestamp().withOffsetSameInstant(ZoneOffset.UTC).withMinute(0).format(DATE_TIME_FORMATTER)
                 + "/" + cseValidRequest.getTimestamp().withOffsetSameInstant(ZoneOffset.UTC).withMinute(0).plusHours(1).format(DATE_TIME_FORMATTER));
 
-        ts.setReferenceCalculationTime(time);
-
         ts.setTimeInterval(timeInterval);
         ts.setTime(time);
+        ts.setReferenceCalculationTime(time);
 
-        TextType textTypeRedFlagReason = new TextType();
-        textTypeRedFlagReason.setV(STATUS_ERROR_MESSAGE);
-
-        TNumber statusNumber = new TNumber();
-        statusNumber.setV(BigInteger.ZERO);
-
-        ts.setSTATUS(statusNumber);
-        ts.setRedFlagReason(textTypeRedFlagReason);
+        completeFillingWithError(ts, BigInteger.ZERO, ERROR_MSG_MISSING_TTC_ADJ_FILE);
 
         listTimestamps.add(ts);
     }
 
-    public void fillTimestampNoComputationNeeded(TTimestamp initialTs) {
+    public void fillTimestampError(TTimestamp initialTs, String errorMsg) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
-        TTimestamp ts = new TTimestamp();
-        ts.setReferenceCalculationTime(initialTs.getReferenceCalculationTime());
+        TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
 
-        QuantityType mnii = new QuantityType();
-        mnii.setV(initialTs.getMiBNII().getV().subtract(initialTs.getANTCFinal().getV()));
-
-        completeFillingWithStatusSuccess(ts, initialTs, mnii);
+        completeFillingWithError(ts, BigInteger.ZERO, errorMsg);
 
         listTimestamps.add(ts);
     }
 
-    public void fillTimestampNoVerificationNeeded(TTimestamp initialTs) {
+    public void fillTimestampFullImportSuccess(TTimestamp initialTs, BigDecimal mniiValue) {
+        fillTimestampSuccess(initialTs, (ts, value) -> ts.setMNII(buildQuantityType(value)), mniiValue);
+    }
+
+    public void fillTimestampFullExportSuccess(TTimestamp initialTs, BigDecimal mnieValue) {
+        fillTimestampSuccess(initialTs, (ts, value) -> ts.setMNIE(buildQuantityType(value)), mnieValue);
+    }
+
+    public void fillTimestampExportCornerSuccess(TTimestamp initialTs, BigDecimal miecValue) {
+        // Temporary method : should be replaced with real handling of export-corner case
+        fillTimestampSuccess(initialTs, (ts, value) -> ts.setMIEC(buildQuantityType(value)), miecValue);
+    }
+
+    private void fillTimestampSuccess(TTimestamp initialTs, BiConsumer<TTimestamp, BigDecimal> valueTimestampFiller, BigDecimal value) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
-        TTimestamp ts = new TTimestamp();
-        ts.setReferenceCalculationTime(initialTs.getReferenceCalculationTime());
+        TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
 
-        QuantityType mnii = new QuantityType();
-        mnii.setV(initialTs.getMNII().getV());
+        valueTimestampFiller.accept(ts, value);
 
-        completeFillingWithStatusSuccess(ts, initialTs, mnii);
+        completeFillingWithStatusSuccess(ts, initialTs);
+        ts.setBASECASEfile(initialTs.getBASECASEfile());
 
         listTimestamps.add(ts);
     }
 
-    private void completeFillingWithStatusSuccess(TTimestamp ts, TTimestamp initialTs, QuantityType mnii) {
+    public void fillTimestampWithDichotomyResponse(TTimestamp initialTs, BigDecimal mibniiValue, BigDecimal mniiValue, TLimitingElement tLimitingElement) {
+        fillEmptyValidationResults();
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+        TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
+
+        ts.setMiBNII(buildQuantityType(mibniiValue));
+        ts.setMNII(buildQuantityType(mniiValue));
+
+        completeFillingWithStatusSuccess(ts, initialTs);
+        ts.setLimitingElement(tLimitingElement); // override initial value set in completeFillingWithStatusSuccess by default
+
+        listTimestamps.add(ts);
+
+        listTimestamps.sort(Comparator.comparing(c -> OffsetDateTime.parse(c.getTime().getV())));
+    }
+
+    public void fillDichotomyError(TTimestamp initialTs) {
+        fillEmptyValidationResults();
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+        TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
+
+        completeFillingWithError(ts, BigInteger.ONE, ERROR_MSG_GENERIC);
+
+        listTimestamps.add(ts);
+    }
+
+    private static QuantityType buildQuantityType(BigDecimal value) {
+        QuantityType quantityType = new QuantityType();
+        quantityType.setV(value);
+        return quantityType;
+    }
+
+    private static TTimestamp initializeNewTimestampWithExistingTimeData(TTimestamp initialTs) {
+        TTimestamp ts = new TTimestamp();
+
         ts.setTimeInterval(initialTs.getTimeInterval());
         ts.setTime(initialTs.getTime());
+        ts.setReferenceCalculationTime(initialTs.getReferenceCalculationTime());
 
+        return ts;
+    }
+
+    private static void completeFillingWithError(TTimestamp ts, BigInteger statusNumber, String errorMsg) {
+        TNumber status = new TNumber();
+        status.setV(statusNumber);
+        ts.setSTATUS(status);
+
+        TextType redFlagReason = new TextType();
+        redFlagReason.setV(errorMsg);
+        ts.setRedFlagReason(redFlagReason);
+    }
+
+    private static void completeFillingWithStatusSuccess(TTimestamp ts, TTimestamp initialTs) {
         TNumber status = new TNumber();
         status.setV(BigInteger.TWO);
         ts.setSTATUS(status);
-        ts.setMNII(mnii);
         ts.setTTCLimitedBy(initialTs.getTTCLimitedBy());
         ts.setCRACfile(initialTs.getCRACfile());
         ts.setCGMfile(initialTs.getCGMfile());
         ts.setGSKfile(initialTs.getGSKfile());
-        ts.setBASECASEfile(initialTs.getBASECASEfile());
         ts.setLimitingElement(initialTs.getLimitingElement());
     }
 
@@ -278,85 +332,5 @@ public class TcDocumentTypeWriter {
         tResultTimeseries.setMeasureUnit(unitOfMeasureType);
 
         listResultTimeseries.add(tResultTimeseries);
-    }
-
-    private TTimestamp initializeTimestampResult(TTimestamp timestampData) {
-        TTimestamp ts = new TTimestamp();
-
-        TTime time = new TTime();
-        time.setV(timestampData.getTime().getV());
-
-        TimeIntervalType timeInterval = new TimeIntervalType();
-        timeInterval.setV(timestampData.getTimeInterval().getV());
-
-        ts.setReferenceCalculationTime(timestampData.getReferenceCalculationTime());
-
-        ts.setTimeInterval(timeInterval);
-        ts.setTime(time);
-
-        return ts;
-    }
-
-    public void fillTimestampWithDichotomyResponse(TTimestamp timestampData, DichotomyResult<RaoResponse> dichotomyResult, TLimitingElement tLimitingElement) {
-        fillEmptyValidationResults();
-        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
-
-        TTimestamp ts = initializeTimestampResult(timestampData);
-
-        TNumber status = new TNumber();
-        status.setV(BigInteger.TWO);
-
-        BigDecimal mibniiValue = timestampData.getMiBNII().getV().subtract(timestampData.getANTCFinal().getV());
-        QuantityType mibnii = new QuantityType();
-        mibnii.setV(mibniiValue);
-
-        BigDecimal mniiValue = computeMnii(dichotomyResult).map(Math::round).map(BigDecimal::valueOf).orElse(mibniiValue);
-        QuantityType mnii = new QuantityType();
-        mnii.setV(mniiValue);
-
-        ts.setSTATUS(status);
-        ts.setMNII(mnii);
-        ts.setMiBNII(mibnii);
-        ts.setTTCLimitedBy(timestampData.getTTCLimitedBy());
-        ts.setCRACfile(timestampData.getCRACfile());
-        ts.setCGMfile(timestampData.getCGMfile());
-        ts.setGSKfile(timestampData.getGSKfile());
-
-        ts.setLimitingElement(tLimitingElement);
-
-        listTimestamps.add(ts);
-
-        listTimestamps.sort(Comparator.comparing(c -> OffsetDateTime.parse(c.getTime().getV())));
-    }
-
-    public void fillDichotomyError(TTimestamp timestampData) {
-        fillEmptyValidationResults();
-        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
-
-        TTimestamp ts = initializeTimestampResult(timestampData);
-
-        TNumber status = new TNumber();
-        status.setV(BigInteger.ONE);
-        ts.setSTATUS(status);
-
-        TextType errorMessage = new TextType();
-        errorMessage.setV("Process fail during TSO validation phase.");
-        ts.setRedFlagReason(errorMessage);
-
-        listTimestamps.add(ts);
-    }
-
-    private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
-        if (dichotomyResult.getHighestValidStep() == null) {
-            return Optional.empty();
-        }
-        String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
-        NetPositionReport netPositionReport = netPositionService.generateNetPositionReport(finalNetworkWithPraUrl);
-        Map<String, Double> italianBordersExchange = netPositionReport.getAreasReport().get("IT").getBordersExchanges();
-        double italianCseNetPosition = italianBordersExchange.get("FR") +
-                italianBordersExchange.get("CH") +
-                italianBordersExchange.get("AT") +
-                italianBordersExchange.get("SI");
-        return Optional.of(-italianCseNetPosition);
     }
 }
