@@ -195,7 +195,7 @@ public class TcDocumentTypeWriter {
         ts.setTime(time);
         ts.setReferenceCalculationTime(time);
 
-        completeFillingWithError(BigInteger.ZERO, ts, ERROR_MSG_MISSING_TTC_ADJ_FILE);
+        completeFillingWithError(ts, BigInteger.ZERO, ERROR_MSG_MISSING_TTC_ADJ_FILE);
 
         listTimestamps.add(ts);
     }
@@ -205,7 +205,7 @@ public class TcDocumentTypeWriter {
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
 
-        completeFillingWithError(BigInteger.ZERO, ts, errorMsg);
+        completeFillingWithError(ts, BigInteger.ZERO, errorMsg);
 
         listTimestamps.add(ts);
     }
@@ -257,15 +257,15 @@ public class TcDocumentTypeWriter {
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
 
-        completeFillingWithError(BigInteger.ONE, ts, ERROR_MSG_GENERIC);
+        completeFillingWithError(ts, BigInteger.ONE, ERROR_MSG_GENERIC);
 
         listTimestamps.add(ts);
     }
 
-    private static QuantityType buildQuantityType(BigDecimal mibniiValue) {
-        QuantityType mibnii = new QuantityType();
-        mibnii.setV(mibniiValue);
-        return mibnii;
+    private static QuantityType buildQuantityType(BigDecimal value) {
+        QuantityType quantityType = new QuantityType();
+        quantityType.setV(value);
+        return quantityType;
     }
 
     private static TTimestamp initializeNewTimestampWithExistingTimeData(TTimestamp initialTs) {
@@ -278,7 +278,7 @@ public class TcDocumentTypeWriter {
         return ts;
     }
 
-    private static void completeFillingWithError(BigInteger statusNumber, TTimestamp ts, String errorMsg) {
+    private static void completeFillingWithError(TTimestamp ts, BigInteger statusNumber, String errorMsg) {
         TNumber status = new TNumber();
         status.setV(statusNumber);
         ts.setSTATUS(status);
