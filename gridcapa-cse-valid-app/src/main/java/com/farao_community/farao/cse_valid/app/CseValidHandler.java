@@ -13,6 +13,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
+import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
@@ -23,9 +24,12 @@ import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Map;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.function.Supplier;
 
@@ -60,7 +64,7 @@ public class CseValidHandler {
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
         Instant computationStartInstant = Instant.now();
         TcDocumentType tcDocumentType = importTtcAdjustmentFile(cseValidRequest.getTtcAdjustment());
-        TcDocumentTypeWriter tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest, netPositionService);
+        TcDocumentTypeWriter tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest);
         if (tcDocumentType != null) {
             TTimestamp timestampData = getTimestampData(cseValidRequest, tcDocumentType);
             if (timestampData != null) {
@@ -108,9 +112,9 @@ public class CseValidHandler {
         } else if (isMniiInTimestamp(timestamp)) {
             computeTimestampForFullImport(timestamp, cseValidRequest, tcDocumentTypeWriter);
         } else if (isMiecInTimestamp(timestamp)) {
-            tcDocumentTypeWriter.fillTimestampForExportCorner(timestamp); // Temporary filler for export corner, should be replaced
+            tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV()); // Temporary filler for export corner, should be replaced
         } else if (isMnieInTimestamp(timestamp)) {
-            tcDocumentTypeWriter.fillTimestampNoComputationNeededForFullExport(timestamp);
+            tcDocumentTypeWriter.fillTimestampFullExportSuccess(timestamp, timestamp.getMNIE().getV());
         } else {
             throw new CseValidInvalidDataException("Timestamp Status not supported");
         }
@@ -118,11 +122,12 @@ public class CseValidHandler {
 
     private void computeTimestampForFullImport(TTimestamp timestamp, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         if (irrelevantValuesInTimestampForFullImport(timestamp)) {
-            tcDocumentTypeWriter.fillTimestampNoVerificationNeededForFullImport(timestamp);
+            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestamp, timestamp.getMNII().getV());
         } else if (missingDataInTimestampForFullImport(timestamp)) {
             tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
         } else if (actualNtcAboveTarget(timestamp)) {
-            tcDocumentTypeWriter.fillTimestampNoComputationNeededForFullImport(timestamp);
+            BigDecimal mniiValue = timestamp.getMiBNII().getV().subtract(timestamp.getANTCFinal().getV());
+            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestamp, mniiValue);
         } else {
             final boolean isCgmFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "CGMs", cseValidRequest::getCgm);
             final boolean isCracFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "CRACs", cseValidRequest::getCrac);
@@ -160,25 +165,38 @@ public class CseValidHandler {
                 || (isMnieInTimestamp(timestamp) && isMiecInTimestamp(timestamp));
     }
 
+    private static boolean isMibniiDefined(TTimestamp timestamp) {
+        return timestamp.getMiBNII() != null && timestamp.getMiBNII().getV() != null;
+    }
+
+    private static int getMibnii(TTimestamp timestamp) {
+        return timestamp.getMiBNII().getV().intValue();
+    }
+
+    private static boolean isAntcfinalDefined(TTimestamp timestamp) {
+        return timestamp.getANTCFinal() != null && timestamp.getANTCFinal().getV() != null;
+    }
+
+    private static int getAntcfinal(TTimestamp timestamp) {
+        return timestamp.getANTCFinal().getV().intValue();
+    }
+
     private static boolean irrelevantValuesInTimestampForFullImport(TTimestamp timestamp) {
         // MNII is present but both values MiBNII and ANTCFinal are absent or both values are equal to zero
         final boolean mibniiAndAntcfinalAbsent = timestamp.getMiBNII() == null && timestamp.getANTCFinal() == null;
-        final boolean mibniiIsZero = timestamp.getMiBNII() != null && timestamp.getMiBNII().getV() != null && timestamp.getMiBNII().getV().intValue() == 0;
-        final boolean antcfinalIsZero = timestamp.getANTCFinal() != null && timestamp.getANTCFinal().getV() != null && timestamp.getANTCFinal().getV().intValue() == 0;
+        final boolean mibniiIsZero = isMibniiDefined(timestamp) && getMibnii(timestamp) == 0;
+        final boolean antcfinalIsZero = isAntcfinalDefined(timestamp) && getAntcfinal(timestamp) == 0;
 
         return mibniiAndAntcfinalAbsent || (mibniiIsZero && antcfinalIsZero);
     }
 
     private static boolean missingDataInTimestampForFullImport(TTimestamp timestamp) {
         // MNII is present but one of the required data (MiBNII or ANTCFinal) is missing
-        final boolean mibniiAbsent = timestamp.getMiBNII() == null || timestamp.getMiBNII().getV() == null;
-        final boolean antcfinalAbsent = timestamp.getANTCFinal() == null || timestamp.getANTCFinal().getV() == null;
-
-        return mibniiAbsent || antcfinalAbsent;
+        return !isMibniiDefined(timestamp) || !isAntcfinalDefined(timestamp);
     }
 
     private boolean actualNtcAboveTarget(TTimestamp timestamp) {
-        final int actualNtc = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
+        final int actualNtc = getMibnii(timestamp) - getAntcfinal(timestamp);
         final int targetNtc = timestamp.getMNII().getV().intValue();
         if (actualNtc >= targetNtc) {
             businessLogger.info("Timestamp '{}' NTC has not been augmented by adjustment process, no computation needed.", timestamp.getTime().getV());
@@ -222,9 +240,25 @@ public class CseValidHandler {
         DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, timestamp);
         if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
             TLimitingElement tLimitingElement = this.limitingElementService.getLimitingElement(dichotomyResult.getHighestValidStep());
-            tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(timestamp, dichotomyResult, tLimitingElement);
+            BigDecimal mibniiValue = timestamp.getMiBNII().getV().subtract(timestamp.getANTCFinal().getV());
+            BigDecimal mniiValue = computeMnii(dichotomyResult).map(Math::round).map(BigDecimal::valueOf).orElse(mibniiValue);
+            tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(timestamp, mibniiValue, mniiValue, tLimitingElement);
         } else {
             tcDocumentTypeWriter.fillDichotomyError(timestamp);
         }
+    }
+
+    private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
+        if (dichotomyResult.getHighestValidStep() == null) {
+            return Optional.empty();
+        }
+        String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
+        NetPositionReport netPositionReport = netPositionService.generateNetPositionReport(finalNetworkWithPraUrl);
+        Map<String, Double> italianBordersExchange = netPositionReport.getAreasReport().get("IT").getBordersExchanges();
+        double italianCseNetPosition = italianBordersExchange.get("FR") +
+                italianBordersExchange.get("CH") +
+                italianBordersExchange.get("AT") +
+                italianBordersExchange.get("SI");
+        return Optional.of(-italianCseNetPosition);
     }
 }

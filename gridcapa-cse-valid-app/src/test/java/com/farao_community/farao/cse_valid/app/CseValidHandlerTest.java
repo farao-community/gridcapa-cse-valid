@@ -12,6 +12,9 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
+import com.farao_community.farao.cse_valid.app.net_position.AreaReport;
+import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
+import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
@@ -32,6 +35,7 @@ import xsd.etso_core_cmpts.QuantityType;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
@@ -66,6 +70,9 @@ class CseValidHandlerTest {
 
     @MockBean
     LimitingElementService limitingElementService;
+
+    @MockBean
+    NetPositionService netPositionService;
 
     @Test
     void existingTtcAdjustmentFileWithoutCalcul() {
@@ -204,7 +211,7 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestamp, cseValidRequest, tcDocumentTypeWriter);
 
         // don't forget to change this when real implementation of export-corner handling will be available
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampForExportCorner(timestamp);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, BigDecimal.ZERO);
     }
 
     @Test
@@ -219,7 +226,7 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestamp, cseValidRequest, tcDocumentTypeWriter);
 
         // don't forget to change this when real implementation of export-corner handling will be available
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampNoComputationNeededForFullExport(timestamp);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampFullExportSuccess(timestamp, BigDecimal.ZERO);
     }
 
     @Test
@@ -233,7 +240,7 @@ class CseValidHandlerTest {
 
         cseValidHandler.computeTimestamp(timestamp, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampNoVerificationNeededForFullImport(timestamp);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampFullImportSuccess(timestamp, BigDecimal.ZERO);
     }
 
     @Test
@@ -253,7 +260,7 @@ class CseValidHandlerTest {
 
         cseValidHandler.computeTimestamp(timestamp, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampNoVerificationNeededForFullImport(timestamp);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampFullImportSuccess(timestamp, BigDecimal.ZERO);
     }
 
     @Test
@@ -311,7 +318,7 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestamp, cseValidRequest, tcDocumentTypeWriter);
 
         verify(businessLogger, times(1)).info(anyString(), eq("time"));
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampNoComputationNeededForFullImport(timestamp);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampFullImportSuccess(timestamp, BigDecimal.TEN);
     }
 
     @Test
@@ -372,7 +379,43 @@ class CseValidHandlerTest {
     }
 
     @Test
-    void computeTimestampMniiRunDichotomySuccess() {
+    void computeTimestampMniiRunDichotomySuccessHighestValidStepNull() {
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        when(cseValidRequest.getCgm()).thenReturn(new CseValidFileResource("cgm.xml", "url/to/cgm.xml"));
+        when(cseValidRequest.getCrac()).thenReturn(new CseValidFileResource("crac.xml", "url/to/crac.xml"));
+        when(cseValidRequest.getGlsk()).thenReturn(new CseValidFileResource("glsk.xml", "url/to/glsk.xml"));
+        when(cseValidRequest.getProcessType()).thenReturn(ProcessType.IDCC);
+
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTime timeValue = new TTime();
+        timeValue.setV("time");
+        timestamp.setTime(timeValue);
+        QuantityType mniiValue = new QuantityType();
+        mniiValue.setV(BigDecimal.TEN);
+        timestamp.setMNII(mniiValue);
+        QuantityType mibniiValue = new QuantityType();
+        mibniiValue.setV(BigDecimal.ONE);
+        timestamp.setMiBNII(mibniiValue);
+        QuantityType antcfinalValue = new QuantityType();
+        antcfinalValue.setV(BigDecimal.ZERO);
+        timestamp.setANTCFinal(antcfinalValue);
+        DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
+        TLimitingElement limitingElement = new TLimitingElement();
+
+        when(minioAdapter.fileExists(any())).thenReturn(true);
+        when(dichotomyResult.hasValidStep()).thenReturn(true);
+        when(dichotomyResult.getHighestValidStep()).thenReturn(null);
+        when(limitingElementService.getLimitingElement(null)).thenReturn(limitingElement);
+        when(dichotomyRunner.runDichotomy(any(), any())).thenReturn(dichotomyResult);
+
+        cseValidHandler.computeTimestamp(timestamp, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.ONE, limitingElement);
+    }
+
+    @Test
+    void computeTimestampMniiRunDichotomySuccessHighestValidStepNotNull() {
         CseValidRequest cseValidRequest = mock(CseValidRequest.class);
         when(cseValidRequest.getCgm()).thenReturn(new CseValidFileResource("cgm.xml", "url/to/cgm.xml"));
         when(cseValidRequest.getCrac()).thenReturn(new CseValidFileResource("crac.xml", "url/to/crac.xml"));
@@ -395,16 +438,23 @@ class CseValidHandlerTest {
         timestamp.setANTCFinal(antcfinalValue);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
         DichotomyStepResult<RaoResponse> highestValidStep = mock(DichotomyStepResult.class);
+        RaoResponse raoResponse = mock(RaoResponse.class);
         TLimitingElement limitingElement = new TLimitingElement();
+        NetPositionReport netPositionReport = mock(NetPositionReport.class);
 
         when(minioAdapter.fileExists(any())).thenReturn(true);
         when(dichotomyResult.hasValidStep()).thenReturn(true);
         when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
-        when(limitingElementService.getLimitingElement(highestValidStep)).thenReturn(limitingElement);
         when(dichotomyRunner.runDichotomy(any(), any())).thenReturn(dichotomyResult);
+        when(limitingElementService.getLimitingElement(highestValidStep)).thenReturn(limitingElement);
+        when(highestValidStep.getValidationData()).thenReturn(raoResponse);
+        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn("finalNetworkWithPra");
+        when(netPositionService.generateNetPositionReport("finalNetworkWithPra")).thenReturn(netPositionReport);
+        Map<String, Double> borderExchanges = Map.of("FR", 1.0, "CH", 2.0, "AT", 4.0, "SI", 8.0);
+        when(netPositionReport.getAreasReport()).thenReturn(Map.of("IT", new AreaReport("id", 42.0, borderExchanges)));
 
         cseValidHandler.computeTimestamp(timestamp, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithDichotomyResponse(timestamp, dichotomyResult, limitingElement);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.valueOf(-15), limitingElement);
     }
 }

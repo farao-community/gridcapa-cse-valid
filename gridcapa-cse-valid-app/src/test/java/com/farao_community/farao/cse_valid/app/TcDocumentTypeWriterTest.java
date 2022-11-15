@@ -8,7 +8,6 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTTCLimitedBy;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
@@ -37,8 +36,8 @@ class TcDocumentTypeWriterTest {
     private TcDocumentTypeWriter tcDocumentTypeWriter;
     private TcDocumentType tcDocumentType;
 
-    private void initTcDocumentTypeWriter(CseValidRequest processRequest, NetPositionService netPositionService) {
-        tcDocumentTypeWriter = new TcDocumentTypeWriter(processRequest, netPositionService);
+    private void initTcDocumentTypeWriter(CseValidRequest processRequest) {
+        tcDocumentTypeWriter = new TcDocumentTypeWriter(processRequest);
         tcDocumentType = Mockito.mock(TcDocumentType.class);
         ReflectionTestUtils.setField(tcDocumentTypeWriter, "tcDocumentType", this.tcDocumentType);
     }
@@ -53,8 +52,7 @@ class TcDocumentTypeWriterTest {
     void fillNoTtcAdjustmentError() {
         // CseValidRequest
         CseValidRequest cseValidRequest = initCseValidRequest();
-        NetPositionService netPositionService = new NetPositionService(null);
-        initTcDocumentTypeWriter(cseValidRequest, netPositionService);
+        initTcDocumentTypeWriter(cseValidRequest);
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
@@ -70,8 +68,7 @@ class TcDocumentTypeWriterTest {
     void fillTimestampError() {
         // CseValidRequest
         CseValidRequest cseValidRequest = initCseValidRequest();
-        NetPositionService netPositionService = new NetPositionService(null);
-        initTcDocumentTypeWriter(cseValidRequest, netPositionService);
+        initTcDocumentTypeWriter(cseValidRequest);
         // TTimestamp
         TTimestamp initialTs = new TTimestamp();
         initTimeDataInTimestamp(initialTs);
@@ -91,11 +88,10 @@ class TcDocumentTypeWriterTest {
     }
 
     @Test
-    void fillTimestampNoVerificationNeededForFullImport() {
+    void fillTimestampFullImportSuccess() {
         // CseValidRequest
         CseValidRequest cseValidRequest = initCseValidRequest();
-        NetPositionService netPositionService = new NetPositionService(null);
-        initTcDocumentTypeWriter(cseValidRequest, netPositionService);
+        initTcDocumentTypeWriter(cseValidRequest);
         // TTimestamp
         TTimestamp initialTs = new TTimestamp();
         initTimeDataInTimestamp(initialTs);
@@ -109,7 +105,7 @@ class TcDocumentTypeWriterTest {
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
-        tcDocumentTypeWriter.fillTimestampNoVerificationNeededForFullImport(initialTs);
+        tcDocumentTypeWriter.fillTimestampFullImportSuccess(initialTs, BigDecimal.TEN);
 
         Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
         Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
@@ -123,49 +119,10 @@ class TcDocumentTypeWriterTest {
     }
 
     @Test
-    void fillTimestampNoComputationNeededForFullImport() {
-        // CseValidRequest
-        CseValidRequest cseValidRequest = initCseValidRequest();
-        NetPositionService netPositionService = new NetPositionService(null);
-        initTcDocumentTypeWriter(cseValidRequest, netPositionService);
-        // TTimestamp
-        TTimestamp initialTs = new TTimestamp();
-        initTimeDataInTimestamp(initialTs);
-        initSuccessDataInTimestamp(initialTs);
-        QuantityType mnii = new QuantityType();
-        mnii.setV(BigDecimal.ZERO);
-        initialTs.setMNII(mnii);
-        QuantityType mibnii = new QuantityType();
-        mibnii.setV(BigDecimal.TEN);
-        initialTs.setMiBNII(mibnii);
-        QuantityType antcfinal = new QuantityType();
-        antcfinal.setV(BigDecimal.ONE);
-        initialTs.setANTCFinal(antcfinal);
-        TextType basecaseFile = new TextType();
-        basecaseFile.setV("basecaseFile");
-        initialTs.setBASECASEfile(basecaseFile);
-        // Mock
-        Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
-
-        tcDocumentTypeWriter.fillTimestampNoComputationNeededForFullImport(initialTs);
-
-        Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
-        Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
-        TTimestamp resultTs = this.tcDocumentType.getValidationResults().get(0).getTimestamp().get(0);
-        SoftAssertions assertions = new SoftAssertions();
-        assertTimeDataValidInResultTimestamp(resultTs, assertions);
-        assertSuccessDataValidInResultTimestamp(resultTs, assertions);
-        assertions.assertThat(resultTs.getBASECASEfile().getV()).isEqualTo("basecaseFile");
-        assertions.assertThat(resultTs.getMNII().getV()).isEqualTo(BigDecimal.valueOf(9));
-        assertions.assertAll();
-    }
-
-    @Test
     void fillDichotomyError() {
         // CseValidRequest
         CseValidRequest cseValidRequest = initCseValidRequest();
-        NetPositionService netPositionService = new NetPositionService(null);
-        initTcDocumentTypeWriter(cseValidRequest, netPositionService);
+        initTcDocumentTypeWriter(cseValidRequest);
         // TTimestamp
         TTimestamp initialTs = new TTimestamp();
         initTimeDataInTimestamp(initialTs);
@@ -185,11 +142,10 @@ class TcDocumentTypeWriterTest {
     }
 
     @Test
-    void fillTimestampNoComputationNeededForFullExport() {
+    void fillTimestampFullExportSuccess() {
         // CseValidRequest
         CseValidRequest cseValidRequest = initCseValidRequest();
-        NetPositionService netPositionService = new NetPositionService(null);
-        initTcDocumentTypeWriter(cseValidRequest, netPositionService);
+        initTcDocumentTypeWriter(cseValidRequest);
         // TTimestamp
         TTimestamp initialTs = new TTimestamp();
         initTimeDataInTimestamp(initialTs);
@@ -203,7 +159,7 @@ class TcDocumentTypeWriterTest {
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
-        tcDocumentTypeWriter.fillTimestampNoComputationNeededForFullExport(initialTs);
+        tcDocumentTypeWriter.fillTimestampFullExportSuccess(initialTs, BigDecimal.ONE);
 
         Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
         Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
@@ -217,12 +173,11 @@ class TcDocumentTypeWriterTest {
     }
 
     @Test
-    void fillTimestampForExportCorner() {
+    void fillTimestampExportCornerSuccess() {
         // Temporary test : should be updated when real handling of export-corner will be available
         // CseValidRequest
         CseValidRequest cseValidRequest = initCseValidRequest();
-        NetPositionService netPositionService = new NetPositionService(null);
-        initTcDocumentTypeWriter(cseValidRequest, netPositionService);
+        initTcDocumentTypeWriter(cseValidRequest);
         // TTimestamp
         TTimestamp initialTs = new TTimestamp();
         initTimeDataInTimestamp(initialTs);
@@ -236,7 +191,7 @@ class TcDocumentTypeWriterTest {
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
-        tcDocumentTypeWriter.fillTimestampForExportCorner(initialTs);
+        tcDocumentTypeWriter.fillTimestampExportCornerSuccess(initialTs, BigDecimal.ONE);
 
         Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
         Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
@@ -246,6 +201,44 @@ class TcDocumentTypeWriterTest {
         assertSuccessDataValidInResultTimestamp(resultTs, assertions);
         assertions.assertThat(resultTs.getBASECASEfile().getV()).isEqualTo("basecaseFile");
         assertions.assertThat(resultTs.getMIEC().getV()).isEqualTo(BigDecimal.ONE);
+        assertions.assertAll();
+    }
+
+    @Test
+    void fillTimestampWithDichotomyResponse() {
+        // CseValidRequest
+        CseValidRequest cseValidRequest = initCseValidRequest();
+        initTcDocumentTypeWriter(cseValidRequest);
+        // TTimestamp
+        TTimestamp initialTs = new TTimestamp();
+        initTimeDataInTimestamp(initialTs);
+        initSuccessDataInTimestamp(initialTs);
+        QuantityType mibnii = new QuantityType();
+        mibnii.setV(BigDecimal.ONE);
+        initialTs.setMiBNII(mibnii);
+        QuantityType mnii = new QuantityType();
+        mnii.setV(BigDecimal.TEN);
+        initialTs.setMNII(mnii);
+        TLimitingElement tLimitingElement = new TLimitingElement();
+        initialTs.setLimitingElement(tLimitingElement);
+        TextType basecaseFile = new TextType();
+        basecaseFile.setV("basecaseFile");
+        initialTs.setBASECASEfile(basecaseFile);
+        // Mock
+        Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
+
+        tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(initialTs, BigDecimal.ONE, BigDecimal.TEN, tLimitingElement);
+
+        Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
+        Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
+        TTimestamp resultTs = this.tcDocumentType.getValidationResults().get(0).getTimestamp().get(0);
+        SoftAssertions assertions = new SoftAssertions();
+        assertTimeDataValidInResultTimestamp(resultTs, assertions);
+        assertSuccessDataValidInResultTimestamp(resultTs, assertions);
+        assertions.assertThat(resultTs.getBASECASEfile()).isNull();
+        assertions.assertThat(resultTs.getLimitingElement()).isEqualTo(tLimitingElement);
+        assertions.assertThat(resultTs.getMiBNII().getV()).isEqualTo(BigDecimal.ONE);
+        assertions.assertThat(resultTs.getMNII().getV()).isEqualTo(BigDecimal.TEN);
         assertions.assertAll();
     }
 

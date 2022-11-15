@@ -8,16 +8,12 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TNumber;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TResultTimeseries;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
-import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
@@ -62,8 +58,7 @@ import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import static com.farao_community.farao.cse_valid.app.Constants.*;
 
@@ -88,11 +83,9 @@ public class TcDocumentTypeWriter {
     private final MessageDateTimeType creationTime;
     private final AreaType domainAreaType;
     private final TimeIntervalType timeIntervalType;
-    private final NetPositionService netPositionService;
 
-    public TcDocumentTypeWriter(CseValidRequest processRequest, NetPositionService netPositionService) {
+    public TcDocumentTypeWriter(CseValidRequest processRequest) {
         this.processStartRequest = processRequest;
-        this.netPositionService = netPositionService;
         this.tcDocumentType = new TcDocumentType();
         this.documentIdentification = new LongIdentificationType();
         this.versionType = new VersionType();
@@ -217,14 +210,25 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
     }
 
-    public void fillTimestampNoVerificationNeededForFullImport(TTimestamp initialTs) {
+    public void fillTimestampFullImportSuccess(TTimestamp initialTs, BigDecimal mniiValue) {
+        fillTimestampSuccess(initialTs, (ts, value) -> ts.setMNII(buildQuantityType(value)), mniiValue);
+    }
+
+    public void fillTimestampFullExportSuccess(TTimestamp initialTs, BigDecimal mnieValue) {
+        fillTimestampSuccess(initialTs, (ts, value) -> ts.setMNIE(buildQuantityType(value)), mnieValue);
+    }
+
+    public void fillTimestampExportCornerSuccess(TTimestamp initialTs, BigDecimal miecValue) {
+        // Temporary method : should be replaced with real handling of export-corner case
+        fillTimestampSuccess(initialTs, (ts, value) -> ts.setMIEC(buildQuantityType(value)), miecValue);
+    }
+
+    private void fillTimestampSuccess(TTimestamp initialTs, BiConsumer<TTimestamp, BigDecimal> valueTimestampFiller, BigDecimal value) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
 
-        QuantityType mnii = new QuantityType();
-        mnii.setV(initialTs.getMNII().getV());
-        ts.setMNII(mnii);
+        valueTimestampFiller.accept(ts, value);
 
         completeFillingWithStatusSuccess(ts, initialTs);
         ts.setBASECASEfile(initialTs.getBASECASEfile());
@@ -232,35 +236,13 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
     }
 
-    public void fillTimestampNoComputationNeededForFullImport(TTimestamp initialTs) {
+    public void fillTimestampWithDichotomyResponse(TTimestamp initialTs, BigDecimal mibniiValue, BigDecimal mniiValue, TLimitingElement tLimitingElement) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
 
-        QuantityType mnii = new QuantityType();
-        mnii.setV(initialTs.getMiBNII().getV().subtract(initialTs.getANTCFinal().getV()));
-        ts.setMNII(mnii);
-
-        completeFillingWithStatusSuccess(ts, initialTs);
-        ts.setBASECASEfile(initialTs.getBASECASEfile());
-
-        listTimestamps.add(ts);
-    }
-
-    public void fillTimestampWithDichotomyResponse(TTimestamp initialTs, DichotomyResult<RaoResponse> dichotomyResult, TLimitingElement tLimitingElement) {
-        fillEmptyValidationResults();
-        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
-        TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
-
-        BigDecimal mibniiValue = initialTs.getMiBNII().getV().subtract(initialTs.getANTCFinal().getV());
-        QuantityType mibnii = new QuantityType();
-        mibnii.setV(mibniiValue);
-        ts.setMiBNII(mibnii);
-
-        BigDecimal mniiValue = computeMnii(dichotomyResult).map(Math::round).map(BigDecimal::valueOf).orElse(mibniiValue);
-        QuantityType mnii = new QuantityType();
-        mnii.setV(mniiValue);
-        ts.setMNII(mnii);
+        ts.setMiBNII(buildQuantityType(mibniiValue));
+        ts.setMNII(buildQuantityType(mniiValue));
 
         completeFillingWithStatusSuccess(ts, initialTs);
         ts.setLimitingElement(tLimitingElement); // override initial value set in completeFillingWithStatusSuccess by default
@@ -268,20 +250,6 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
 
         listTimestamps.sort(Comparator.comparing(c -> OffsetDateTime.parse(c.getTime().getV())));
-    }
-
-    private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
-        if (dichotomyResult.getHighestValidStep() == null) {
-            return Optional.empty();
-        }
-        String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
-        NetPositionReport netPositionReport = netPositionService.generateNetPositionReport(finalNetworkWithPraUrl);
-        Map<String, Double> italianBordersExchange = netPositionReport.getAreasReport().get("IT").getBordersExchanges();
-        double italianCseNetPosition = italianBordersExchange.get("FR") +
-                italianBordersExchange.get("CH") +
-                italianBordersExchange.get("AT") +
-                italianBordersExchange.get("SI");
-        return Optional.of(-italianCseNetPosition);
     }
 
     public void fillDichotomyError(TTimestamp initialTs) {
@@ -294,35 +262,10 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
     }
 
-    public void fillTimestampNoComputationNeededForFullExport(TTimestamp initialTs) {
-        fillEmptyValidationResults();
-        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
-        TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
-
-        QuantityType mnie = new QuantityType();
-        mnie.setV(initialTs.getMNIE().getV());
-        ts.setMNIE(mnie);
-
-        completeFillingWithStatusSuccess(ts, initialTs);
-        ts.setBASECASEfile(initialTs.getBASECASEfile());
-
-        listTimestamps.add(ts);
-    }
-
-    public void fillTimestampForExportCorner(TTimestamp initialTs) {
-        // Temporary method : should be replaced with real handling of export-corner case
-        fillEmptyValidationResults();
-        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
-        TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
-
-        QuantityType miec = new QuantityType();
-        miec.setV(initialTs.getMIEC().getV());
-        ts.setMIEC(miec);
-
-        completeFillingWithStatusSuccess(ts, initialTs);
-        ts.setBASECASEfile(initialTs.getBASECASEfile());
-
-        listTimestamps.add(ts);
+    private static QuantityType buildQuantityType(BigDecimal mibniiValue) {
+        QuantityType mibnii = new QuantityType();
+        mibnii.setV(mibniiValue);
+        return mibnii;
     }
 
     private static TTimestamp initializeNewTimestampWithExistingTimeData(TTimestamp initialTs) {
