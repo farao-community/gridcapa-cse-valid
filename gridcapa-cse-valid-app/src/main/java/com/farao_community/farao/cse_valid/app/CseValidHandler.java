@@ -107,7 +107,7 @@ public class CseValidHandler {
     void computeTimestamp(TTimestamp timestamp, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         if (missingMniiMnieMiecInTimestamp(timestamp)) {
             tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
-        } else if (contradictoryDataInTimestamp(timestamp)) {
+        } else if (multipleMniiMnieMiecInTimestamp(timestamp)) {
             tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_CONTRADICTORY_DATA);
         } else if (isMniiInTimestamp(timestamp)) {
             computeTimestampForFullImport(timestamp, cseValidRequest, tcDocumentTypeWriter);
@@ -116,7 +116,7 @@ public class CseValidHandler {
         } else if (isMnieInTimestamp(timestamp)) {
             tcDocumentTypeWriter.fillTimestampFullExportSuccess(timestamp, timestamp.getMNIE().getV());
         } else {
-            throw new CseValidInvalidDataException("Timestamp Status not supported");
+            throw new CseValidInvalidDataException(String.format("Unhandled data for timestamp %s and reference calculation time %s", timestamp.getTime().getV(), timestamp.getReferenceCalculationTime().getV()));
         }
     }
 
@@ -135,7 +135,9 @@ public class CseValidHandler {
             final boolean areAllFilesAvailable = isCgmFileAvailable && isCracFileAvailable && isGlskFileAvailable;
 
             if (!areAllFilesAvailable) {
-                handleMissingFiles(timestamp, tcDocumentTypeWriter, isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
+                businessLogger.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
+                String redFlagError = errorMessageForMissingFiles(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
+                tcDocumentTypeWriter.fillTimestampError(timestamp, redFlagError);
             } else {
                 runDichotomyForFullImport(timestamp, cseValidRequest, tcDocumentTypeWriter);
             }
@@ -158,7 +160,7 @@ public class CseValidHandler {
         return !isMniiInTimestamp(timestamp) && !isMnieInTimestamp(timestamp) && !isMiecInTimestamp(timestamp);
     }
 
-    private static boolean contradictoryDataInTimestamp(TTimestamp timestamp) {
+    private static boolean multipleMniiMnieMiecInTimestamp(TTimestamp timestamp) {
         // simultaneous presence of at least two values among MNII (full import), MIEC (export-corner) and MNIE (full export)
         return (isMniiInTimestamp(timestamp) && isMnieInTimestamp(timestamp))
                 || (isMniiInTimestamp(timestamp) && isMiecInTimestamp(timestamp))
@@ -214,13 +216,7 @@ public class CseValidHandler {
         return processType.name() + "/" + filetype + "/" + filename;
     }
 
-    private void handleMissingFiles(TTimestamp timestamp, TcDocumentTypeWriter tcDocumentTypeWriter, boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
-        businessLogger.error("Missing some input files for timestamp '{}'", timestamp.getTime().getV());
-        String redFlagError = redFlagReasonError(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
-        tcDocumentTypeWriter.fillTimestampError(timestamp, redFlagError);
-    }
-
-    private static String redFlagReasonError(boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
+    private static String errorMessageForMissingFiles(boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
         StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
 
         if (!isCgmFileAvailable) {
