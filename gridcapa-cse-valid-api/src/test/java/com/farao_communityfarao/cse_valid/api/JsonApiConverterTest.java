@@ -33,8 +33,10 @@ class JsonApiConverterTest {
         assertEquals("test", cseValidRequest.getId());
         assertEquals("ttcAdjustment.txt", cseValidRequest.getTtcAdjustment().getFilename());
         assertEquals("https://ttcAdjustment/file/url", cseValidRequest.getTtcAdjustment().getUrl());
-        assertEquals("crac.txt", cseValidRequest.getCrac().getFilename());
-        assertEquals("https://crac/file/url", cseValidRequest.getCrac().getUrl());
+        assertEquals("importCrac.txt", cseValidRequest.getImportCrac().getFilename());
+        assertEquals("https://importCrac/file/url", cseValidRequest.getImportCrac().getUrl());
+        assertEquals("exportCrac.txt", cseValidRequest.getExportCrac().getFilename());
+        assertEquals("https://exportCrac/file/url", cseValidRequest.getExportCrac().getUrl());
         assertEquals("cgm.txt", cseValidRequest.getCgm().getFilename());
         assertEquals("https://cgm/file/url", cseValidRequest.getCgm().getUrl());
         assertEquals("glsk.txt", cseValidRequest.getGlsk().getFilename());

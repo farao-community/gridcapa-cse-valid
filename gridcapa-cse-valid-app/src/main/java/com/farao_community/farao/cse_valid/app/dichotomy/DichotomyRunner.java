@@ -74,7 +74,7 @@ public class DichotomyRunner {
     }
 
     private String getJsonCracUrl(CseValidRequest cseValidRequest, Network network) {
-        CseCrac cseCrac = fileImporter.importCseCrac(cseValidRequest.getCrac().getUrl());
+        CseCrac cseCrac = fileImporter.importCseCrac(cseValidRequest.getImportCrac().getUrl());
         Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
         return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
     }

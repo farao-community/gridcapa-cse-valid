@@ -45,7 +45,7 @@ class TcDocumentTypeWriterTest {
     private static CseValidRequest initCseValidRequest() {
         OffsetDateTime timestamp = OffsetDateTime.now();
         OffsetDateTime time = OffsetDateTime.now();
-        return new CseValidRequest(null, ProcessType.D2CC, timestamp, null, null, null, null, time);
+        return new CseValidRequest(null, ProcessType.D2CC, timestamp, null, null, null, null, null, time);
     }
 
     @Test

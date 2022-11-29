@@ -45,24 +45,27 @@ public class CseValidRequest {
     @JsonDeserialize(using = OffsetDateTimeDeserializer.class)
     private final OffsetDateTime time;
     private final CseValidFileResource ttcAdjustment;
-    private final CseValidFileResource crac;
+    private final CseValidFileResource importCrac;
+    private final CseValidFileResource exportCrac;
     private final CseValidFileResource cgm;
     private final CseValidFileResource glsk;
 
     @JsonCreator
     public CseValidRequest(@JsonProperty("id") String id,
-                            @JsonProperty("processType") ProcessType processType,
-                            @JsonProperty("timestamp") OffsetDateTime timestamp,
-                            @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
-                            @JsonProperty("crac") CseValidFileResource crac,
-                            @JsonProperty("cgm") CseValidFileResource cgm,
-                            @JsonProperty("glsk") CseValidFileResource glsk,
+                           @JsonProperty("processType") ProcessType processType,
+                           @JsonProperty("timestamp") OffsetDateTime timestamp,
+                           @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
+                           @JsonProperty("importCrac") CseValidFileResource importCrac,
+                           @JsonProperty("exportCrac") CseValidFileResource exportCrac,
+                           @JsonProperty("cgm") CseValidFileResource cgm,
+                           @JsonProperty("glsk") CseValidFileResource glsk,
                            @JsonProperty("time") OffsetDateTime time) {
         this.id = id;
         this.processType = processType;
         this.timestamp = timestamp;
         this.ttcAdjustment = ttcAdjustment;
-        this.crac = crac;
+        this.importCrac = importCrac;
+        this.exportCrac = exportCrac;
         this.cgm = cgm;
         this.glsk = glsk;
         this.time = time;
@@ -71,59 +74,71 @@ public class CseValidRequest {
     public static CseValidRequest buildD2ccValidRequest(@JsonProperty("id") String id,
                                                         @JsonProperty("timestamp") OffsetDateTime timestamp,
                                                         @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
-                                                        @JsonProperty("crac") CseValidFileResource crac,
+                                                        @JsonProperty("importCrac") CseValidFileResource importCrac,
+                                                        @JsonProperty("exportCrac") CseValidFileResource exportCrac,
                                                         @JsonProperty("cgm") CseValidFileResource cgm,
                                                         @JsonProperty("glsk") CseValidFileResource glsk) {
-        return new CseValidRequest(id, ProcessType.D2CC, timestamp, ttcAdjustment, crac, cgm, glsk, timestamp);
+        return new CseValidRequest(id, ProcessType.D2CC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, timestamp);
     }
 
     public static CseValidRequest buildIdccValidRequest(@JsonProperty("id") String id,
                                                         @JsonProperty("timestamp") OffsetDateTime timestamp,
                                                         @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
-                                                        @JsonProperty("crac") CseValidFileResource crac,
+                                                        @JsonProperty("importCrac") CseValidFileResource importCrac,
+                                                        @JsonProperty("exportCrac") CseValidFileResource exportCrac,
                                                         @JsonProperty("cgm") CseValidFileResource cgm,
                                                         @JsonProperty("glsk") CseValidFileResource glsk) {
-        return new CseValidRequest(id, ProcessType.IDCC, timestamp, ttcAdjustment, crac, cgm, glsk, timestamp);
+        return new CseValidRequest(id, ProcessType.IDCC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, timestamp);
     }
 
     public static CseValidRequest buildD2ccValidRequest(@JsonProperty("id") String id,
                                                         @JsonProperty("timestamp") OffsetDateTime timestamp,
                                                         @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
-                                                        @JsonProperty("crac") CseValidFileResource crac,
+                                                        @JsonProperty("importCrac") CseValidFileResource importCrac,
+                                                        @JsonProperty("exportCrac") CseValidFileResource exportCrac,
                                                         @JsonProperty("cgm") CseValidFileResource cgm,
                                                         @JsonProperty("glsk") CseValidFileResource glsk,
                                                         @JsonProperty("time") OffsetDateTime time) {
-        return new CseValidRequest(id, ProcessType.D2CC, timestamp, ttcAdjustment, crac, cgm, glsk, time);
+        return new CseValidRequest(id, ProcessType.D2CC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
     }
 
     public static CseValidRequest buildIdccValidRequest(@JsonProperty("id") String id,
                                                         @JsonProperty("timestamp") OffsetDateTime timestamp,
                                                         @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
-                                                        @JsonProperty("crac") CseValidFileResource crac,
+                                                        @JsonProperty("importCrac") CseValidFileResource importCrac,
+                                                        @JsonProperty("exportCrac") CseValidFileResource exportCrac,
                                                         @JsonProperty("cgm") CseValidFileResource cgm,
                                                         @JsonProperty("glsk") CseValidFileResource glsk,
                                                         @JsonProperty("time") OffsetDateTime time) {
-        return new CseValidRequest(id, ProcessType.IDCC, timestamp, ttcAdjustment, crac, cgm, glsk, time);
+        return new CseValidRequest(id, ProcessType.IDCC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
     }
 
     public String getId() {
         return id;
     }
 
+    public ProcessType getProcessType() {
+        return processType;
+    }
+
     public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 
-    public ProcessType getProcessType() {
-        return processType;
+    public OffsetDateTime getTime() {
+        return time;
     }
 
     public CseValidFileResource getTtcAdjustment() {
         return ttcAdjustment;
     }
 
-    public CseValidFileResource getCrac() {
-        return crac;
+    public CseValidFileResource getImportCrac() {
+        return importCrac;
+    }
+
+    public CseValidFileResource getExportCrac() {
+        return exportCrac;
     }
 
     public CseValidFileResource getCgm() {
@@ -132,10 +147,6 @@ public class CseValidRequest {
 
     public CseValidFileResource getGlsk() {
         return glsk;
-    }
-
-    public OffsetDateTime getTime() {
-        return time;
     }
 
     @Override

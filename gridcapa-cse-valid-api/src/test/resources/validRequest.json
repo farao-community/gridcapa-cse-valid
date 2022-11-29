@@ -8,9 +8,13 @@
         "filename": "ttcAdjustment.txt",
         "url": "https://ttcAdjustment/file/url"
       },
-      "crac": {
-        "filename": "crac.txt",
-        "url": "https://crac/file/url"
+      "importCrac": {
+        "filename": "importCrac.txt",
+        "url": "https://importCrac/file/url"
+      },
+      "exportCrac": {
+        "filename": "exportCrac.txt",
+        "url": "https://exportCrac/file/url"
       },
       "cgm": {
         "filename": "cgm.txt",
