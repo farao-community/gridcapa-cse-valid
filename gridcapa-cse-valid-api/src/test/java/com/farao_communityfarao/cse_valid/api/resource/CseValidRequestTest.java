@@ -25,7 +25,8 @@ class CseValidRequestTest {
     private OffsetDateTime timestamp;
     private OffsetDateTime time;
     private CseValidFileResource ttcAdjustment;
-    private CseValidFileResource crac;
+    private CseValidFileResource importCrac;
+    private CseValidFileResource exportCrac;
     private CseValidFileResource cgm;
     private CseValidFileResource glsk;
 
@@ -34,61 +35,66 @@ class CseValidRequestTest {
         timestamp = OffsetDateTime.parse("2022-04-20T00:30Z");
         time = OffsetDateTime.parse("2022-04-20T01:30Z");
         ttcAdjustment = new CseValidFileResource("ttcAdjustment.txt", "http://path/to/ttcAdjustment/file");
-        crac = new CseValidFileResource("crac.txt", "http://path/to/crac/file");
+        importCrac = new CseValidFileResource("importCrac.txt", "http://path/to/importCrac/file");
+        exportCrac = new CseValidFileResource("exportCrac.txt", "http://path/to/exportCrac/file");
         cgm = new CseValidFileResource("cgm.txt", "http://path/to/cgm/file");
         glsk = new CseValidFileResource("glsk.txt", "http://path/to/glsk/file");
     }
 
     @Test
     void checkManualCseValidD2ccRequest() {
-        CseValidRequest cseValidRequest = CseValidRequest.buildD2ccValidRequest("id", timestamp, ttcAdjustment, crac, cgm, glsk);
+        CseValidRequest cseValidRequest = CseValidRequest.buildD2ccValidRequest("id", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk);
         assertNotNull(cseValidRequest);
         assertEquals("id", cseValidRequest.getId());
         assertEquals(ProcessType.D2CC, cseValidRequest.getProcessType());
         assertEquals("2022-04-20T00:30Z", cseValidRequest.getTimestamp().toString());
         assertEquals("ttcAdjustment.txt", cseValidRequest.getTtcAdjustment().getFilename());
-        assertEquals("crac.txt", cseValidRequest.getCrac().getFilename());
+        assertEquals("importCrac.txt", cseValidRequest.getImportCrac().getFilename());
+        assertEquals("exportCrac.txt", cseValidRequest.getExportCrac().getFilename());
         assertEquals("cgm.txt", cseValidRequest.getCgm().getFilename());
         assertEquals("glsk.txt", cseValidRequest.getGlsk().getFilename());
     }
 
     @Test
     void checkManualCseValidIdccRequest() {
-        CseValidRequest cseValidRequest = CseValidRequest.buildIdccValidRequest("id", timestamp, ttcAdjustment, crac, cgm, glsk);
+        CseValidRequest cseValidRequest = CseValidRequest.buildIdccValidRequest("id", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk);
         assertNotNull(cseValidRequest);
         assertEquals("id", cseValidRequest.getId());
         assertEquals(ProcessType.IDCC, cseValidRequest.getProcessType());
         assertEquals("2022-04-20T00:30Z", cseValidRequest.getTimestamp().toString());
         assertEquals("ttcAdjustment.txt", cseValidRequest.getTtcAdjustment().getFilename());
-        assertEquals("crac.txt", cseValidRequest.getCrac().getFilename());
+        assertEquals("importCrac.txt", cseValidRequest.getImportCrac().getFilename());
+        assertEquals("exportCrac.txt", cseValidRequest.getExportCrac().getFilename());
         assertEquals("cgm.txt", cseValidRequest.getCgm().getFilename());
         assertEquals("glsk.txt", cseValidRequest.getGlsk().getFilename());
     }
 
     @Test
     void checkCseValidD2ccRequestWithDifferentTime() {
-        CseValidRequest cseValidRequest = CseValidRequest.buildD2ccValidRequest("id", timestamp, ttcAdjustment, crac, cgm, glsk, time);
+        CseValidRequest cseValidRequest = CseValidRequest.buildD2ccValidRequest("id", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
         assertNotNull(cseValidRequest);
         assertEquals("id", cseValidRequest.getId());
         assertEquals(ProcessType.D2CC, cseValidRequest.getProcessType());
         assertEquals("2022-04-20T00:30Z", cseValidRequest.getTimestamp().toString());
         assertEquals("2022-04-20T01:30Z", cseValidRequest.getTime().toString());
         assertEquals("ttcAdjustment.txt", cseValidRequest.getTtcAdjustment().getFilename());
-        assertEquals("crac.txt", cseValidRequest.getCrac().getFilename());
+        assertEquals("importCrac.txt", cseValidRequest.getImportCrac().getFilename());
+        assertEquals("exportCrac.txt", cseValidRequest.getExportCrac().getFilename());
         assertEquals("cgm.txt", cseValidRequest.getCgm().getFilename());
         assertEquals("glsk.txt", cseValidRequest.getGlsk().getFilename());
     }
 
     @Test
     void checkCseValidIdccRequestWithDifferentTime() {
-        CseValidRequest cseValidRequest = CseValidRequest.buildIdccValidRequest("id", timestamp, ttcAdjustment, crac, cgm, glsk, time);
+        CseValidRequest cseValidRequest = CseValidRequest.buildIdccValidRequest("id", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
         assertNotNull(cseValidRequest);
         assertEquals("id", cseValidRequest.getId());
         assertEquals(ProcessType.IDCC, cseValidRequest.getProcessType());
         assertEquals("2022-04-20T00:30Z", cseValidRequest.getTimestamp().toString());
         assertEquals("2022-04-20T01:30Z", cseValidRequest.getTime().toString());
         assertEquals("ttcAdjustment.txt", cseValidRequest.getTtcAdjustment().getFilename());
-        assertEquals("crac.txt", cseValidRequest.getCrac().getFilename());
+        assertEquals("importCrac.txt", cseValidRequest.getImportCrac().getFilename());
+        assertEquals("exportCrac.txt", cseValidRequest.getExportCrac().getFilename());
         assertEquals("cgm.txt", cseValidRequest.getCgm().getFilename());
         assertEquals("glsk.txt", cseValidRequest.getGlsk().getFilename());
     }

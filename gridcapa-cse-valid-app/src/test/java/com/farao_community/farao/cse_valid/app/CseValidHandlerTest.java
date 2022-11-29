@@ -105,7 +105,8 @@ class CseValidHandlerTest {
                 ProcessType.D2CC,
                 OffsetDateTime.now(),
                 new CseValidFileResource("ttc.xml", "file://ttc.xml"),
-                new CseValidFileResource("crac.xml", "file://crac.xml"),
+                new CseValidFileResource("importCrac.xml", "file://importCrac.xml"),
+                new CseValidFileResource("exportCrac.xml", "file://exportCrac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
                 new CseValidFileResource("glsk.xml", "file://glsk.xml"),
                 OffsetDateTime.now());
@@ -123,7 +124,8 @@ class CseValidHandlerTest {
                 ProcessType.D2CC,
                 OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC),
                 createFileResource(ttcAdjustmentFilename),
-                new CseValidFileResource("crac.xml", "file://crac.xml"),
+                new CseValidFileResource("importCrac.xml", "file://importCrac.xml"),
+                new CseValidFileResource("exportCrac.xml", "file://exportCrac.xml"),
                 new CseValidFileResource("cgm.xml", "file://cgm.xml"),
                 new CseValidFileResource("glsk.xml", "file://glsk.xml"),
                 OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
@@ -351,7 +353,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiRunDichotomyError() {
         CseValidRequest cseValidRequest = mock(CseValidRequest.class);
         when(cseValidRequest.getCgm()).thenReturn(new CseValidFileResource("cgm.xml", "url/to/cgm.xml"));
-        when(cseValidRequest.getCrac()).thenReturn(new CseValidFileResource("crac.xml", "url/to/crac.xml"));
+        when(cseValidRequest.getImportCrac()).thenReturn(new CseValidFileResource("importCrac.xml", "url/to/importCrac.xml"));
         when(cseValidRequest.getGlsk()).thenReturn(new CseValidFileResource("glsk.xml", "url/to/glsk.xml"));
         when(cseValidRequest.getProcessType()).thenReturn(ProcessType.IDCC);
 
@@ -382,7 +384,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiRunDichotomySuccessHighestValidStepNull() {
         CseValidRequest cseValidRequest = mock(CseValidRequest.class);
         when(cseValidRequest.getCgm()).thenReturn(new CseValidFileResource("cgm.xml", "url/to/cgm.xml"));
-        when(cseValidRequest.getCrac()).thenReturn(new CseValidFileResource("crac.xml", "url/to/crac.xml"));
+        when(cseValidRequest.getImportCrac()).thenReturn(new CseValidFileResource("importCrac.xml", "url/to/importCrac.xml"));
         when(cseValidRequest.getGlsk()).thenReturn(new CseValidFileResource("glsk.xml", "url/to/glsk.xml"));
         when(cseValidRequest.getProcessType()).thenReturn(ProcessType.IDCC);
 
@@ -418,7 +420,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiRunDichotomySuccessHighestValidStepNotNull() {
         CseValidRequest cseValidRequest = mock(CseValidRequest.class);
         when(cseValidRequest.getCgm()).thenReturn(new CseValidFileResource("cgm.xml", "url/to/cgm.xml"));
-        when(cseValidRequest.getCrac()).thenReturn(new CseValidFileResource("crac.xml", "url/to/crac.xml"));
+        when(cseValidRequest.getImportCrac()).thenReturn(new CseValidFileResource("importCrac.xml", "url/to/importCrac.xml"));
         when(cseValidRequest.getGlsk()).thenReturn(new CseValidFileResource("glsk.xml", "url/to/glsk.xml"));
         when(cseValidRequest.getProcessType()).thenReturn(ProcessType.IDCC);
 
