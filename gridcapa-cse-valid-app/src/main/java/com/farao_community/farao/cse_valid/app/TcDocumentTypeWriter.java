@@ -219,7 +219,6 @@ public class TcDocumentTypeWriter {
     }
 
     public void fillTimestampExportCornerSuccess(TTimestamp initialTs, BigDecimal miecValue) {
-        // Temporary method : should be replaced with real handling of export-corner case
         fillTimestampSuccess(initialTs, (ts, value) -> ts.setMIEC(buildQuantityType(value)), miecValue);
     }
 
