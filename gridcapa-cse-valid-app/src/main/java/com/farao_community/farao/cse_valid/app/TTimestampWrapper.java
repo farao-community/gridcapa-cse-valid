@@ -50,8 +50,9 @@ public class TTimestampWrapper {
 
     public boolean hasCalculationDirections() {
         return timestamp.getCalculationDirections() != null
-                && timestamp.getCalculationDirections().getCalculationDirection() != null
-                && !timestamp.getCalculationDirections().getCalculationDirection().isEmpty();
+                && !timestamp.getCalculationDirections().isEmpty()
+                && timestamp.getCalculationDirections().get(0).getCalculationDirection() != null
+                && !timestamp.getCalculationDirections().get(0).getCalculationDirection().isEmpty();
     }
 
     public boolean hasNoneOfMniiMnieMiec() {

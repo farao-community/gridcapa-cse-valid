@@ -159,9 +159,8 @@
 					<xsd:element name="CGMfile" type="ecc:TextType" minOccurs="0" maxOccurs="1"/>
 					<xsd:element name="GSKfile" type="ecc:TextType" minOccurs="0" maxOccurs="1"/>
 					<xsd:element name="CRACfile" type="ecc:TextType" minOccurs="0" maxOccurs="1"/>
-					<xsd:element name="BASECASEfile" type="ecc:TextType" minOccurs="0" maxOccurs="1"/> <!-- Re-added the BASECASEfile markup (was deleted when switching from v9.4 to v9.29) -->
 					<xsd:element name="Reason" type="Reason_Type" minOccurs="0" maxOccurs="1"/>
-					<xsd:element name="CalculationDirections" type="T_CalculationDirections" minOccurs="0" maxOccurs="1"/> <!-- maxOccurs was "unbounded" in v9.29 but that does not fit with specifications -->
+					<xsd:element name="CalculationDirections" type="T_CalculationDirections" minOccurs="0" maxOccurs="unbounded"/>
 					<xsd:element name="SplittingFactors" type="T_SplittingFactors" minOccurs="0" maxOccurs="1"/>
 					<xsd:element name="ShiftingFactors" type="T_ShiftingFactors" minOccurs="0" maxOccurs="1"/>
 				</xsd:sequence>

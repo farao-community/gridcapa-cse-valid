@@ -18,6 +18,7 @@ import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TFactor;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTTCLimitedBy;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
@@ -26,21 +27,25 @@ import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
+import xsd.etso_core_cmpts.AreaType;
+import xsd.etso_core_cmpts.QuantityType;
+import xsd.etso_core_cmpts.TextType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
-import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_SHIFTING_FACTORS;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_CALCULATION_DIRECTIONS;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_SHIFTING_FACTORS;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -167,24 +172,34 @@ public class CseValidHandler {
         } else {
             int italianImportAfterCep70Adjustment = timestampWrapper.getMiecIntValue();
             int maxItalianSecureImport = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
-            timestampWrapper.getTimeValue();
-            timestampWrapper.getReferenceCalculationTimeValue();
-            timestamp.getLimitingElement();
-            timestamp.getTTCLimitedBy();
-            timestamp.getCGMfile();
-            timestamp.getGSKfile();
-            timestamp.getCRACfile();
-            timestamp.getBASECASEfile();
-            timestamp.getCalculationDirections().getCalculationDirection().stream()
+            String timeValue = timestampWrapper.getTimeValue();
+            String referenceCalculationTimeValue = timestampWrapper.getReferenceCalculationTimeValue();
+            TLimitingElement limitingElement = timestamp.getLimitingElement();
+            TTTCLimitedBy ttcLimitedBy = timestamp.getTTCLimitedBy();
+            TextType cgmFile = timestamp.getCGMfile();
+            TextType gskFile = timestamp.getGSKfile();
+            TextType cracFile = timestamp.getCRACfile();
+            List<AreaType> calculationDirectionsList = timestamp.getCalculationDirections().get(0)
+                    .getCalculationDirection().stream()
                     .map(TCalculationDirection::getInArea)
                     .collect(Collectors.toList());
-            timestamp.getShiftingFactors().getShiftingFactor().stream()
-                    .filter(f -> f.getCountry().getV().equals("FR"))
-                    .map(TFactor::getFactor)
-                    .findFirst().orElseThrow();
+            Map<String, QuantityType> shiftingFactorsMap = timestamp.getShiftingFactors().getShiftingFactor().stream()
+                    .collect(Collectors.toMap(f -> f.getCountry().getV(), TFactor::getFactor));
 
             // TODO Case 005 : To be completed
-            throw new NotImplementedException();
+            throw new NotImplementedException("Export corner handling is not implemented yet. "
+                    + "Italian import after CEP70 : " + italianImportAfterCep70Adjustment
+                    + " ; Max italian secure import : " + maxItalianSecureImport
+                    + " ; Time : " + timeValue
+                    + " ; Reference calculation time : " + referenceCalculationTimeValue
+                    + " ; Limiting element : " + limitingElement
+                    + " ; TTC limited by : " + ttcLimitedBy
+                    + " ; CGM file : " + cgmFile
+                    + " ; GSK file : " + gskFile
+                    + " ; CRAC file : " + cracFile
+                    + " ; Calculation directions : " + calculationDirectionsList
+                    + " ; Shifting factors : " + shiftingFactorsMap
+            );
         }
     }
 

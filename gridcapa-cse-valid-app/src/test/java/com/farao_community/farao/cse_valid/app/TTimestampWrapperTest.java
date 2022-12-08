@@ -149,8 +149,8 @@ class TTimestampWrapperTest {
 
     @Test
     void hasCalculationDirectionsTrue() {
-        timestamp.setCalculationDirections(new TCalculationDirections());
-        timestamp.getCalculationDirections().getCalculationDirection().add(new TCalculationDirection());
+        timestamp.getCalculationDirections().add(new TCalculationDirections());
+        timestamp.getCalculationDirections().get(0).getCalculationDirection().add(new TCalculationDirection());
         Assertions.assertThat(timestampWrapper.hasCalculationDirections()).isTrue();
     }
 
@@ -158,7 +158,7 @@ class TTimestampWrapperTest {
     void hasCalculationDirectionsFalse() {
         Assertions.assertThat(timestampWrapper.hasCalculationDirections()).isFalse();
 
-        timestamp.setCalculationDirections(new TCalculationDirections());
+        timestamp.getCalculationDirections().add(new TCalculationDirections());
         Assertions.assertThat(timestampWrapper.hasCalculationDirections()).isFalse();
     }
 
