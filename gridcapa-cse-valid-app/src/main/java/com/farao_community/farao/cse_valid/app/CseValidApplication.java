@@ -6,13 +6,16 @@
  */
 package com.farao_community.farao.cse_valid.app;
 
+import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 @SpringBootApplication
+@EnableConfigurationProperties({EicCodesConfiguration.class})
 public class CseValidApplication {
     public static void main(String[] args) {
         SpringApplication.run(CseValidApplication.class, args);

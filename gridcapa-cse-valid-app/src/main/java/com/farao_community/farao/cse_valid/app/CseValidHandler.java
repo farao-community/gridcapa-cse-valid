@@ -11,6 +11,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
+import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
@@ -53,6 +54,7 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSIN
 @Component
 public class CseValidHandler {
     private final DichotomyRunner dichotomyRunner;
+    private final EicCodesConfiguration eicCodesConfiguration;
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final MinioAdapter minioAdapter;
@@ -60,10 +62,12 @@ public class CseValidHandler {
     private final LimitingElementService limitingElementService;
     private final Logger businessLogger;
 
-    public CseValidHandler(DichotomyRunner dichotomyRunner, FileImporter fileImporter, FileExporter fileExporter,
+    public CseValidHandler(DichotomyRunner dichotomyRunner, EicCodesConfiguration eicCodesConfiguration,
+                           FileImporter fileImporter, FileExporter fileExporter,
                            MinioAdapter minioAdapter, NetPositionService netPositionService,
                            LimitingElementService limitingElementService, Logger businessLogger) {
         this.dichotomyRunner = dichotomyRunner;
+        this.eicCodesConfiguration = eicCodesConfiguration;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.minioAdapter = minioAdapter;
@@ -179,14 +183,12 @@ public class CseValidHandler {
             TextType cgmFile = timestamp.getCGMfile();
             TextType gskFile = timestamp.getGSKfile();
             TextType cracFile = timestamp.getCRACfile();
-            List<AreaType> calculationDirectionsList = timestamp.getCalculationDirections().get(0)
-                    .getCalculationDirection().stream()
-                    .map(TCalculationDirection::getInArea)
-                    .collect(Collectors.toList());
+            List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+            List<AreaType> inArea = calculationDirections.stream().map(TCalculationDirection::getInArea).filter(at -> !eicCodesConfiguration.getItaly().equals(at.getV())).collect(Collectors.toList());
+            List<AreaType> outArea = calculationDirections.stream().map(TCalculationDirection::getOutArea).filter(at -> !eicCodesConfiguration.getItaly().equals(at.getV())).collect(Collectors.toList());
             Map<String, QuantityType> shiftingFactorsMap = timestamp.getShiftingFactors().getShiftingFactor().stream()
                     .collect(Collectors.toMap(f -> f.getCountry().getV(), TFactor::getFactor));
 
-            // TODO Case 005 : To be completed
             throw new NotImplementedException("Export corner handling is not implemented yet. "
                     + "Italian import after CEP70 : " + italianImportAfterCep70Adjustment
                     + " ; Max italian secure import : " + maxItalianSecureImport
@@ -197,7 +199,8 @@ public class CseValidHandler {
                     + " ; CGM file : " + cgmFile
                     + " ; GSK file : " + gskFile
                     + " ; CRAC file : " + cracFile
-                    + " ; Calculation directions : " + calculationDirectionsList
+                    + " ; InArea : " + inArea
+                    + " ; OutArea : " + outArea
                     + " ; Shifting factors : " + shiftingFactorsMap
             );
         }
