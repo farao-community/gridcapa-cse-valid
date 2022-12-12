@@ -166,9 +166,9 @@ public class CseValidHandler {
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
         } else if (missingDataInTimestampForExportCorner(timestampWrapper)) {
             tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_DATA);
-        } else if (timestampWrapper.hasShiftingFactors()) {
+        } else if (!timestampWrapper.hasShiftingFactors()) {
             tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_SHIFTING_FACTORS);
-        } else if (timestampWrapper.hasCalculationDirections()) {
+        } else if (!timestampWrapper.hasCalculationDirections()) {
             tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_CALCULATION_DIRECTIONS);
         } else if (actualNtcAboveTargetForExportCorner(timestampWrapper)) {
             BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());

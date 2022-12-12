@@ -15,7 +15,12 @@ import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
 import com.farao_community.farao.cse_valid.app.net_position.AreaReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.CountryType;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirections;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TFactor;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
@@ -23,6 +28,7 @@ import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapterProperties;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import org.apache.commons.lang3.NotImplementedException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -30,6 +36,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import xsd.etso_core_cmpts.AreaType;
 import xsd.etso_core_cmpts.QuantityType;
 
 import java.math.BigDecimal;
@@ -39,7 +46,9 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_CALCULATION_DIRECTIONS;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
+import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_SHIFTING_FACTORS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -203,22 +212,6 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_CONTRADICTORY_DATA);
-    }
-
-    @Test
-    void computeTimestampMiec() {
-        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        TTimestamp timestamp = new TTimestamp();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
-        QuantityType miecValue = new QuantityType();
-        miecValue.setV(BigDecimal.ZERO);
-        timestamp.setMIEC(miecValue);
-
-        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-
-        // don't forget to change this when real implementation of export-corner handling will be available
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, BigDecimal.ZERO);
     }
 
     @Test
@@ -472,5 +465,198 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.valueOf(-15), limitingElement);
+    }
+
+    @Test
+    void computeTimestampMiecMibiecAndAntcfinalAbsent() {
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
+        QuantityType miecValue = new QuantityType();
+        miecValue.setV(BigDecimal.ZERO);
+        timestamp.setMIEC(miecValue);
+
+        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, BigDecimal.ZERO);
+    }
+
+    @Test
+    void computeTimestampMiecMibiecAndAntcfinalBothZero() {
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
+        QuantityType miecValue = new QuantityType();
+        miecValue.setV(BigDecimal.ZERO);
+        timestamp.setMIEC(miecValue);
+        QuantityType mibiecValue = new QuantityType();
+        mibiecValue.setV(BigDecimal.ZERO);
+        timestamp.setMiBIEC(mibiecValue);
+        QuantityType antcfinalValue = new QuantityType();
+        antcfinalValue.setV(BigDecimal.ZERO);
+        timestamp.setANTCFinal(antcfinalValue);
+
+        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, BigDecimal.ZERO);
+    }
+
+    @Test
+    void computeTimestampMiecMibiecAbsent() {
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
+        QuantityType miecValue = new QuantityType();
+        miecValue.setV(BigDecimal.ZERO);
+        timestamp.setMIEC(miecValue);
+        QuantityType antcfinalValue = new QuantityType();
+        antcfinalValue.setV(BigDecimal.ZERO);
+        timestamp.setANTCFinal(antcfinalValue);
+
+        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
+    }
+
+    @Test
+    void computeTimestampMiecAntcfinalAbsent() {
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
+        QuantityType miecValue = new QuantityType();
+        miecValue.setV(BigDecimal.ZERO);
+        timestamp.setMIEC(miecValue);
+        QuantityType mibiecValue = new QuantityType();
+        mibiecValue.setV(BigDecimal.ZERO);
+        timestamp.setMiBIEC(mibiecValue);
+
+        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
+    }
+
+    @Test
+    void computeTimestampMiecShiftingFactorsMissing() {
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
+        TTime timeValue = new TTime();
+        timeValue.setV("time");
+        timestamp.setTime(timeValue);
+        QuantityType miecValue = new QuantityType();
+        miecValue.setV(BigDecimal.ONE);
+        timestamp.setMIEC(miecValue);
+        QuantityType mibiecValue = new QuantityType();
+        mibiecValue.setV(BigDecimal.TEN);
+        timestamp.setMiBIEC(mibiecValue);
+        QuantityType antcfinalValue = new QuantityType();
+        antcfinalValue.setV(BigDecimal.ZERO);
+        timestamp.setANTCFinal(antcfinalValue);
+
+        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_SHIFTING_FACTORS);
+    }
+
+    @Test
+    void computeTimestampMiecCalculationDirectionsMissing() {
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
+        TTime timeValue = new TTime();
+        timeValue.setV("time");
+        timestamp.setTime(timeValue);
+        QuantityType miecValue = new QuantityType();
+        miecValue.setV(BigDecimal.ONE);
+        timestamp.setMIEC(miecValue);
+        QuantityType mibiecValue = new QuantityType();
+        mibiecValue.setV(BigDecimal.TEN);
+        timestamp.setMiBIEC(mibiecValue);
+        QuantityType antcfinalValue = new QuantityType();
+        antcfinalValue.setV(BigDecimal.ZERO);
+        timestamp.setANTCFinal(antcfinalValue);
+        TShiftingFactors shiftingFactors = new TShiftingFactors();
+        shiftingFactors.getShiftingFactor().add(new TFactor());
+        timestamp.setShiftingFactors(shiftingFactors);
+
+        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_CALCULATION_DIRECTIONS);
+    }
+
+    @Test
+    void computeTimestampMiecActualNtcAboveTarget() {
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
+        TTime timeValue = new TTime();
+        timeValue.setV("time");
+        timestamp.setTime(timeValue);
+        QuantityType miecValue = new QuantityType();
+        miecValue.setV(BigDecimal.ONE);
+        timestamp.setMIEC(miecValue);
+        QuantityType mibiecValue = new QuantityType();
+        mibiecValue.setV(BigDecimal.TEN);
+        timestamp.setMiBIEC(mibiecValue);
+        QuantityType antcfinalValue = new QuantityType();
+        antcfinalValue.setV(BigDecimal.ZERO);
+        timestamp.setANTCFinal(antcfinalValue);
+        TShiftingFactors shiftingFactors = new TShiftingFactors();
+        shiftingFactors.getShiftingFactor().add(new TFactor());
+        timestamp.setShiftingFactors(shiftingFactors);
+        TCalculationDirections calculationDirections = new TCalculationDirections();
+        calculationDirections.getCalculationDirection().add(new TCalculationDirection());
+        timestamp.getCalculationDirections().add(calculationDirections);
+
+        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, BigDecimal.TEN);
+    }
+
+    @Test
+    void computeTimestampMiecRunDichotomy() {
+        // don't forget to change this test when real implementation of export-corner handling will be available
+
+        CseValidRequest cseValidRequest = mock(CseValidRequest.class);
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        TTimestamp timestamp = new TTimestamp();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
+        TTime timeValue = new TTime();
+        timeValue.setV("time");
+        timestamp.setTime(timeValue);
+        QuantityType miecValue = new QuantityType();
+        miecValue.setV(BigDecimal.TEN);
+        timestamp.setMIEC(miecValue);
+        QuantityType mibiecValue = new QuantityType();
+        mibiecValue.setV(BigDecimal.ONE);
+        timestamp.setMiBIEC(mibiecValue);
+        QuantityType antcfinalValue = new QuantityType();
+        antcfinalValue.setV(BigDecimal.ZERO);
+        timestamp.setANTCFinal(antcfinalValue);
+        TShiftingFactors shiftingFactors = new TShiftingFactors();
+        TFactor factor = new TFactor();
+        CountryType countryType = new CountryType();
+        countryType.setV("TEST");
+        factor.setCountry(countryType);
+        factor.setFactor(new QuantityType());
+        shiftingFactors.getShiftingFactor().add(factor);
+        timestamp.setShiftingFactors(shiftingFactors);
+        TCalculationDirections calculationDirections = new TCalculationDirections();
+        TCalculationDirection calculationDirection = new TCalculationDirection();
+        calculationDirection.setInArea(new AreaType());
+        calculationDirection.setOutArea(new AreaType());
+        calculationDirections.getCalculationDirection().add(calculationDirection);
+        timestamp.getCalculationDirections().add(calculationDirections);
+        timestamp.setReferenceCalculationTime(new TTime());
+
+        Assertions.assertThatExceptionOfType(NotImplementedException.class)
+                .isThrownBy(() -> cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter));
     }
 }
