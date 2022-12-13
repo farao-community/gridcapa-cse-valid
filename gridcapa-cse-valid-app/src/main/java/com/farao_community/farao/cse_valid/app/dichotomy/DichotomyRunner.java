@@ -58,12 +58,29 @@ public class DichotomyRunner {
         this.businessLogger = businessLogger;
     }
 
-    public DichotomyResult<RaoResponse> runDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp) {
+    public DichotomyResult<RaoResponse> runImportCornerDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp) {
         int npAugmented = timestamp.getMNII().getV().intValue();
         int np = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
         double maxValue = (double) npAugmented - np;
         Network network = importNetworkFile(cseValidRequest);
-        String jsonCracUrl = getJsonCracUrl(cseValidRequest, network);
+        String jsonImportCracUrl = getJsonImportCracUrl(cseValidRequest, network);
+        businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
+        DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
+                new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
+                INDEX_STRATEGY_CONFIGURATION,
+                getNetworkShifter(timestamp.getSplittingFactors(), network, cseValidRequest),
+                getNetworkValidator(cseValidRequest, jsonImportCracUrl));
+        return engine.run(network);
+    }
+
+    public DichotomyResult<RaoResponse> runExportCornerDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp, boolean isExportCornerActive) {
+        int npAugmented = timestamp.getMIEC().getV().intValue();
+        int np = timestamp.getMiBIEC().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
+        double maxValue = (double) npAugmented - np;
+        Network network = importNetworkFile(cseValidRequest);
+        String jsonCracUrl = isExportCornerActive
+                ? getJsonExportCracUrl(cseValidRequest, network)
+                : getJsonImportCracUrl(cseValidRequest, network);
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
@@ -73,8 +90,14 @@ public class DichotomyRunner {
         return engine.run(network);
     }
 
-    private String getJsonCracUrl(CseValidRequest cseValidRequest, Network network) {
+    private String getJsonImportCracUrl(CseValidRequest cseValidRequest, Network network) {
         CseCrac cseCrac = fileImporter.importCseCrac(cseValidRequest.getImportCrac().getUrl());
+        Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
+        return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+    }
+
+    private String getJsonExportCracUrl(CseValidRequest cseValidRequest, Network network) {
+        CseCrac cseCrac = fileImporter.importCseCrac(cseValidRequest.getExportCrac().getUrl());
         Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
         return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
     }
@@ -82,9 +105,9 @@ public class DichotomyRunner {
     private NetworkShifter getNetworkShifter(TSplittingFactors splittingFactors, Network network, CseValidRequest cseValidRequest) {
         GlskDocument glskDocument = fileImporter.importGlsk(cseValidRequest.getGlsk().getUrl());
         return new LinearScaler(
-            glskDocument.getZonalScalable(network),
-            new SplittingFactors(convertSplittingFactors(splittingFactors)),
-            SHIFT_TOLERANCE);
+                glskDocument.getZonalScalable(network),
+                new SplittingFactors(convertSplittingFactors(splittingFactors)),
+                SHIFT_TOLERANCE);
     }
 
     private Map<String, Double> convertSplittingFactors(TSplittingFactors tSplittingFactors) {
