@@ -13,6 +13,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
+import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
 import com.farao_community.farao.cse_valid.app.net_position.AreaReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
@@ -20,6 +21,7 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.util.CseValidRequestTestData;
 import com.farao_community.farao.cse_valid.app.util.TimeStampTestData;
+import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
@@ -27,7 +29,6 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapterProperties;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,10 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -59,22 +57,25 @@ import static org.mockito.Mockito.when;
 class CseValidHandlerTest {
 
     @Autowired
-    CseValidHandler cseValidHandler;
+    private CseValidHandler cseValidHandler;
 
     @MockBean
-    Logger businessLogger;
+    private Logger businessLogger;
 
     @MockBean
-    DichotomyRunner dichotomyRunner;
+    private DichotomyRunner dichotomyRunner;
 
     @MockBean
-    MinioAdapter minioAdapter;
+    private MinioAdapter minioAdapter;
 
     @MockBean
-    LimitingElementService limitingElementService;
+    private LimitingElementService limitingElementService;
 
     @MockBean
-    NetPositionService netPositionService;
+    private NetPositionService netPositionService;
+
+    @MockBean
+    private CseValidRequestValidator cseValidRequestValidator;
 
     @Test
     void existingTtcAdjustmentFileWithoutCalcul() {
@@ -265,18 +266,20 @@ class CseValidHandlerTest {
     }
 
     @Test
-    void computeTimestampMniiFilesNotAvailable() {
+    void computeTimestampMniiFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
 
+        String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file.";
+        CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
+        doThrow(e).when(cseValidRequestValidator).validateImportCornerCseValidRequest(cseValidRequest);
+
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
-        ArgumentCaptor<String> redFlagErrorCaptor = ArgumentCaptor.forClass(String.class);
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), redFlagErrorCaptor.capture());
-        Assertions.assertThat(redFlagErrorCaptor.getValue()).contains("CGM file", "CRAC file", "GLSK file");
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), eq(e.getMessage()));
     }
 
     @Test
@@ -440,33 +443,37 @@ class CseValidHandlerTest {
     }
 
     @Test
-    void computeTimestampMiecWithFranceInAreaAndFilesNotAvailable() {
+    void computeTimestampMiecWithFranceInAreaAndFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
 
+        String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file, CRAC Transit.";
+        CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
+        doThrow(e).when(cseValidRequestValidator).validateExportCornerCseValidRequest(cseValidRequest, true);
+
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
-        ArgumentCaptor<String> redFlagErrorCaptor = ArgumentCaptor.forClass(String.class);
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), redFlagErrorCaptor.capture());
-        Assertions.assertThat(redFlagErrorCaptor.getValue()).contains("CGM file", "CRAC file", "CRAC Transit", "GLSK file");
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), eq(e.getMessage()));
     }
 
     @Test
-    void computeTimestampMiecWithFranceOutAreaAndFilesNotAvailable() {
+    void computeTimestampMiecWithFranceOutAreaAndFilesNotAvailable() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp);
 
+        String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file.";
+        CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
+        doThrow(e).when(cseValidRequestValidator).validateExportCornerCseValidRequest(cseValidRequest, false);
+
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
-        ArgumentCaptor<String> redFlagErrorCaptor = ArgumentCaptor.forClass(String.class);
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), redFlagErrorCaptor.capture());
-        Assertions.assertThat(redFlagErrorCaptor.getValue()).contains("CGM file", "CRAC file", "GLSK file");
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), eq(e.getMessage()));
     }
 
     @Test

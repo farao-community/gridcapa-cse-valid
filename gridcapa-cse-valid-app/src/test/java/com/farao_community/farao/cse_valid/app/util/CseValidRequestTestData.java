@@ -37,6 +37,12 @@ public final class CseValidRequestTestData {
     private CseValidRequestTestData() {
     }
 
+    public static CseValidRequest getCseValidRequestMissingAllFiles(ProcessType processType) {
+        String id = UUID.randomUUID().toString();
+        OffsetDateTime timestamp = OffsetDateTime.parse("2022-12-13T14:30Z");
+        return new CseValidRequest(id, processType, timestamp, null, null, null, null, null, timestamp);
+    }
+
     /* --------------- IMPORT CORNER --------------- */
 
     public static CseValidRequest getImportCseValidRequest(ProcessType processType) {

@@ -10,16 +10,17 @@ import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataExce
 import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
-import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
+import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
+import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
@@ -34,8 +35,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.StringJoiner;
-import java.util.function.Supplier;
 
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_CALCULATION_DIRECTIONS;
@@ -55,11 +54,17 @@ public class CseValidHandler {
     private final NetPositionService netPositionService;
     private final LimitingElementService limitingElementService;
     private final Logger businessLogger;
+    private final CseValidRequestValidator cseValidRequestValidator;
 
-    public CseValidHandler(DichotomyRunner dichotomyRunner, EicCodesConfiguration eicCodesConfiguration,
-                           FileImporter fileImporter, FileExporter fileExporter,
-                           MinioAdapter minioAdapter, NetPositionService netPositionService,
-                           LimitingElementService limitingElementService, Logger businessLogger) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner,
+                           EicCodesConfiguration eicCodesConfiguration,
+                           FileImporter fileImporter,
+                           FileExporter fileExporter,
+                           MinioAdapter minioAdapter,
+                           NetPositionService netPositionService,
+                           LimitingElementService limitingElementService,
+                           Logger businessLogger,
+                           CseValidRequestValidator cseValidRequestValidator) {
         this.dichotomyRunner = dichotomyRunner;
         this.eicCodesConfiguration = eicCodesConfiguration;
         this.fileImporter = fileImporter;
@@ -68,6 +73,7 @@ public class CseValidHandler {
         this.netPositionService = netPositionService;
         this.limitingElementService = limitingElementService;
         this.businessLogger = businessLogger;
+        this.cseValidRequestValidator = cseValidRequestValidator;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
@@ -139,17 +145,12 @@ public class CseValidHandler {
             BigDecimal mniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
             tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), mniiValue);
         } else {
-            final boolean isCgmFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "CGMs", cseValidRequest::getCgm);
-            final boolean isImportCracFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "IMPORT_CRACs", cseValidRequest::getImportCrac);
-            final boolean isGlskFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest::getGlsk);
-            final boolean areAllFilesAvailable = isCgmFileAvailable && isImportCracFileAvailable && isGlskFileAvailable;
-
-            if (!areAllFilesAvailable) {
-                businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
-                String redFlagError = errorMessageImportCornerForMissingFiles(isCgmFileAvailable, isGlskFileAvailable, isImportCracFileAvailable);
-                tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), redFlagError);
-            } else {
+            try {
+                cseValidRequestValidator.validateImportCornerCseValidRequest(cseValidRequest);
                 runDichotomyForFullImport(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            } catch (CseValidRequestValidatorException e) {
+                businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
+                tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
             }
         }
     }
@@ -168,9 +169,9 @@ public class CseValidHandler {
             BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
         } else {
-            if (checkFranceInArea(timestamp)) {
+            if (isFranceInArea(timestamp)) {
                 runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, true);
-            } else if (checkFranceOutArea(timestamp)) {
+            } else if (isFranceOutArea(timestamp)) {
                 runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, false);
             } else {
                 throw new CseValidInvalidDataException("France must appear in InArea or OutArea");
@@ -227,54 +228,6 @@ public class CseValidHandler {
         return false;
     }
 
-    private boolean checkFileAvailability(ProcessType processType, String filetype, Supplier<CseValidFileResource> fileSupplier) {
-        return fileSupplier.get() != null && minioAdapter.fileExists(buildMinioPath(processType, filetype, fileSupplier.get().getFilename()));
-    }
-
-    private static String buildMinioPath(ProcessType processType, String filetype, String filename) {
-        return processType.name() + "/" + filetype + "/" + filename;
-    }
-
-    private static String errorMessageImportCornerForMissingFiles(boolean isCgmFileAvailable, boolean isGlskFileAvailable, boolean isImportCracFileAvailable) {
-        StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
-
-        if (!isCgmFileAvailable) {
-            stringJoiner.add("CGM file");
-        }
-
-        if (!isGlskFileAvailable) {
-            stringJoiner.add("GLSK file");
-        }
-
-        if (!isImportCracFileAvailable) {
-            stringJoiner.add("CRAC file");
-        }
-
-        return stringJoiner.toString();
-    }
-
-    private static String errorMessageExportCornerForMissingFiles(boolean isCgmFileAvailable, boolean isGlskFileAvailable, boolean isImportCracFileAvailable, boolean isExportCracFileAvailable) {
-        StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
-
-        if (!isCgmFileAvailable) {
-            stringJoiner.add("CGM file");
-        }
-
-        if (!isGlskFileAvailable) {
-            stringJoiner.add("GLSK file");
-        }
-
-        if (!isImportCracFileAvailable) {
-            stringJoiner.add("CRAC file");
-        }
-
-        if (!isExportCracFileAvailable) {
-            stringJoiner.add("CRAC Transit file");
-        }
-
-        return stringJoiner.toString();
-    }
-
     private void runDichotomyForFullImport(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runImportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp());
         if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
@@ -288,27 +241,17 @@ public class CseValidHandler {
     }
 
     private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, boolean isExportCornerActive) {
-        final boolean isCgmFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "CGMs", cseValidRequest::getCgm);
-        final boolean isGlskFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest::getGlsk);
-        final boolean isImportCracFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "IMPORT_CRACs", cseValidRequest::getImportCrac);
-        final boolean isExportCracFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "EXPORT_CRACs", cseValidRequest::getExportCrac);
-        final boolean areAllFilesAvailable = isExportCornerActive
-                ? isCgmFileAvailable && isImportCracFileAvailable && isExportCracFileAvailable && isGlskFileAvailable
-                : isCgmFileAvailable && isImportCracFileAvailable && isGlskFileAvailable;
-
-        if (!areAllFilesAvailable) {
-            businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
-            String redFlagError = isExportCornerActive
-                    ? errorMessageExportCornerForMissingFiles(isCgmFileAvailable, isGlskFileAvailable, isImportCracFileAvailable, isExportCracFileAvailable)
-                    : errorMessageImportCornerForMissingFiles(isCgmFileAvailable, isGlskFileAvailable, isImportCracFileAvailable);
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), redFlagError);
-        } else {
+        try {
+            cseValidRequestValidator.validateExportCornerCseValidRequest(cseValidRequest, isExportCornerActive);
             DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), isExportCornerActive);
             // TODO
+        } catch (CseValidRequestValidatorException e) {
+            businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
+            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
         }
     }
 
-    private boolean checkFranceInArea(TTimestamp timestamp) {
+    private boolean isFranceInArea(TTimestamp timestamp) {
         List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
         Optional<AreaType> franceInArea = calculationDirections.stream()
                 .map(TCalculationDirection::getInArea)
@@ -317,7 +260,7 @@ public class CseValidHandler {
         return franceInArea.isPresent();
     }
 
-    private boolean checkFranceOutArea(TTimestamp timestamp) {
+    private boolean isFranceOutArea(TTimestamp timestamp) {
         List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
         Optional<AreaType> franceOutArea = calculationDirections.stream()
                 .map(TCalculationDirection::getOutArea)
