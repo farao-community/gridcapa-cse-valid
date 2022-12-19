@@ -20,23 +20,7 @@ import java.util.StringJoiner;
 @Component
 public class CseValidRequestValidator {
 
-    public void validateImportCornerCseValidRequest(CseValidRequest cseValidRequest) throws CseValidRequestValidatorException {
-
-        if (cseValidRequest == null) {
-            throw new CseValidRequestValidatorException("Request is null");
-        }
-
-        final boolean cgmFileExists = fileExists(cseValidRequest.getCgm());
-        final boolean glskFileExists = fileExists(cseValidRequest.getGlsk());
-        final boolean importCracFileExists = fileExists(cseValidRequest.getImportCrac());
-        final boolean allFilesExist = cgmFileExists && glskFileExists && importCracFileExists;
-        if (!allFilesExist) {
-            final String message = buildMessageImportCornerForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists);
-            throw new CseValidRequestValidatorException(message);
-        }
-    }
-
-    public void validateExportCornerCseValidRequest(CseValidRequest cseValidRequest, boolean isExportCornerActive) throws CseValidRequestValidatorException {
+    public void validateCseValidRequest(CseValidRequest cseValidRequest, Boolean isExportCornerActive) throws CseValidRequestValidatorException {
 
         if (cseValidRequest == null) {
             throw new CseValidRequestValidatorException("Request is null");
@@ -46,17 +30,17 @@ public class CseValidRequestValidator {
         final boolean glskFileExists = fileExists(cseValidRequest.getGlsk());
         final boolean importCracFileExists = fileExists(cseValidRequest.getImportCrac());
 
-        if (isExportCornerActive) {
+        if (Boolean.TRUE.equals(isExportCornerActive)) {
             final boolean exportCracFileExist = fileExists(cseValidRequest.getExportCrac());
             final boolean allFilesExist = cgmFileExists && glskFileExists && importCracFileExists && exportCracFileExist;
             if (!allFilesExist) {
-                final String message = buildMessageExportCornerForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists, exportCracFileExist);
+                final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists, exportCracFileExist);
                 throw new CseValidRequestValidatorException(message);
             }
         } else {
             final boolean allFilesExist = cgmFileExists && glskFileExists && importCracFileExists;
             if (!allFilesExist) {
-                final String message = buildMessageImportCornerForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists);
+                final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists, null);
                 throw new CseValidRequestValidatorException(message);
             }
         }
@@ -66,7 +50,7 @@ public class CseValidRequestValidator {
         return cseValidFileResource != null && cseValidFileResource.getFilename() != null && cseValidFileResource.getUrl() != null;
     }
 
-    private static String buildMessageImportCornerForMissingFiles(boolean cgmFileExists, boolean glskFileExists, boolean importCracFileExists) {
+    private static String buildMessageForMissingFiles(boolean cgmFileExists, boolean glskFileExists, boolean importCracFileExists, Boolean exportCracFileExists) {
         StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
 
         if (!cgmFileExists) {
@@ -81,25 +65,7 @@ public class CseValidRequestValidator {
             stringJoiner.add("CRAC file");
         }
 
-        return stringJoiner.toString();
-    }
-
-    private static String buildMessageExportCornerForMissingFiles(boolean cgmFileExists, boolean glskFileExists, boolean importCracFileExists, boolean exportCracFileExists) {
-        StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
-
-        if (!cgmFileExists) {
-            stringJoiner.add("CGM file");
-        }
-
-        if (!glskFileExists) {
-            stringJoiner.add("GLSK file");
-        }
-
-        if (!importCracFileExists) {
-            stringJoiner.add("CRAC file");
-        }
-
-        if (!exportCracFileExists) {
+        if (Boolean.FALSE.equals(exportCracFileExists)) {
             stringJoiner.add("CRAC Transit file");
         }
 

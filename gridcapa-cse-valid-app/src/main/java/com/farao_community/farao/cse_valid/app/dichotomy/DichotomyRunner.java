@@ -63,24 +63,7 @@ public class DichotomyRunner {
         int np = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
         double maxValue = (double) npAugmented - np;
         Network network = importNetworkFile(cseValidRequest);
-        String jsonImportCracUrl = getJsonImportCracUrl(cseValidRequest, network);
-        businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
-        DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
-                new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
-                INDEX_STRATEGY_CONFIGURATION,
-                getNetworkShifter(timestamp.getSplittingFactors(), network, cseValidRequest),
-                getNetworkValidator(cseValidRequest, jsonImportCracUrl));
-        return engine.run(network);
-    }
-
-    public DichotomyResult<RaoResponse> runExportCornerDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp, boolean isExportCornerActive) {
-        int npAugmented = timestamp.getMIEC().getV().intValue();
-        int np = timestamp.getMiBIEC().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
-        double maxValue = (double) npAugmented - np;
-        Network network = importNetworkFile(cseValidRequest);
-        String jsonCracUrl = isExportCornerActive
-                ? getJsonExportCracUrl(cseValidRequest, network)
-                : getJsonImportCracUrl(cseValidRequest, network);
+        String jsonCracUrl = getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
@@ -90,14 +73,25 @@ public class DichotomyRunner {
         return engine.run(network);
     }
 
-    private String getJsonImportCracUrl(CseValidRequest cseValidRequest, Network network) {
-        CseCrac cseCrac = fileImporter.importCseCrac(cseValidRequest.getImportCrac().getUrl());
-        Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
-        return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+    public DichotomyResult<RaoResponse> runExportCornerDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp, boolean isExportCornerActive) {
+        int npAugmented = timestamp.getMIEC().getV().intValue();
+        int np = timestamp.getMiBIEC().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
+        double maxValue = (double) npAugmented - np;
+        Network network = importNetworkFile(cseValidRequest);
+        String jsonCracUrl = isExportCornerActive
+                ? getJsonCracUrl(cseValidRequest, network, cseValidRequest.getExportCrac().getUrl())
+                : getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
+        businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
+        DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
+                new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
+                INDEX_STRATEGY_CONFIGURATION,
+                getNetworkShifter(timestamp.getSplittingFactors(), network, cseValidRequest),
+                getNetworkValidator(cseValidRequest, jsonCracUrl));
+        return engine.run(network);
     }
 
-    private String getJsonExportCracUrl(CseValidRequest cseValidRequest, Network network) {
-        CseCrac cseCrac = fileImporter.importCseCrac(cseValidRequest.getExportCrac().getUrl());
+    private String getJsonCracUrl(CseValidRequest cseValidRequest, Network network, String cracUrl) {
+        CseCrac cseCrac = fileImporter.importCseCrac(cracUrl);
         Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
         return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
     }

@@ -35,7 +35,7 @@ class CseValidRequestValidatorTest {
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateImportCornerCseValidRequest(cseValidRequest);
+            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
@@ -48,7 +48,7 @@ class CseValidRequestValidatorTest {
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateImportCornerCseValidRequest(cseValidRequest);
+            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
@@ -57,7 +57,7 @@ class CseValidRequestValidatorTest {
     @Test
     void testValidateImportCornerCseValidRequestAllFilesExist() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        assertDoesNotThrow(() -> cseValidRequestValidator.validateImportCornerCseValidRequest(cseValidRequest));
+        assertDoesNotThrow(() -> cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null));
     }
 
     /* --------------- EXPORT CORNER --------------- */
@@ -69,7 +69,7 @@ class CseValidRequestValidatorTest {
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateExportCornerCseValidRequest(cseValidRequest, true);
+            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
@@ -82,7 +82,7 @@ class CseValidRequestValidatorTest {
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateExportCornerCseValidRequest(cseValidRequest, false);
+            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
@@ -95,7 +95,7 @@ class CseValidRequestValidatorTest {
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateExportCornerCseValidRequest(cseValidRequest, true);
+            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
@@ -108,15 +108,21 @@ class CseValidRequestValidatorTest {
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateExportCornerCseValidRequest(cseValidRequest, false);
+            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
     }
 
     @Test
-    void testValidateExportCornerCseValidRequestAllFilesExist() {
+    void testValidateExportCornerCseValidRequestWhenFranceInAreaAndAllFilesExist() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        assertDoesNotThrow(() -> cseValidRequestValidator.validateImportCornerCseValidRequest(cseValidRequest));
+        assertDoesNotThrow(() -> cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true));
+    }
+
+    @Test
+    void testValidateExportCornerCseValidRequestWhenFranceOutAreaAndAllFilesExist() {
+        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
+        assertDoesNotThrow(() -> cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false));
     }
 }

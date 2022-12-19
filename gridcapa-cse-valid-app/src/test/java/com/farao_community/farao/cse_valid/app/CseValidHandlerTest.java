@@ -274,7 +274,7 @@ class CseValidHandlerTest {
 
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
-        doThrow(e).when(cseValidRequestValidator).validateImportCornerCseValidRequest(cseValidRequest);
+        doThrow(e).when(cseValidRequestValidator).validateCseValidRequest(cseValidRequest, null);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
@@ -451,7 +451,7 @@ class CseValidHandlerTest {
 
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file, CRAC Transit.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
-        doThrow(e).when(cseValidRequestValidator).validateExportCornerCseValidRequest(cseValidRequest, true);
+        doThrow(e).when(cseValidRequestValidator).validateCseValidRequest(cseValidRequest, true);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
@@ -468,7 +468,7 @@ class CseValidHandlerTest {
 
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
-        doThrow(e).when(cseValidRequestValidator).validateExportCornerCseValidRequest(cseValidRequest, false);
+        doThrow(e).when(cseValidRequestValidator).validateCseValidRequest(cseValidRequest, false);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 

@@ -22,7 +22,6 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
@@ -50,7 +49,6 @@ public class CseValidHandler {
     private final EicCodesConfiguration eicCodesConfiguration;
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
-    private final MinioAdapter minioAdapter;
     private final NetPositionService netPositionService;
     private final LimitingElementService limitingElementService;
     private final Logger businessLogger;
@@ -60,7 +58,6 @@ public class CseValidHandler {
                            EicCodesConfiguration eicCodesConfiguration,
                            FileImporter fileImporter,
                            FileExporter fileExporter,
-                           MinioAdapter minioAdapter,
                            NetPositionService netPositionService,
                            LimitingElementService limitingElementService,
                            Logger businessLogger,
@@ -69,7 +66,6 @@ public class CseValidHandler {
         this.eicCodesConfiguration = eicCodesConfiguration;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
-        this.minioAdapter = minioAdapter;
         this.netPositionService = netPositionService;
         this.limitingElementService = limitingElementService;
         this.businessLogger = businessLogger;
@@ -146,7 +142,7 @@ public class CseValidHandler {
             tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), mniiValue);
         } else {
             try {
-                cseValidRequestValidator.validateImportCornerCseValidRequest(cseValidRequest);
+                cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null);
                 runDichotomyForFullImport(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
             } catch (CseValidRequestValidatorException e) {
                 businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
@@ -242,7 +238,7 @@ public class CseValidHandler {
 
     private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, boolean isExportCornerActive) {
         try {
-            cseValidRequestValidator.validateExportCornerCseValidRequest(cseValidRequest, isExportCornerActive);
+            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, isExportCornerActive);
             DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), isExportCornerActive);
             // TODO
         } catch (CseValidRequestValidatorException e) {
