@@ -22,6 +22,8 @@ public final class Constants {
     public static final String PRODUCT = "8716867000016";
     public static final String ERROR_MSG_MISSING_TTC_ADJ_FILE = "Process fail during TSO validation phase: Missing TTC_adjustment file.";
     public static final String ERROR_MSG_MISSING_DATA = "Process fail during TSO validation phase: Missing datas.";
+    public static final String ERROR_MSG_MISSING_SHIFTING_FACTORS = "Process fail during TSO validation phase: Missing ShiftingFactors block.";
+    public static final String ERROR_MSG_MISSING_CALCULATION_DIRECTIONS = "Process fail during TSO validation phase: Missing CalculationDirections block.";
     public static final String ERROR_MSG_CONTRADICTORY_DATA = "Process fail during TSO validation phase: Contradictory datas.";
     public static final String ERROR_MSG_GENERIC = "Process fail during TSO validation phase.";
     public static final List<String> LIMITED_BY_STATUSES_TO_BE_CALCULATED = List.of("Critical Branch", "Minimum Margin");

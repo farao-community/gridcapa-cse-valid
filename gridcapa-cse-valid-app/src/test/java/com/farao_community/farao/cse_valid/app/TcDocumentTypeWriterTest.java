@@ -99,9 +99,6 @@ class TcDocumentTypeWriterTest {
         QuantityType mnii = new QuantityType();
         mnii.setV(BigDecimal.TEN);
         initialTs.setMNII(mnii);
-        TextType basecaseFile = new TextType();
-        basecaseFile.setV("basecaseFile");
-        initialTs.setBASECASEfile(basecaseFile);
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
@@ -113,7 +110,6 @@ class TcDocumentTypeWriterTest {
         SoftAssertions assertions = new SoftAssertions();
         assertTimeDataValidInResultTimestamp(resultTs, assertions);
         assertSuccessDataValidInResultTimestamp(resultTs, assertions);
-        assertions.assertThat(resultTs.getBASECASEfile().getV()).isEqualTo("basecaseFile");
         assertions.assertThat(resultTs.getMNII().getV()).isEqualTo(BigDecimal.TEN);
         assertions.assertAll();
     }
@@ -153,9 +149,6 @@ class TcDocumentTypeWriterTest {
         QuantityType mnie = new QuantityType();
         mnie.setV(BigDecimal.ONE);
         initialTs.setMNIE(mnie);
-        TextType basecaseFile = new TextType();
-        basecaseFile.setV("basecaseFile");
-        initialTs.setBASECASEfile(basecaseFile);
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
@@ -167,7 +160,6 @@ class TcDocumentTypeWriterTest {
         SoftAssertions assertions = new SoftAssertions();
         assertTimeDataValidInResultTimestamp(resultTs, assertions);
         assertSuccessDataValidInResultTimestamp(resultTs, assertions);
-        assertions.assertThat(resultTs.getBASECASEfile().getV()).isEqualTo("basecaseFile");
         assertions.assertThat(resultTs.getMNIE().getV()).isEqualTo(BigDecimal.ONE);
         assertions.assertAll();
     }
@@ -185,9 +177,6 @@ class TcDocumentTypeWriterTest {
         QuantityType miec = new QuantityType();
         miec.setV(BigDecimal.ONE);
         initialTs.setMIEC(miec);
-        TextType basecaseFile = new TextType();
-        basecaseFile.setV("basecaseFile");
-        initialTs.setBASECASEfile(basecaseFile);
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
@@ -199,7 +188,6 @@ class TcDocumentTypeWriterTest {
         SoftAssertions assertions = new SoftAssertions();
         assertTimeDataValidInResultTimestamp(resultTs, assertions);
         assertSuccessDataValidInResultTimestamp(resultTs, assertions);
-        assertions.assertThat(resultTs.getBASECASEfile().getV()).isEqualTo("basecaseFile");
         assertions.assertThat(resultTs.getMIEC().getV()).isEqualTo(BigDecimal.ONE);
         assertions.assertAll();
     }
@@ -221,9 +209,6 @@ class TcDocumentTypeWriterTest {
         initialTs.setMNII(mnii);
         TLimitingElement tLimitingElement = new TLimitingElement();
         initialTs.setLimitingElement(tLimitingElement);
-        TextType basecaseFile = new TextType();
-        basecaseFile.setV("basecaseFile");
-        initialTs.setBASECASEfile(basecaseFile);
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
@@ -235,7 +220,6 @@ class TcDocumentTypeWriterTest {
         SoftAssertions assertions = new SoftAssertions();
         assertTimeDataValidInResultTimestamp(resultTs, assertions);
         assertSuccessDataValidInResultTimestamp(resultTs, assertions);
-        assertions.assertThat(resultTs.getBASECASEfile()).isNull();
         assertions.assertThat(resultTs.getLimitingElement()).isEqualTo(tLimitingElement);
         assertions.assertThat(resultTs.getMiBNII().getV()).isEqualTo(BigDecimal.ONE);
         assertions.assertThat(resultTs.getMNII().getV()).isEqualTo(BigDecimal.TEN);

@@ -219,7 +219,6 @@ public class TcDocumentTypeWriter {
     }
 
     public void fillTimestampExportCornerSuccess(TTimestamp initialTs, BigDecimal miecValue) {
-        // Temporary method : should be replaced with real handling of export-corner case
         fillTimestampSuccess(initialTs, (ts, value) -> ts.setMIEC(buildQuantityType(value)), miecValue);
     }
 
@@ -231,7 +230,6 @@ public class TcDocumentTypeWriter {
         valueTimestampFiller.accept(ts, value);
 
         completeFillingWithStatusSuccess(ts, initialTs);
-        ts.setBASECASEfile(initialTs.getBASECASEfile());
 
         listTimestamps.add(ts);
     }
@@ -292,10 +290,10 @@ public class TcDocumentTypeWriter {
         TNumber status = new TNumber();
         status.setV(BigInteger.TWO);
         ts.setSTATUS(status);
-        ts.setTTCLimitedBy(initialTs.getTTCLimitedBy());
         ts.setCRACfile(initialTs.getCRACfile());
         ts.setCGMfile(initialTs.getCGMfile());
         ts.setGSKfile(initialTs.getGSKfile());
+        ts.setTTCLimitedBy(initialTs.getTTCLimitedBy());
         ts.setLimitingElement(initialTs.getLimitingElement());
     }
 
