@@ -7,7 +7,6 @@
 package com.farao_community.farao.cse_valid.app;
 
 import java.time.ZoneId;
-import java.util.List;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -26,7 +25,6 @@ public final class Constants {
     public static final String ERROR_MSG_MISSING_CALCULATION_DIRECTIONS = "Process fail during TSO validation phase: Missing CalculationDirections block.";
     public static final String ERROR_MSG_CONTRADICTORY_DATA = "Process fail during TSO validation phase: Contradictory datas.";
     public static final String ERROR_MSG_GENERIC = "Process fail during TSO validation phase.";
-    public static final List<String> LIMITED_BY_STATUSES_TO_BE_CALCULATED = List.of("Critical Branch", "Minimum Margin");
     public static final ZoneId EUROPE_BRUSSELS_ZONE_ID = ZoneId.of("Europe/Brussels");
 
     private Constants() { }

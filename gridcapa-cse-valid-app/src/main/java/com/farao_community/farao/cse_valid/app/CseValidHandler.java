@@ -10,27 +10,22 @@ import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataExce
 import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
-import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
+import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TFactor;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTTCLimitedBy;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
+import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
-import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 import xsd.etso_core_cmpts.AreaType;
-import xsd.etso_core_cmpts.QuantityType;
-import xsd.etso_core_cmpts.TextType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -39,9 +34,6 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.StringJoiner;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_CALCULATION_DIRECTIONS;
@@ -57,23 +49,27 @@ public class CseValidHandler {
     private final EicCodesConfiguration eicCodesConfiguration;
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
-    private final MinioAdapter minioAdapter;
     private final NetPositionService netPositionService;
     private final LimitingElementService limitingElementService;
     private final Logger businessLogger;
+    private final CseValidRequestValidator cseValidRequestValidator;
 
-    public CseValidHandler(DichotomyRunner dichotomyRunner, EicCodesConfiguration eicCodesConfiguration,
-                           FileImporter fileImporter, FileExporter fileExporter,
-                           MinioAdapter minioAdapter, NetPositionService netPositionService,
-                           LimitingElementService limitingElementService, Logger businessLogger) {
+    public CseValidHandler(DichotomyRunner dichotomyRunner,
+                           EicCodesConfiguration eicCodesConfiguration,
+                           FileImporter fileImporter,
+                           FileExporter fileExporter,
+                           NetPositionService netPositionService,
+                           LimitingElementService limitingElementService,
+                           Logger businessLogger,
+                           CseValidRequestValidator cseValidRequestValidator) {
         this.dichotomyRunner = dichotomyRunner;
         this.eicCodesConfiguration = eicCodesConfiguration;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
-        this.minioAdapter = minioAdapter;
         this.netPositionService = netPositionService;
         this.limitingElementService = limitingElementService;
         this.businessLogger = businessLogger;
+        this.cseValidRequestValidator = cseValidRequestValidator;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
@@ -128,7 +124,7 @@ public class CseValidHandler {
         } else if (timestampWrapper.hasMnii()) {
             computeTimestampForFullImport(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         } else if (timestampWrapper.hasMiec()) {
-            computeTimestampForExportCorner(timestampWrapper, tcDocumentTypeWriter);
+            computeTimestampForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         } else if (timestampWrapper.hasMnie()) {
             tcDocumentTypeWriter.fillTimestampFullExportSuccess(timestampWrapper.getTimestamp(), timestampWrapper.getMnieValue());
         } else {
@@ -145,22 +141,17 @@ public class CseValidHandler {
             BigDecimal mniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
             tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), mniiValue);
         } else {
-            final boolean isCgmFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "CGMs", cseValidRequest::getCgm);
-            final boolean isCracFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "CRACs", cseValidRequest::getImportCrac);
-            final boolean isGlskFileAvailable = checkFileAvailability(cseValidRequest.getProcessType(), "GLSKs", cseValidRequest::getGlsk);
-            final boolean areAllFilesAvailable = isCgmFileAvailable && isCracFileAvailable && isGlskFileAvailable;
-
-            if (!areAllFilesAvailable) {
-                businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
-                String redFlagError = errorMessageForMissingFiles(isCgmFileAvailable, isCracFileAvailable, isGlskFileAvailable);
-                tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), redFlagError);
-            } else {
+            try {
+                cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null);
                 runDichotomyForFullImport(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            } catch (CseValidRequestValidatorException e) {
+                businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
+                tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
             }
         }
     }
 
-    private void computeTimestampForExportCorner(TTimestampWrapper timestampWrapper, TcDocumentTypeWriter tcDocumentTypeWriter) {
+    private void computeTimestampForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         TTimestamp timestamp = timestampWrapper.getTimestamp();
         if (irrelevantValuesInTimestampForExportCorner(timestampWrapper)) {
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
@@ -174,35 +165,13 @@ public class CseValidHandler {
             BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
         } else {
-            int italianImportAfterCep70Adjustment = timestampWrapper.getMiecIntValue();
-            int maxItalianSecureImport = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
-            String timeValue = timestampWrapper.getTimeValue();
-            String referenceCalculationTimeValue = timestampWrapper.getReferenceCalculationTimeValue();
-            TLimitingElement limitingElement = timestamp.getLimitingElement();
-            TTTCLimitedBy ttcLimitedBy = timestamp.getTTCLimitedBy();
-            TextType cgmFile = timestamp.getCGMfile();
-            TextType gskFile = timestamp.getGSKfile();
-            TextType cracFile = timestamp.getCRACfile();
-            List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
-            List<AreaType> inArea = calculationDirections.stream().map(TCalculationDirection::getInArea).filter(at -> !eicCodesConfiguration.getItaly().equals(at.getV())).collect(Collectors.toList());
-            List<AreaType> outArea = calculationDirections.stream().map(TCalculationDirection::getOutArea).filter(at -> !eicCodesConfiguration.getItaly().equals(at.getV())).collect(Collectors.toList());
-            Map<String, QuantityType> shiftingFactorsMap = timestamp.getShiftingFactors().getShiftingFactor().stream()
-                    .collect(Collectors.toMap(f -> f.getCountry().getV(), TFactor::getFactor));
-
-            throw new NotImplementedException("Export corner handling is not implemented yet. "
-                    + "Italian import after CEP70 : " + italianImportAfterCep70Adjustment
-                    + " ; Max italian secure import : " + maxItalianSecureImport
-                    + " ; Time : " + timeValue
-                    + " ; Reference calculation time : " + referenceCalculationTimeValue
-                    + " ; Limiting element : " + limitingElement
-                    + " ; TTC limited by : " + ttcLimitedBy
-                    + " ; CGM file : " + cgmFile
-                    + " ; GSK file : " + gskFile
-                    + " ; CRAC file : " + cracFile
-                    + " ; InArea : " + inArea
-                    + " ; OutArea : " + outArea
-                    + " ; Shifting factors : " + shiftingFactorsMap
-            );
+            if (isFranceInArea(timestamp)) {
+                runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, true);
+            } else if (isFranceOutArea(timestamp)) {
+                runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, false);
+            } else {
+                throw new CseValidInvalidDataException("France must appear in InArea or OutArea");
+            }
         }
     }
 
@@ -255,32 +224,8 @@ public class CseValidHandler {
         return false;
     }
 
-    private boolean checkFileAvailability(ProcessType processType, String filetype, Supplier<CseValidFileResource> fileSupplier) {
-        return fileSupplier.get() != null && minioAdapter.fileExists(buildMinioPath(processType, filetype, fileSupplier.get().getFilename()));
-    }
-
-    private static String buildMinioPath(ProcessType processType, String filetype, String filename) {
-        return processType.name() + "/" + filetype + "/" + filename;
-    }
-
-    private static String errorMessageForMissingFiles(boolean isCgmFileAvailable, boolean isCracFileAvailable, boolean isGlskFileAvailable) {
-        StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
-
-        if (!isCgmFileAvailable) {
-            stringJoiner.add("CGM file");
-        }
-        if (!isCracFileAvailable) {
-            stringJoiner.add("CRAC file");
-        }
-        if (!isGlskFileAvailable) {
-            stringJoiner.add("GLSK file");
-        }
-
-        return stringJoiner.toString();
-    }
-
     private void runDichotomyForFullImport(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
-        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(cseValidRequest, timestampWrapper.getTimestamp());
+        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runImportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp());
         if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
             TLimitingElement tLimitingElement = this.limitingElementService.getLimitingElement(dichotomyResult.getHighestValidStep());
             BigDecimal mibniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
@@ -289,6 +234,35 @@ public class CseValidHandler {
         } else {
             tcDocumentTypeWriter.fillDichotomyError(timestampWrapper.getTimestamp());
         }
+    }
+
+    private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, boolean isExportCornerActive) {
+        try {
+            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, isExportCornerActive);
+            DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), isExportCornerActive);
+            // TODO
+        } catch (CseValidRequestValidatorException e) {
+            businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
+            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
+        }
+    }
+
+    private boolean isFranceInArea(TTimestamp timestamp) {
+        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+        Optional<AreaType> franceInArea = calculationDirections.stream()
+                .map(TCalculationDirection::getInArea)
+                .filter(areaType -> eicCodesConfiguration.getFrance().equals(areaType.getV()))
+                .findFirst();
+        return franceInArea.isPresent();
+    }
+
+    private boolean isFranceOutArea(TTimestamp timestamp) {
+        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+        Optional<AreaType> franceOutArea = calculationDirections.stream()
+                .map(TCalculationDirection::getOutArea)
+                .filter(areaType -> eicCodesConfiguration.getFrance().equals(areaType.getV()))
+                .findFirst();
+        return franceOutArea.isPresent();
     }
 
     private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
