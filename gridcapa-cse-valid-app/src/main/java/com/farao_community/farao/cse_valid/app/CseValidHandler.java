@@ -158,7 +158,7 @@ public class CseValidHandler {
             tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), mniiValue);
         } else {
             try {
-                cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null);
+                cseValidRequestValidator.checkAllFilesExist(cseValidRequest, null);
                 runDichotomyForFullImport(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
             } catch (CseValidRequestValidatorException e) {
                 businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
@@ -229,8 +229,9 @@ public class CseValidHandler {
             BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
         } else {
-            if (!isDegradedMode(timestampWrapper, cseValidRequest, tcDocumentTypeWriter)) {
-                Network network = cseValidNetworkShifter.getNetworkShiftedWithShifttingFactors(timestamp, cseValidRequest);
+            if (areAllRequiredFilesPresent(timestampWrapper, cseValidRequest, tcDocumentTypeWriter)) {
+                Network network = cseValidNetworkShifter.getNetworkShiftedWithShiftingFactors(timestamp, cseValidRequest);
+
                 runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
             }
         }
@@ -256,24 +257,24 @@ public class CseValidHandler {
         return actualNtcAboveTargetNtc(timestampWrapper, actualNtc, targetNtc);
     }
 
-    private boolean isDegradedMode(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+    private boolean areAllRequiredFilesPresent(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         TTimestamp timestamp = timestampWrapper.getTimestamp();
         String franceEic = eicCodesConfiguration.getFrance();
         List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
         try {
             if (isCountryInArea(franceEic, calculationDirections)) {
-                cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true);
+                cseValidRequestValidator.checkAllFilesExist(cseValidRequest, true);
             } else if (isCountryOutArea(franceEic, calculationDirections)) {
-                cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false);
+                cseValidRequestValidator.checkAllFilesExist(cseValidRequest, false);
             } else {
                 throw new CseValidInvalidDataException("France must appear in InArea or OutArea");
             }
         } catch (CseValidRequestValidatorException e) {
             businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
             tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     public static boolean isCountryInArea(String countryEic, List<TCalculationDirection> calculationDirections) {

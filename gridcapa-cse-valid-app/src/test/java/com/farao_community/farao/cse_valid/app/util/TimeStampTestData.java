@@ -385,7 +385,7 @@ public final class TimeStampTestData {
         antcfinalValue.setV(BigDecimal.ZERO);
         timestamp.setANTCFinal(antcfinalValue);
 
-        TShiftingFactors shiftingFactors = TSplittingAndShifttingFactorsTestData.getTShiftingFactors();
+        TShiftingFactors shiftingFactors = TSplittingAndShiftingFactorsTestData.getTShiftingFactors();
         timestamp.setShiftingFactors(shiftingFactors);
 
         TCalculationDirections tCalculationDirections = new TCalculationDirections();
@@ -417,7 +417,7 @@ public final class TimeStampTestData {
         antcfinalValue.setV(BigDecimal.ZERO);
         timestamp.setANTCFinal(antcfinalValue);
 
-        TShiftingFactors shiftingFactors = TSplittingAndShifttingFactorsTestData.getTShiftingFactors();
+        TShiftingFactors shiftingFactors = TSplittingAndShiftingFactorsTestData.getTShiftingFactors();
         timestamp.setShiftingFactors(shiftingFactors);
 
         TCalculationDirections tCalculationDirections = new TCalculationDirections();

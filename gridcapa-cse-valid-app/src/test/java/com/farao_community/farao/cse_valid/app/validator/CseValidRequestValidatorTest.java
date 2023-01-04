@@ -31,100 +31,100 @@ class CseValidRequestValidatorTest {
     /* --------------- IMPORT CORNER --------------- */
 
     @Test
-    void testValidateImportCornerCseValidRequestWhenRequestIsNull() {
+    void checkAllFilesExistShouldThrowAnExceptionWhenRequestIsNull() {
         CseValidRequest cseValidRequest = null;
         String errorMessage = "Request is null";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null);
+            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, null);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
     }
 
     @Test
-    void testValidateImportCornerCseValidRequestMissingAllFiles() {
+    void checkAllFilesExistShouldThrowAnExceptionWhenMissingAllFiles() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getCseValidRequestMissingAllFiles(ProcessType.IDCC);
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, GLSK file, CRAC file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null);
+            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, null);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
     }
 
     @Test
-    void testValidateImportCornerCseValidRequestAllFilesExist() {
+    void checkAllFilesExistWhentAllFilesExist() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        assertDoesNotThrow(() -> cseValidRequestValidator.validateCseValidRequest(cseValidRequest, null));
+        assertDoesNotThrow(() -> cseValidRequestValidator.checkAllFilesExist(cseValidRequest, null));
     }
 
     /* --------------- EXPORT CORNER --------------- */
 
     @Test
-    void testValidateExportCornerCseValidRequestWhenFranceInAreaAndRequestIsNull() {
+    void checkAllFilesExistShouldThrowAnExceptionWhenFranceIsInAreaAndRequestIsNull() {
         CseValidRequest cseValidRequest = null;
         String errorMessage = "Request is null";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true);
+            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, true);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
     }
 
     @Test
-    void testValidateExportCornerCseValidRequestWhenFranceOutAreaAndRequestIsNull() {
+    void checkAllFilesExistShouldThrowAnExceptionWhenFranceIsOutAreaAndRequestIsNull() {
         CseValidRequest cseValidRequest = null;
         String errorMessage = "Request is null";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false);
+            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, false);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
     }
 
     @Test
-    void testValidateExportCornerCseValidRequestMissingAllFilesWhenFranceIsInArea() {
+    void checkAllFilesExistShouldThrowAnExceptionWhenMissingAllFilesAndFranceIsInArea() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getCseValidRequestMissingAllFiles(ProcessType.IDCC);
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, GLSK file, CRAC file, CRAC Transit file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true);
+            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, true);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
     }
 
     @Test
-    void testValidateExportCornerCseValidRequestMissingAllFilesWhenFranceIsOutArea() {
+    void checkAllFilesExistShouldThrowAnExceptionWhenMissingAllFilesAndFranceIsOutArea() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getCseValidRequestMissingAllFiles(ProcessType.IDCC);
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, GLSK file, CRAC file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
-            cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false);
+            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, false);
         }, "CseValidRequestValidatorException error was expected");
 
         assertEquals(errorMessage, thrown.getMessage());
     }
 
     @Test
-    void testValidateExportCornerCseValidRequestWhenFranceInAreaAndAllFilesExist() {
+    void checkAllFilesExistWhenFranceIsInAreaAndAllFilesExist() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        assertDoesNotThrow(() -> cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true));
+        assertDoesNotThrow(() -> cseValidRequestValidator.checkAllFilesExist(cseValidRequest, true));
     }
 
     @Test
-    void testValidateExportCornerCseValidRequestWhenFranceOutAreaAndAllFilesExist() {
+    void checkAllFilesExistWhenFranceIsOutAreaAndAllFilesExist() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        assertDoesNotThrow(() -> cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false));
+        assertDoesNotThrow(() -> cseValidRequestValidator.checkAllFilesExist(cseValidRequest, false));
     }
 }

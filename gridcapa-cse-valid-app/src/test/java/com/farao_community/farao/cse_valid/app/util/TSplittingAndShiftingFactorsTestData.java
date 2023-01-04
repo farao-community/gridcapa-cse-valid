@@ -18,9 +18,9 @@ import java.math.BigDecimal;
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 
-public final class TSplittingAndShifttingFactorsTestData {
+public final class TSplittingAndShiftingFactorsTestData {
 
-    private TSplittingAndShifttingFactorsTestData() {
+    private TSplittingAndShiftingFactorsTestData() {
     }
 
     public static TSplittingFactors getTSplittingFactors() {

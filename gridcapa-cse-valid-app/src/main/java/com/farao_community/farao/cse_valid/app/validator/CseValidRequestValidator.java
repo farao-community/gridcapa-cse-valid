@@ -20,7 +20,7 @@ import java.util.StringJoiner;
 @Component
 public class CseValidRequestValidator {
 
-    public void validateCseValidRequest(CseValidRequest cseValidRequest, Boolean isExportCornerActive) throws CseValidRequestValidatorException {
+    public void checkAllFilesExist(CseValidRequest cseValidRequest, Boolean isExportCornerActive) throws CseValidRequestValidatorException {
 
         if (cseValidRequest == null) {
             throw new CseValidRequestValidatorException("Request is null");

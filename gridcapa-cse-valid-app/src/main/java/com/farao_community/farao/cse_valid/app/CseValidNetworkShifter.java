@@ -24,6 +24,7 @@ import com.powsybl.iidm.network.Network;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,33 +50,32 @@ public class CseValidNetworkShifter {
         GlskDocument glskDocument = fileImporter.importGlsk(glskUrl);
         return new LinearScaler(
                 glskDocument.getZonalScalable(network),
-                new SplittingFactors(convertSplittingFactors(tSplittingFactors)),
+                new SplittingFactors(getSplittingFactorsMap(tSplittingFactors)),
                 SHIFT_TOLERANCE);
     }
 
-    public NetworkShifter getNetworkShifterWithShifttingFactorsReduceToFranceAndItaly(TShiftingFactors tShiftingFactors,
-                                                                                      List<TCalculationDirection> calculationDirections,
-                                                                                      Network network,
-                                                                                      String glskUrl) {
+    public NetworkShifter getNetworkShifterReduceToFranceAndItaly(boolean isExportCornerActive,
+                                                                  Network network,
+                                                                  String glskUrl) {
         GlskDocument glskDocument = fileImporter.importGlsk(glskUrl);
         return new LinearScaler(
                 glskDocument.getZonalScalable(network),
-                new SplittingFactors(convertShifttingFactorsReduceToFranceAndItaly(tShiftingFactors, calculationDirections)),
+                new SplittingFactors(getShiftingFactorMapReduceToFranceAndItaly(isExportCornerActive)),
                 SHIFT_TOLERANCE);
     }
 
-    NetworkShifter getNetworkShifterWithShifttingFactors(TShiftingFactors tShiftingFactors,
-                                                                 List<TCalculationDirection> calculationDirections,
-                                                                 Network network,
-                                                                 String glskUrl) {
+    NetworkShifter getNetworkShifterWithShiftingFactors(TShiftingFactors tShiftingFactors,
+                                                        List<TCalculationDirection> calculationDirections,
+                                                        Network network,
+                                                        String glskUrl) {
         GlskDocument glskDocument = fileImporter.importGlsk(glskUrl);
         return new LinearScaler(
                 glskDocument.getZonalScalable(network),
-                new SplittingFactors(convertShifttingFactors(tShiftingFactors, calculationDirections)),
+                new SplittingFactors(getShiftingFactorsMap(tShiftingFactors, calculationDirections)),
                 SHIFT_TOLERANCE);
     }
 
-    private Map<String, Double> convertSplittingFactors(TSplittingFactors tSplittingFactors) {
+    private Map<String, Double> getSplittingFactorsMap(TSplittingFactors tSplittingFactors) {
         Map<String, Double> splittingFactorsMap = tSplittingFactors.getSplittingFactor().stream()
                 .collect(Collectors.toMap(
                     tFactor -> toEic(tFactor.getCountry().getV()),
@@ -85,18 +85,15 @@ public class CseValidNetworkShifter {
         return splittingFactorsMap;
     }
 
-    private Map<String, Double> convertShifttingFactorsReduceToFranceAndItaly(TShiftingFactors tShiftingFactors, List<TCalculationDirection> calculationDirections) {
-        return tShiftingFactors.getShiftingFactor().stream()
-                .filter(tFactor ->
-                    Country.FR.equals(Country.valueOf(tFactor.getCountry().getV())) ||
-                    Country.IT.equals(Country.valueOf(tFactor.getCountry().getV())))
-                .collect(Collectors.toMap(
-                    tFactor -> toEic(tFactor.getCountry().getV()),
-                    tFactor -> tFactor.getFactor().getV().doubleValue() * getFactorSignOfCountry(tFactor.getCountry().getV(), calculationDirections)
-                ));
+    private Map<String, Double> getShiftingFactorMapReduceToFranceAndItaly(boolean isExportCornerActive) {
+        Map<String, Double> result = new HashMap<>();
+        Double franceFactor = isExportCornerActive ? -1.0 : 1.0;
+        result.put(toEic(Country.FR.toString()), franceFactor);
+        result.put(toEic(Country.IT.toString()), franceFactor * -1);
+        return result;
     }
 
-    private Map<String, Double> convertShifttingFactors(TShiftingFactors tShiftingFactors, List<TCalculationDirection> calculationDirections) {
+    private Map<String, Double> getShiftingFactorsMap(TShiftingFactors tShiftingFactors, List<TCalculationDirection> calculationDirections) {
         return tShiftingFactors.getShiftingFactor().stream()
                 .collect(Collectors.toMap(
                     tFactor -> toEic(tFactor.getCountry().getV()),
@@ -104,7 +101,7 @@ public class CseValidNetworkShifter {
                 ));
     }
 
-    private byte getFactorSignOfCountry(String country, List<TCalculationDirection> calculationDirections) {
+    private double getFactorSignOfCountry(String country, List<TCalculationDirection> calculationDirections) {
         String countryEic = toEic(country);
         if (CseValidHandler.isCountryInArea(countryEic, calculationDirections)) {
             return -1;
@@ -118,22 +115,20 @@ public class CseValidNetworkShifter {
         return new EICode(Country.valueOf(country)).getAreaCode();
     }
 
-    public Network getNetworkShiftedWithShifttingFactors(TTimestamp timestamp, CseValidRequest cseValidRequest) {
+    public Network getNetworkShiftedWithShiftingFactors(TTimestamp timestamp, CseValidRequest cseValidRequest) {
         TShiftingFactors tShiftingFactors = timestamp.getShiftingFactors();
         List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
         String cgmFileName = cseValidRequest.getCgm().getFilename();
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         Network network = fileImporter.importNetwork(cgmFileName, cgmUrl);
         String glskUrl = cseValidRequest.getGlsk().getUrl();
-        NetworkShifter networkShifter = getNetworkShifterWithShifttingFactors(tShiftingFactors, calculationDirections, network, glskUrl);
+        NetworkShifter networkShifter = getNetworkShifterWithShiftingFactors(tShiftingFactors, calculationDirections, network, glskUrl);
         double shiftValue = computeShiftValue(timestamp);
 
         try {
             networkShifter.shiftNetwork(shiftValue, network);
             return network;
-        } catch (GlskLimitationException e) {
-            throw new RuntimeException(e);
-        } catch (ShiftingException e) {
+        } catch (GlskLimitationException | ShiftingException e) {
             throw new RuntimeException(e);
         }
     }
