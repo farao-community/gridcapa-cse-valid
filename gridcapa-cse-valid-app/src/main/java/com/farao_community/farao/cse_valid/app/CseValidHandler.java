@@ -16,6 +16,7 @@ import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
+import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
@@ -56,6 +57,7 @@ public class CseValidHandler {
     private final Logger businessLogger;
     private final CseValidRequestValidator cseValidRequestValidator;
     private final CseValidNetworkShifter cseValidNetworkShifter;
+    private final CseValidRaoValidator cseValidRaoValidator;
 
     public CseValidHandler(DichotomyRunner dichotomyRunner,
                            EicCodesConfiguration eicCodesConfiguration,
@@ -65,7 +67,8 @@ public class CseValidHandler {
                            LimitingElementService limitingElementService,
                            Logger businessLogger,
                            CseValidRequestValidator cseValidRequestValidator,
-                           CseValidNetworkShifter cseValidNetworkShifter) {
+                           CseValidNetworkShifter cseValidNetworkShifter,
+                           CseValidRaoValidator cseValidRaoValidator) {
         this.dichotomyRunner = dichotomyRunner;
         this.eicCodesConfiguration = eicCodesConfiguration;
         this.fileImporter = fileImporter;
@@ -75,6 +78,7 @@ public class CseValidHandler {
         this.businessLogger = businessLogger;
         this.cseValidRequestValidator = cseValidRequestValidator;
         this.cseValidNetworkShifter = cseValidNetworkShifter;
+        this.cseValidRaoValidator = cseValidRaoValidator;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
@@ -231,8 +235,11 @@ public class CseValidHandler {
         } else {
             if (areAllRequiredFilesPresent(timestampWrapper, cseValidRequest, tcDocumentTypeWriter)) {
                 Network network = cseValidNetworkShifter.getNetworkShiftedWithShiftingFactors(timestamp, cseValidRequest);
-
-                runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+                if (cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cseValidRequest.getExportCrac().getUrl())) {
+                    tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
+                } else {
+                    runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+                }
             }
         }
     }

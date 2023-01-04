@@ -10,12 +10,10 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.app.CseValidNetworkShifter;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
+import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
-import com.farao_community.farao.data.crac_api.Crac;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
 import com.farao_community.farao.dichotomy.api.DichotomyEngine;
-import com.farao_community.farao.dichotomy.api.NetworkValidator;
 import com.farao_community.farao.dichotomy.api.index.Index;
 import com.farao_community.farao.dichotomy.api.index.RangeDivisionIndexStrategy;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
@@ -44,31 +42,34 @@ public class DichotomyRunner {
     private final RaoRunnerClient raoRunnerClient;
     private final Logger businessLogger;
     private final CseValidNetworkShifter cseValidNetworkShifter;
+    private final CseValidRaoValidator cseValidRaoValidator;
 
     public DichotomyRunner(FileImporter fileImporter,
                            FileExporter fileExporter,
                            RaoRunnerClient raoRunnerClient,
                            Logger businessLogger,
-                           CseValidNetworkShifter cseValidNetworkShifter) {
+                           CseValidNetworkShifter cseValidNetworkShifter,
+                           CseValidRaoValidator cseValidRaoValidator) {
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.raoRunnerClient = raoRunnerClient;
         this.businessLogger = businessLogger;
         this.cseValidNetworkShifter = cseValidNetworkShifter;
+        this.cseValidRaoValidator = cseValidRaoValidator;
     }
 
     public DichotomyResult<RaoResponse> runImportCornerDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp) {
         int npAugmented = timestamp.getMNII().getV().intValue();
         int np = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
         double maxValue = (double) npAugmented - np;
-        Network network = importNetworkFile(cseValidRequest);
-        String jsonCracUrl = getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
+        Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
+        String jsonCracUrl = cseValidRaoValidator.getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
                 cseValidNetworkShifter.getNetworkShifterWithSplittingFactors(timestamp.getSplittingFactors(), network, cseValidRequest.getGlsk().getUrl()),
-                getNetworkValidator(cseValidRequest, jsonCracUrl));
+                cseValidRaoValidator.getNetworkValidator(cseValidRequest, jsonCracUrl));
         return engine.run(network);
     }
 
@@ -76,10 +77,10 @@ public class DichotomyRunner {
         int npAugmented = timestamp.getMIEC().getV().intValue();
         int np = timestamp.getMiBIEC().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
         double maxValue = (double) npAugmented - np;
-        Network network = importNetworkFile(cseValidRequest);
+        Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
         String jsonCracUrl = isExportCornerActive
-                ? getJsonCracUrl(cseValidRequest, network, cseValidRequest.getExportCrac().getUrl())
-                : getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
+                ? cseValidRaoValidator.getJsonCracUrl(cseValidRequest, network, cseValidRequest.getExportCrac().getUrl())
+                : cseValidRaoValidator.getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
         List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
@@ -87,30 +88,7 @@ public class DichotomyRunner {
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
                 cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(isExportCornerActive, network, glskUrl),
-                getNetworkValidator(cseValidRequest, jsonCracUrl));
+                cseValidRaoValidator.getNetworkValidator(cseValidRequest, jsonCracUrl));
         return engine.run(network);
-    }
-
-    private String getJsonCracUrl(CseValidRequest cseValidRequest, Network network, String cracUrl) {
-        CseCrac cseCrac = fileImporter.importCseCrac(cracUrl);
-        Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
-        return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
-    }
-
-    private NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl) {
-        String raoParametersURL = fileExporter.saveRaoParameters(cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
-        return new RaoValidator(
-                cseValidRequest.getProcessType(),
-                cseValidRequest.getId(),
-                cseValidRequest.getTimestamp(),
-                jsonCracUrl,
-                raoParametersURL,
-                raoRunnerClient,
-                fileImporter,
-                fileExporter);
-    }
-
-    public Network importNetworkFile(CseValidRequest cseValidRequest) {
-        return fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
     }
 }
