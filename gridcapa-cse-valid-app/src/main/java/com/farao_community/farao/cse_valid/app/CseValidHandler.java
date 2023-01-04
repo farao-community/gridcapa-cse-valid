@@ -23,6 +23,7 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.powsybl.iidm.network.Network;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 import xsd.etso_core_cmpts.AreaType;
@@ -120,6 +121,15 @@ public class CseValidHandler {
         return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC).toString();
     }
 
+    private boolean actualNtcAboveTargetNtc(TTimestampWrapper timestampWrapper, int actualNtc, int targetNtc) {
+        if (actualNtc >= targetNtc) {
+            businessLogger.info("Timestamp '{}' NTC has not been augmented by adjustment process, no computation needed.", timestampWrapper.getTimestamp().getTime().getV());
+            return true;
+        }
+        businessLogger.info("Timestamp '{}' augmented NTC must be validated.", timestampWrapper.getTimestamp().getTime().getV());
+        return false;
+    }
+
     void computeTimestamp(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         if (timestampWrapper.hasNoneOfMniiMnieMiec()) {
             tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_DATA);
@@ -177,15 +187,6 @@ public class CseValidHandler {
         return actualNtcAboveTargetNtc(timestampWrapper, actualNtc, targetNtc);
     }
 
-    private boolean actualNtcAboveTargetNtc(TTimestampWrapper timestampWrapper, int actualNtc, int targetNtc) {
-        if (actualNtc >= targetNtc) {
-            businessLogger.info("Timestamp '{}' NTC has not been augmented by adjustment process, no computation needed.", timestampWrapper.getTimestamp().getTime().getV());
-            return true;
-        }
-        businessLogger.info("Timestamp '{}' augmented NTC must be validated.", timestampWrapper.getTimestamp().getTime().getV());
-        return false;
-    }
-
     private void runDichotomyForFullImport(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runImportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp());
         if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
@@ -229,7 +230,7 @@ public class CseValidHandler {
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
         } else {
             if (!isDegradedMode(timestampWrapper, cseValidRequest, tcDocumentTypeWriter)) {
-                cseValidNetworkShifter.shiftNetworkWithShifttingFactors(timestamp, cseValidRequest);
+                Network network = cseValidNetworkShifter.getNetworkShiftedWithShifttingFactors(timestamp, cseValidRequest);
                 runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
             }
         }
@@ -257,10 +258,12 @@ public class CseValidHandler {
 
     private boolean isDegradedMode(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         TTimestamp timestamp = timestampWrapper.getTimestamp();
+        String franceEic = eicCodesConfiguration.getFrance();
+        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
         try {
-            if (isFranceInArea(timestamp)) {
+            if (isCountryInArea(franceEic, calculationDirections)) {
                 cseValidRequestValidator.validateCseValidRequest(cseValidRequest, true);
-            } else if (isFranceOutArea(timestamp)) {
+            } else if (isCountryOutArea(franceEic, calculationDirections)) {
                 cseValidRequestValidator.validateCseValidRequest(cseValidRequest, false);
             } else {
                 throw new CseValidInvalidDataException("France must appear in InArea or OutArea");
@@ -273,27 +276,27 @@ public class CseValidHandler {
         return false;
     }
 
-    private boolean isFranceInArea(TTimestamp timestamp) {
-        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
-        Optional<AreaType> franceInArea = calculationDirections.stream()
+    public static boolean isCountryInArea(String countryEic, List<TCalculationDirection> calculationDirections) {
+        Optional<AreaType> countryInArea = calculationDirections.stream()
                 .map(TCalculationDirection::getInArea)
-                .filter(areaType -> eicCodesConfiguration.getFrance().equals(areaType.getV()))
+                .filter(areaType -> areaType.getV().equals(countryEic))
                 .findFirst();
-        return franceInArea.isPresent();
+        return countryInArea.isPresent();
     }
 
-    private boolean isFranceOutArea(TTimestamp timestamp) {
-        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
-        Optional<AreaType> franceOutArea = calculationDirections.stream()
+    public static boolean isCountryOutArea(String countryEic, List<TCalculationDirection> calculationDirections) {
+        Optional<AreaType> countryOutArea = calculationDirections.stream()
                 .map(TCalculationDirection::getOutArea)
-                .filter(areaType -> eicCodesConfiguration.getFrance().equals(areaType.getV()))
+                .filter(areaType -> areaType.getV().equals(countryEic))
                 .findFirst();
-        return franceOutArea.isPresent();
+        return countryOutArea.isPresent();
     }
 
     private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         TTimestamp timestamp = timestampWrapper.getTimestamp();
-        boolean isExportCornerActive = isFranceInArea(timestamp);
+        String franceEic = eicCodesConfiguration.getFrance();
+        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+        boolean isExportCornerActive = isCountryInArea(franceEic, calculationDirections);
         DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), isExportCornerActive);
         // TODO
     }

@@ -499,7 +499,7 @@ class CseValidHandlerTest {
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(cseValidNetworkShifter, times(1)).shiftNetworkWithShifttingFactors(timestamp, cseValidRequest);
+        verify(cseValidNetworkShifter, times(1)).getNetworkShiftedWithShifttingFactors(timestamp, cseValidRequest);
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), true);
     }
 
@@ -516,7 +516,7 @@ class CseValidHandlerTest {
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(cseValidNetworkShifter, times(1)).shiftNetworkWithShifttingFactors(timestamp, cseValidRequest);
+        verify(cseValidNetworkShifter, times(1)).getNetworkShiftedWithShifttingFactors(timestamp, cseValidRequest);
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(cseValidRequest, timestampWrapper.getTimestamp(), false);
     }
 }

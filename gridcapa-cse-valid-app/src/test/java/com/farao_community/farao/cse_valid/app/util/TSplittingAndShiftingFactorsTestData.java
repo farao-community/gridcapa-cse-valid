@@ -27,7 +27,7 @@ public final class TSplittingAndShifttingFactorsTestData {
         TSplittingFactors tSplittingFactors = new TSplittingFactors();
 
         tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.ONE, "FR"));
-        tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.TEN, "CH"));
+        tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.TEN, "IT"));
 
         return tSplittingFactors;
     }
@@ -36,7 +36,7 @@ public final class TSplittingAndShifttingFactorsTestData {
         TShiftingFactors tShiftingFactors = new TShiftingFactors();
 
         tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.ONE, "FR"));
-        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.TEN, "CH"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.TEN, "IT"));
 
         return tShiftingFactors;
     }

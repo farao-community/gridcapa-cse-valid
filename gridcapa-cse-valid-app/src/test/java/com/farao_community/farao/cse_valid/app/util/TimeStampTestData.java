@@ -385,23 +385,12 @@ public final class TimeStampTestData {
         antcfinalValue.setV(BigDecimal.ZERO);
         timestamp.setANTCFinal(antcfinalValue);
 
-        TShiftingFactors shiftingFactors = new TShiftingFactors();
-        shiftingFactors.getShiftingFactor().add(new TFactor());
+        TShiftingFactors shiftingFactors = TSplittingAndShifttingFactorsTestData.getTShiftingFactors();
         timestamp.setShiftingFactors(shiftingFactors);
-
-        AreaType inArea = new AreaType();
-        inArea.setV("10YFR-RTE------C");
-
-        AreaType outArea = new AreaType();
-        outArea.setV("10YIT-GRTN-----B");
-
-        TCalculationDirection tCalculationDirection = new TCalculationDirection();
-        tCalculationDirection.setInArea(inArea);
-        tCalculationDirection.setOutArea(outArea);
 
         TCalculationDirections tCalculationDirections = new TCalculationDirections();
         List<TCalculationDirection> tCalculationDirectionList = tCalculationDirections.getCalculationDirection();
-        tCalculationDirectionList.add(tCalculationDirection);
+        tCalculationDirectionList.add(TCalculationDirectionTestData.getTCalculationDirectionWithFranceInArea());
 
         List<TCalculationDirections> tCalculationDirectionsList = timestamp.getCalculationDirections();
         tCalculationDirectionsList.add(tCalculationDirections);
@@ -428,23 +417,12 @@ public final class TimeStampTestData {
         antcfinalValue.setV(BigDecimal.ZERO);
         timestamp.setANTCFinal(antcfinalValue);
 
-        TShiftingFactors shiftingFactors = new TShiftingFactors();
-        shiftingFactors.getShiftingFactor().add(new TFactor());
+        TShiftingFactors shiftingFactors = TSplittingAndShifttingFactorsTestData.getTShiftingFactors();
         timestamp.setShiftingFactors(shiftingFactors);
-
-        AreaType inArea = new AreaType();
-        inArea.setV("10YIT-GRTN-----B");
-
-        AreaType outArea = new AreaType();
-        outArea.setV("10YFR-RTE------C");
-
-        TCalculationDirection tCalculationDirection = new TCalculationDirection();
-        tCalculationDirection.setInArea(inArea);
-        tCalculationDirection.setOutArea(outArea);
 
         TCalculationDirections tCalculationDirections = new TCalculationDirections();
         List<TCalculationDirection> tCalculationDirectionList = tCalculationDirections.getCalculationDirection();
-        tCalculationDirectionList.add(tCalculationDirection);
+        tCalculationDirectionList.add(TCalculationDirectionTestData.getTCalculationDirectionWithFranceOutArea());
 
         List<TCalculationDirections> tCalculationDirectionsList = timestamp.getCalculationDirections();
         tCalculationDirectionsList.add(tCalculationDirections);

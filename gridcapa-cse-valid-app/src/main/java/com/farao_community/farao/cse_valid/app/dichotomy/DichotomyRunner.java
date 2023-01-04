@@ -10,6 +10,8 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.app.CseValidNetworkShifter;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
@@ -24,6 +26,8 @@ import com.powsybl.iidm.network.Network;
 
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -78,11 +82,14 @@ public class DichotomyRunner {
         String jsonCracUrl = isExportCornerActive
                 ? getJsonCracUrl(cseValidRequest, network, cseValidRequest.getExportCrac().getUrl())
                 : getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
+        TShiftingFactors tShiftingFactors = timestamp.getShiftingFactors();
+        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+        String glskUrl = cseValidRequest.getGlsk().getUrl();
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
-                cseValidNetworkShifter.getNetworkShifterWithShifttingFactors(timestamp.getShiftingFactors(), network, cseValidRequest.getGlsk().getUrl()),
+                cseValidNetworkShifter.getNetworkShifterWithShifttingFactorsReduceToFranceAndItaly(tShiftingFactors, calculationDirections, network, glskUrl),
                 getNetworkValidator(cseValidRequest, jsonCracUrl));
         return engine.run(network);
     }
