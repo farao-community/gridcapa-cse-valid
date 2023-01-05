@@ -81,15 +81,15 @@ public class CseValidNetworkShifter {
                     tFactor -> toEic(tFactor.getCountry().getV()),
                     tFactor -> tFactor.getFactor().getV().doubleValue()
                 ));
-        splittingFactorsMap.put(toEic("IT"), -1.);
+        splittingFactorsMap.put(toEic(Country.IT), -1.);
         return splittingFactorsMap;
     }
 
     private Map<String, Double> getShiftingFactorMapReduceToFranceAndItaly(boolean isExportCornerActive) {
         Map<String, Double> result = new HashMap<>();
-        Double franceFactor = isExportCornerActive ? -1.0 : 1.0;
-        result.put(toEic(Country.FR.toString()), franceFactor);
-        result.put(toEic(Country.IT.toString()), franceFactor * -1);
+        double franceFactor = isExportCornerActive ? -1.0 : 1.0;
+        result.put(toEic(Country.FR), franceFactor);
+        result.put(toEic(Country.IT), franceFactor * -1);
         return result;
     }
 
@@ -112,7 +112,11 @@ public class CseValidNetworkShifter {
     }
 
     private String toEic(String country) {
-        return new EICode(Country.valueOf(country)).getAreaCode();
+        return toEic(Country.valueOf(country));
+    }
+
+    private String toEic(Country country) {
+        return new EICode(country).getAreaCode();
     }
 
     public Network getNetworkShiftedWithShiftingFactors(TTimestamp timestamp, CseValidRequest cseValidRequest) {
