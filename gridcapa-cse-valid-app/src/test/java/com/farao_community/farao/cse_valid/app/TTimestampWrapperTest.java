@@ -24,7 +24,7 @@ class TTimestampWrapperTest {
         timestamp.getTime().setV("timeValue");
         timestamp.setReferenceCalculationTime(new TTime());
         timestamp.getReferenceCalculationTime().setV("referenceCalculationTimeValue");
-        timestampWrapper = new TTimestampWrapper(timestamp);
+        timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
     }
 
     private void initTimestampFullImport() {

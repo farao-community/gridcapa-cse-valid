@@ -20,7 +20,7 @@ import java.util.StringJoiner;
 @Component
 public class CseValidRequestValidator {
 
-    public void checkAllFilesExist(CseValidRequest cseValidRequest, Boolean isExportCornerActive) throws CseValidRequestValidatorException {
+    public void checkAllFilesExist(CseValidRequest cseValidRequest, Boolean isFranceExporting) throws CseValidRequestValidatorException {
 
         if (cseValidRequest == null) {
             throw new CseValidRequestValidatorException("Request is null");
@@ -30,7 +30,7 @@ public class CseValidRequestValidator {
         final boolean glskFileExists = fileExists(cseValidRequest.getGlsk());
         final boolean importCracFileExists = fileExists(cseValidRequest.getImportCrac());
 
-        if (Boolean.TRUE.equals(isExportCornerActive)) {
+        if (Boolean.TRUE.equals(isFranceExporting)) {
             final boolean exportCracFileExist = fileExists(cseValidRequest.getExportCrac());
             final boolean allFilesExist = cgmFileExists && glskFileExists && importCracFileExists && exportCracFileExist;
             if (!allFilesExist) {

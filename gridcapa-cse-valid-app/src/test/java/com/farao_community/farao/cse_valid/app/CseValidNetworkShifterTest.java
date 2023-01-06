@@ -164,7 +164,7 @@ class CseValidNetworkShifterTest {
         BigDecimal antcFinal = timestamp.getANTCFinal().getV();
         double shiftValue = miec.subtract(mibiec.subtract(antcFinal)).doubleValue();
 
-        Network networkShifted = cseValidNetworkShifter.getNetworkShiftedWithShiftingFactors(timestamp, cseValidRequest);
+        Network networkShifted = cseValidNetworkShifter.shiftNetwork(timestamp, cseValidRequest);
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
         assertNotNull(networkShifted);
@@ -192,7 +192,7 @@ class CseValidNetworkShifterTest {
         doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterWithShiftingFactors(tShiftingFactors, calculationDirections, network, glskUrl);
 
         assertThrows(RuntimeException.class, () -> {
-            cseValidNetworkShifter.getNetworkShiftedWithShiftingFactors(timestamp, cseValidRequest);
+            cseValidNetworkShifter.shiftNetwork(timestamp, cseValidRequest);
         });
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
@@ -220,7 +220,7 @@ class CseValidNetworkShifterTest {
         doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterWithShiftingFactors(tShiftingFactors, calculationDirections, network, glskUrl);
 
         assertThrows(RuntimeException.class, () -> {
-            cseValidNetworkShifter.getNetworkShiftedWithShiftingFactors(timestamp, cseValidRequest);
+            cseValidNetworkShifter.shiftNetwork(timestamp, cseValidRequest);
         });
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);

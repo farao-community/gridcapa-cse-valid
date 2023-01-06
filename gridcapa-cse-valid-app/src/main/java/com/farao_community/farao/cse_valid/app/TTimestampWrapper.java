@@ -1,16 +1,31 @@
 package com.farao_community.farao.cse_valid.app;
 
+import com.farao_community.farao.commons.EICode;
+import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TSplittingFactors;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
+import com.powsybl.iidm.network.Country;
 import xsd.etso_core_cmpts.QuantityType;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class TTimestampWrapper {
     private final TTimestamp timestamp;
+    private final EicCodesConfiguration eicCodesConfiguration;
+    private Map<String, Boolean> exportingCountryMap;
 
     // Timestamp
-    public TTimestampWrapper(TTimestamp timestamp) {
+    public TTimestampWrapper(TTimestamp timestamp, EicCodesConfiguration eicCodesConfiguration) {
         this.timestamp = timestamp;
+        this.eicCodesConfiguration = eicCodesConfiguration;
+        initExportingCountryMap();
     }
 
     public TTimestamp getTimestamp() {
@@ -131,5 +146,70 @@ public class TTimestampWrapper {
 
     public int getAntcfinalIntValue() {
         return timestamp.getANTCFinal().getV().intValue();
+    }
+
+    //
+
+    private void initExportingCountryMap() {
+        if (hasCalculationDirections()) {
+            exportingCountryMap = new HashMap<>();
+            List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+            calculationDirections.forEach(tCalculationDirection -> {
+                if (tCalculationDirection.getInArea().getV().equals(eicCodesConfiguration.getItaly())) {
+                    exportingCountryMap.put(tCalculationDirection.getOutArea().getV(), false);
+                } else if (tCalculationDirection.getOutArea().getV().equals(eicCodesConfiguration.getItaly())) {
+                    exportingCountryMap.put(tCalculationDirection.getInArea().getV(), true);
+                }
+            });
+        }
+    }
+
+    public Boolean isFranceExporting() {
+        return exportingCountryMap.get(eicCodesConfiguration.getFrance());
+    }
+
+    public Map<String, Double> getImportCornerSplittingFactors() {
+        TSplittingFactors tSplittingFactors = timestamp.getSplittingFactors();
+        Map<String, Double> splittingFactorsMap = tSplittingFactors.getSplittingFactor().stream()
+                .collect(Collectors.toMap(
+                    tFactor -> toEic(tFactor.getCountry().getV()),
+                    tFactor -> tFactor.getFactor().getV().doubleValue()
+                ));
+        splittingFactorsMap.put(toEic(Country.IT), -1.);
+        return splittingFactorsMap;
+    }
+
+    public Map<String, Double> getExportCornerSplittingFactors() {
+        TShiftingFactors tShiftingFactors = timestamp.getShiftingFactors();
+        return tShiftingFactors.getShiftingFactor().stream()
+                .collect(Collectors.toMap(
+                    tFactor -> toEic(tFactor.getCountry().getV()),
+                    tFactor -> tFactor.getFactor().getV().doubleValue() * getFactorSignOfCountry(tFactor.getCountry().getV())
+                ));
+    }
+
+    public Map<String, Double> getExportCornerSplittingFactorsMapReduceToFranceAndItaly() {
+        Map<String, Double> result = new HashMap<>();
+        double franceFactor = isFranceExporting() ? -1.0 : 1.0;
+        result.put(toEic(Country.FR), franceFactor);
+        result.put(toEic(Country.IT), franceFactor * -1);
+        return result;
+    }
+
+    private double getFactorSignOfCountry(String country) {
+        String countryEic = toEic(country);
+        Boolean isCountryExporting = exportingCountryMap.get(countryEic);
+        if (isCountryExporting == null) {
+            throw new CseValidInvalidDataException("Country " + country + " must appear in InArea or OutArea");
+        }
+        return isCountryExporting ? -1 : 1;
+    }
+
+    private String toEic(String country) {
+        return toEic(Country.valueOf(country));
+    }
+
+    private String toEic(Country country) {
+        return new EICode(country).getAreaCode();
     }
 }

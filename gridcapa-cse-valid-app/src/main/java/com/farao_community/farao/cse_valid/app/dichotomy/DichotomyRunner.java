@@ -9,8 +9,8 @@ package com.farao_community.farao.cse_valid.app.dichotomy;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.app.CseValidNetworkShifter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
+import com.farao_community.farao.cse_valid.app.TTimestampWrapper;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.dichotomy.api.DichotomyEngine;
 import com.farao_community.farao.dichotomy.api.index.Index;
 import com.farao_community.farao.dichotomy.api.index.RangeDivisionIndexStrategy;
@@ -47,9 +47,9 @@ public class DichotomyRunner {
         this.cseValidRaoValidator = cseValidRaoValidator;
     }
 
-    public DichotomyResult<RaoResponse> runImportCornerDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp) {
-        int npAugmented = timestamp.getMNII().getV().intValue();
-        int np = timestamp.getMiBNII().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
+    public DichotomyResult<RaoResponse> runImportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest) {
+        int npAugmented = timestampWrapper.getMniiIntValue();
+        int np = timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue();
         double maxValue = (double) npAugmented - np;
         Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
         String jsonCracUrl = cseValidRaoValidator.getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
@@ -57,25 +57,25 @@ public class DichotomyRunner {
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
-                cseValidNetworkShifter.getNetworkShifterWithSplittingFactors(timestamp.getSplittingFactors(), network, cseValidRequest.getGlsk().getUrl()),
+                cseValidNetworkShifter.getNetworkShifterWithSplittingFactors(timestampWrapper, network, cseValidRequest.getGlsk().getUrl()),
                 cseValidRaoValidator.getNetworkValidator(cseValidRequest, jsonCracUrl));
         return engine.run(network);
     }
 
-    public DichotomyResult<RaoResponse> runExportCornerDichotomy(CseValidRequest cseValidRequest, TTimestamp timestamp, boolean isExportCornerActive) {
-        int npAugmented = timestamp.getMIEC().getV().intValue();
-        int np = timestamp.getMiBIEC().getV().intValue() - timestamp.getANTCFinal().getV().intValue();
+    public DichotomyResult<RaoResponse> runExportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest) {
+        int npAugmented = timestampWrapper.getMiecIntValue();
+        int np = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
         double maxValue = (double) npAugmented - np;
         Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
-        String jsonCracUrl = isExportCornerActive
+        boolean isFranceExporting = timestampWrapper.isFranceExporting();
+        String jsonCracUrl = isFranceExporting
                 ? cseValidRaoValidator.getJsonCracUrl(cseValidRequest, network, cseValidRequest.getExportCrac().getUrl())
                 : cseValidRaoValidator.getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
-        String glskUrl = cseValidRequest.getGlsk().getUrl();
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
-                cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(isExportCornerActive, network, glskUrl),
+                cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(timestampWrapper, network, cseValidRequest.getGlsk().getUrl()),
                 cseValidRaoValidator.getNetworkValidator(cseValidRequest, jsonCracUrl));
         return engine.run(network);
     }
