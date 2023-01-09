@@ -230,6 +230,7 @@ public class CseValidHandler {
             BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
         } else {
+            timestampWrapper.initExportingCountryMap();
             if (areAllRequiredFilesPresent(timestampWrapper, cseValidRequest, tcDocumentTypeWriter)) {
                 Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
                 double shiftValue = computeShiftValue(timestampWrapper);
@@ -279,10 +280,7 @@ public class CseValidHandler {
     }
 
     private double computeShiftValue(TTimestampWrapper timestampWrapper) {
-        int miec = timestampWrapper.getMiecIntValue();
-        int mibiec = timestampWrapper.getMibiecIntValue();
-        int antcFinal = timestampWrapper.getAntcfinalIntValue();
-        return miec - (mibiec - antcFinal);
+        return (double) timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
     }
 
     private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {

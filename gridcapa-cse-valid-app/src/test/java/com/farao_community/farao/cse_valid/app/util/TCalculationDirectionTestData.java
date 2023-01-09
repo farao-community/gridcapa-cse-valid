@@ -11,33 +11,29 @@ public final class TCalculationDirectionTestData {
     }
 
     public static List<TCalculationDirection> getTCalculationDirectionListWithFranceInArea() {
-        return List.of(getTCalculationDirectionWithFranceInArea());
+        return List.of(
+                getTCalculationDirection("10YIT-GRTN-----B", "10YCH-SWISSGRIDZ"),
+                getTCalculationDirection("10YIT-GRTN-----B", "10YAT-APG------L"),
+                getTCalculationDirection("10YIT-GRTN-----B", "10YSI-ELES-----O"),
+                getTCalculationDirection("10YFR-RTE------C", "10YIT-GRTN-----B")
+        );
     }
 
     public static List<TCalculationDirection> getTCalculationDirectionListWithFranceOutArea() {
-        return List.of(getTCalculationDirectionWithFranceOutArea());
+        return List.of(
+                getTCalculationDirection("10YIT-GRTN-----B", "10YFR-RTE------C"),
+                getTCalculationDirection("10YIT-GRTN-----B", "10YAT-APG------L"),
+                getTCalculationDirection("10YIT-GRTN-----B", "10YSI-ELES-----O"),
+                getTCalculationDirection("10YCH-SWISSGRIDZ", "10YIT-GRTN-----B")
+        );
     }
 
-    public static TCalculationDirection getTCalculationDirectionWithFranceInArea() {
+    private static TCalculationDirection getTCalculationDirection(String countryEicInArea, String countryEicOutArea) {
         AreaType inArea = new AreaType();
-        inArea.setV("10YFR-RTE------C");
+        inArea.setV(countryEicInArea);
 
         AreaType outArea = new AreaType();
-        outArea.setV("10YIT-GRTN-----B");
-
-        TCalculationDirection tCalculationDirection = new TCalculationDirection();
-        tCalculationDirection.setInArea(inArea);
-        tCalculationDirection.setOutArea(outArea);
-
-        return tCalculationDirection;
-    }
-
-    public static TCalculationDirection getTCalculationDirectionWithFranceOutArea() {
-        AreaType inArea = new AreaType();
-        inArea.setV("10YIT-GRTN-----B");
-
-        AreaType outArea = new AreaType();
-        outArea.setV("10YFR-RTE------C");
+        outArea.setV(countryEicOutArea);
 
         TCalculationDirection tCalculationDirection = new TCalculationDirection();
         tCalculationDirection.setInArea(inArea);

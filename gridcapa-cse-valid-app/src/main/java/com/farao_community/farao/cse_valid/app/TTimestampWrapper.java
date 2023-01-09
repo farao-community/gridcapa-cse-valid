@@ -25,7 +25,6 @@ public class TTimestampWrapper {
     public TTimestampWrapper(TTimestamp timestamp, EicCodesConfiguration eicCodesConfiguration) {
         this.timestamp = timestamp;
         this.eicCodesConfiguration = eicCodesConfiguration;
-        initExportingCountryMap();
     }
 
     public TTimestamp getTimestamp() {
@@ -150,18 +149,17 @@ public class TTimestampWrapper {
 
     //
 
-    private void initExportingCountryMap() {
-        if (hasCalculationDirections()) {
-            exportingCountryMap = new HashMap<>();
-            List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
-            calculationDirections.forEach(tCalculationDirection -> {
-                if (tCalculationDirection.getInArea().getV().equals(eicCodesConfiguration.getItaly())) {
-                    exportingCountryMap.put(tCalculationDirection.getOutArea().getV(), false);
-                } else if (tCalculationDirection.getOutArea().getV().equals(eicCodesConfiguration.getItaly())) {
-                    exportingCountryMap.put(tCalculationDirection.getInArea().getV(), true);
-                }
-            });
-        }
+    public void initExportingCountryMap() {
+        exportingCountryMap = new HashMap<>();
+        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+        calculationDirections.forEach(tCalculationDirection -> {
+            if (tCalculationDirection.getInArea().getV().equals(eicCodesConfiguration.getItaly())) {
+                exportingCountryMap.put(tCalculationDirection.getOutArea().getV(), false);
+            } else if (tCalculationDirection.getOutArea().getV().equals(eicCodesConfiguration.getItaly())) {
+                exportingCountryMap.put(tCalculationDirection.getInArea().getV(), true);
+            }
+        });
+        exportingCountryMap.put(toEic(Country.IT), true);
     }
 
     public Boolean isFranceExporting() {

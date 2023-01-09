@@ -8,13 +8,9 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TSplittingFactors;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
+import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
+import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
 import com.farao_community.farao.cse_valid.app.util.CseValidRequestTestData;
-import com.farao_community.farao.cse_valid.app.util.TCalculationDirectionTestData;
-import com.farao_community.farao.cse_valid.app.util.TSplittingAndShiftingFactorsTestData;
 import com.farao_community.farao.cse_valid.app.util.TimeStampTestData;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
@@ -22,12 +18,10 @@ import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.iidm.network.Network;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,6 +41,9 @@ class CseValidNetworkShifterTest {
 
     private static final String GLSK_FILE_URL = "file://glsk.xml";
 
+    @Autowired
+    private EicCodesConfiguration eicCodesConfiguration;
+
     @MockBean
     private FileImporter fileImporter;
 
@@ -57,14 +54,15 @@ class CseValidNetworkShifterTest {
 
     @Test
     void getNetworkShifterWithSplittingFactors() {
-        TSplittingFactors tSplittingFactors = TSplittingAndShiftingFactorsTestData.getTSplittingFactors();
         Network network = mock(Network.class);
         GlskDocument glskDocument = mock(GlskDocument.class);
+        TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
         when(glskDocument.getZonalScalable(network)).thenReturn(null);
         when(fileImporter.importGlsk(GLSK_FILE_URL)).thenReturn(glskDocument);
+        when(timestampWrapper.getImportCornerSplittingFactors()).thenReturn(TimeStampTestData.getImportCornerSplittingFactors());
 
-        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterWithSplittingFactors(tSplittingFactors, network, GLSK_FILE_URL);
+        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterWithSplittingFactors(timestampWrapper, network, GLSK_FILE_URL);
 
         verify(fileImporter, times(1)).importGlsk(GLSK_FILE_URL);
         verify(glskDocument, times(1)).getZonalScalable(network);
@@ -77,11 +75,13 @@ class CseValidNetworkShifterTest {
     void getNetworkShifterReduceToFranceAndItalyWithFranceInArea() {
         Network network = mock(Network.class);
         GlskDocument glskDocument = mock(GlskDocument.class);
+        TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
         when(glskDocument.getZonalScalable(network)).thenReturn(null);
         when(fileImporter.importGlsk(GLSK_FILE_URL)).thenReturn(glskDocument);
+        when(timestampWrapper.getExportCornerSplittingFactorsMapReduceToFranceAndItaly()).thenReturn(TimeStampTestData.getExportCornerSplittingFactorsMapReduceToFranceAndItalyWithFranceInArea());
 
-        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(true, network, GLSK_FILE_URL);
+        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(timestampWrapper, network, GLSK_FILE_URL);
 
         verify(fileImporter, times(1)).importGlsk(GLSK_FILE_URL);
         verify(glskDocument, times(1)).getZonalScalable(network);
@@ -92,11 +92,13 @@ class CseValidNetworkShifterTest {
     void getNetworkShifterReduceToFranceAndItalyWithFranceOutArea() {
         Network network = mock(Network.class);
         GlskDocument glskDocument = mock(GlskDocument.class);
+        TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
         when(glskDocument.getZonalScalable(network)).thenReturn(null);
         when(fileImporter.importGlsk(GLSK_FILE_URL)).thenReturn(glskDocument);
+        when(timestampWrapper.getExportCornerSplittingFactorsMapReduceToFranceAndItaly()).thenReturn(TimeStampTestData.getExportCornerSplittingFactorsMapReduceToFranceAndItalyWithFranceOutArea());
 
-        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(false, network, GLSK_FILE_URL);
+        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(timestampWrapper, network, GLSK_FILE_URL);
 
         verify(fileImporter, times(1)).importGlsk(GLSK_FILE_URL);
         verify(glskDocument, times(1)).getZonalScalable(network);
@@ -107,16 +109,15 @@ class CseValidNetworkShifterTest {
 
     @Test
     void getNetworkShiftedWithShiftingFactorsWithFranceInArea() {
-        TShiftingFactors tShiftingFactors = TSplittingAndShiftingFactorsTestData.getTShiftingFactors();
-        List<TCalculationDirection> calculationDirections = TCalculationDirectionTestData.getTCalculationDirectionListWithFranceInArea();
-
         Network network = mock(Network.class);
         GlskDocument glskDocument = mock(GlskDocument.class);
+        TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
         when(glskDocument.getZonalScalable(network)).thenReturn(null);
         when(fileImporter.importGlsk(GLSK_FILE_URL)).thenReturn(glskDocument);
+        when(timestampWrapper.getExportCornerSplittingFactors()).thenReturn(TimeStampTestData.getExportCornerSplittingFactorsWithFranceInArea());
 
-        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterWithShiftingFactors(tShiftingFactors, calculationDirections, network, GLSK_FILE_URL);
+        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterWithShiftingFactors(timestampWrapper, network, GLSK_FILE_URL);
 
         verify(fileImporter, times(1)).importGlsk(GLSK_FILE_URL);
         verify(glskDocument, times(1)).getZonalScalable(network);
@@ -125,74 +126,55 @@ class CseValidNetworkShifterTest {
 
     @Test
     void getNetworkShiftedWithShiftingFactorsWithFranceOutArea() {
-        TShiftingFactors tShiftingFactors = TSplittingAndShiftingFactorsTestData.getTShiftingFactors();
-        List<TCalculationDirection> calculationDirections = TCalculationDirectionTestData.getTCalculationDirectionListWithFranceOutArea();
-
         Network network = mock(Network.class);
         GlskDocument glskDocument = mock(GlskDocument.class);
+        TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
         when(glskDocument.getZonalScalable(network)).thenReturn(null);
         when(fileImporter.importGlsk(GLSK_FILE_URL)).thenReturn(glskDocument);
+        when(timestampWrapper.getExportCornerSplittingFactors()).thenReturn(TimeStampTestData.getExportCornerSplittingFactorsWithFranceOutArea());
 
-        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterWithShiftingFactors(tShiftingFactors, calculationDirections, network, GLSK_FILE_URL);
+        NetworkShifter networkShifter = cseValidNetworkShifter.getNetworkShifterWithShiftingFactors(timestampWrapper, network, GLSK_FILE_URL);
 
         verify(fileImporter, times(1)).importGlsk(GLSK_FILE_URL);
         verify(glskDocument, times(1)).getZonalScalable(network);
         assertNotNull(networkShifter);
     }
 
-    /* ------------------- getNetworkShiftedWithShiftingFactors ------------------- */
+    /* ------------------- shiftNetwork ------------------- */
 
     @Test
-    void getNetworkShiftedWithShiftingFactors() throws GlskLimitationException, ShiftingException {
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TShiftingFactors tShiftingFactors = timestamp.getShiftingFactors();
-        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+    void shiftNetwork() throws GlskLimitationException, ShiftingException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        String cgmFileName = cseValidRequest.getCgm().getFilename();
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
+        double shiftValue = 1000.0;
 
         Network network = mock(Network.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
+        TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
-        when(fileImporter.importNetwork(cgmFileName, cgmUrl)).thenReturn(network);
-        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterWithShiftingFactors(tShiftingFactors, calculationDirections, network, glskUrl);
+        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterWithShiftingFactors(timestampWrapper, network, glskUrl);
 
-        BigDecimal miec = timestamp.getMIEC().getV();
-        BigDecimal mibiec = timestamp.getMiBIEC().getV();
-        BigDecimal antcFinal = timestamp.getANTCFinal().getV();
-        double shiftValue = miec.subtract(mibiec.subtract(antcFinal)).doubleValue();
-
-        Network networkShifted = cseValidNetworkShifter.shiftNetwork(timestamp, cseValidRequest);
+        cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        assertNotNull(networkShifted);
     }
 
     @Test
     void getNetworkShiftedWithShiftingFactorsShouldThrowRunTimeExceptionBecauseGlskLimitationExceptionWasThrownWhenShifting() throws GlskLimitationException, ShiftingException {
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TShiftingFactors tShiftingFactors = timestamp.getShiftingFactors();
-        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        String cgmFileName = cseValidRequest.getCgm().getFilename();
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
+        double shiftValue = 1000.0;
+
         Network network = mock(Network.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
+        TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
-        BigDecimal miec = timestamp.getMIEC().getV();
-        BigDecimal mibiec = timestamp.getMiBIEC().getV();
-        BigDecimal antcFinal = timestamp.getANTCFinal().getV();
-        double shiftValue = miec.subtract(mibiec.subtract(antcFinal)).doubleValue();
-
-        when(fileImporter.importNetwork(cgmFileName, cgmUrl)).thenReturn(network);
         doThrow(GlskLimitationException.class).when(networkShifter).shiftNetwork(shiftValue, network);
-        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterWithShiftingFactors(tShiftingFactors, calculationDirections, network, glskUrl);
+        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterWithShiftingFactors(timestampWrapper, network, glskUrl);
 
-        assertThrows(RuntimeException.class, () -> {
-            cseValidNetworkShifter.shiftNetwork(timestamp, cseValidRequest);
+        assertThrows(CseValidShiftFailureException.class, () -> {
+            cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
         });
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
@@ -200,27 +182,19 @@ class CseValidNetworkShifterTest {
 
     @Test
     void getNetworkShiftedWithShiftingFactorsShouldThrowRunTimeExceptionBecauseShiftingExceptionWasThrownWhenShifting() throws GlskLimitationException, ShiftingException {
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TShiftingFactors tShiftingFactors = timestamp.getShiftingFactors();
-        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        String cgmFileName = cseValidRequest.getCgm().getFilename();
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
+        double shiftValue = 1000.0;
+
         Network network = mock(Network.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
+        TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
-        BigDecimal miec = timestamp.getMIEC().getV();
-        BigDecimal mibiec = timestamp.getMiBIEC().getV();
-        BigDecimal antcFinal = timestamp.getANTCFinal().getV();
-        double shiftValue = miec.subtract(mibiec.subtract(antcFinal)).doubleValue();
-
-        when(fileImporter.importNetwork(cgmFileName, cgmUrl)).thenReturn(network);
         doThrow(ShiftingException.class).when(networkShifter).shiftNetwork(shiftValue, network);
-        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterWithShiftingFactors(tShiftingFactors, calculationDirections, network, glskUrl);
+        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterWithShiftingFactors(timestampWrapper, network, glskUrl);
 
-        assertThrows(RuntimeException.class, () -> {
-            cseValidNetworkShifter.shiftNetwork(timestamp, cseValidRequest);
+        assertThrows(CseValidShiftFailureException.class, () -> {
+            cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
         });
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);

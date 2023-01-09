@@ -26,17 +26,34 @@ public final class TSplittingAndShiftingFactorsTestData {
     public static TSplittingFactors getTSplittingFactors() {
         TSplittingFactors tSplittingFactors = new TSplittingFactors();
 
-        tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.ONE, "FR"));
-        tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.TEN, "IT"));
+        tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.valueOf(0.4), "FR"));
+        tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.valueOf(0.2), "AT"));
+        tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.valueOf(0.3), "SI"));
+        tSplittingFactors.getSplittingFactor().add(getTFactor(BigDecimal.valueOf(0.1), "CH"));
 
         return tSplittingFactors;
     }
 
-    public static TShiftingFactors getTShiftingFactors() {
+    public static TShiftingFactors getTShiftingFactorsWithFranceInArea() {
         TShiftingFactors tShiftingFactors = new TShiftingFactors();
 
-        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.ONE, "FR"));
-        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.TEN, "IT"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.7), "CH"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.2), "AT"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.1), "SI"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.4), "FR"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.6), "IT"));
+
+        return tShiftingFactors;
+    }
+
+    public static TShiftingFactors getTShiftingFactorsWithFranceOutArea() {
+        TShiftingFactors tShiftingFactors = new TShiftingFactors();
+
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.7), "FR"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.2), "AT"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.1), "SI"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.4), "CH"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.6), "IT"));
 
         return tShiftingFactors;
     }
