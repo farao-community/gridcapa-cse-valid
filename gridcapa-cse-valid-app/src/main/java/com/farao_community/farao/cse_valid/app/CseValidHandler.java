@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -41,6 +41,7 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSIN
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 @Component
@@ -159,7 +160,7 @@ public class CseValidHandler {
             tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), mniiValue);
         } else {
             try {
-                cseValidRequestValidator.checkAllFilesExist(cseValidRequest, null);
+                cseValidRequestValidator.checkAllFilesExist(cseValidRequest, false);
                 runDichotomyForFullImport(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
             } catch (CseValidRequestValidatorException e) {
                 businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
@@ -230,12 +231,14 @@ public class CseValidHandler {
             BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
         } else {
-            timestampWrapper.initExportingCountryMap();
             if (areAllRequiredFilesPresent(timestampWrapper, cseValidRequest, tcDocumentTypeWriter)) {
-                Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
+                Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getUrl());
                 double shiftValue = computeShiftValue(timestampWrapper);
                 cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, cseValidRequest.getGlsk().getUrl());
-                if (cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cseValidRequest.getExportCrac().getUrl())) {
+                String cracUrl = timestampWrapper.isExportCornerActiveForFrance()
+                        ? cseValidRequest.getExportCrac().getUrl()
+                        : cseValidRequest.getImportCrac().getUrl();
+                if (cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cracUrl)) {
                     tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
                 } else {
                     runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
@@ -265,12 +268,8 @@ public class CseValidHandler {
     }
 
     private boolean areAllRequiredFilesPresent(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
-        Boolean isFranceExporting = timestampWrapper.isFranceExporting();
-        if (isFranceExporting == null) {
-            throw new CseValidInvalidDataException("France must appear in InArea or OutArea");
-        }
         try {
-            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, isFranceExporting);
+            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, timestampWrapper.isExportCornerActiveForFrance());
         } catch (CseValidRequestValidatorException e) {
             businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
             tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());

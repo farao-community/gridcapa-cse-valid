@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -436,17 +436,52 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static Map<String, Double> getImportCornerSplittingFactors() {
+    public static Map<String, Boolean> getExportingCountryMapWithFranceInArea() {
+        Map<String, Boolean> exportingCountryMap = new HashMap<>();
+        exportingCountryMap.put("10YCH-SWISSGRIDZ", false);
+        exportingCountryMap.put("10YAT-APG------L", false);
+        exportingCountryMap.put("10YSI-ELES-----O", false);
+        exportingCountryMap.put("10YFR-RTE------C", true);
+        exportingCountryMap.put("10YIT-GRTN-----B", true);
+        return exportingCountryMap;
+    }
+
+    public static Map<String, Boolean> getExportingCountryMapWithFranceOutArea() {
+        Map<String, Boolean> exportingCountryMap = new HashMap<>();
+        exportingCountryMap.put("10YFR-RTE------C", false);
+        exportingCountryMap.put("10YAT-APG------L", false);
+        exportingCountryMap.put("10YSI-ELES-----O", false);
+        exportingCountryMap.put("10YCH-SWISSGRIDZ", true);
+        exportingCountryMap.put("10YIT-GRTN-----B", true);
+        return exportingCountryMap;
+    }
+
+    public static Map<String, Double> getImportCornerSplittingFactorsWithoutItaly() {
         Map<String, Double> importCornerSplittingFactors = new HashMap<>();
         importCornerSplittingFactors.put("10YAT-APG------L", 0.2);
         importCornerSplittingFactors.put("10YSI-ELES-----O", 0.3);
         importCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.1);
         importCornerSplittingFactors.put("10YFR-RTE------C", 0.4);
+        return importCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getImportCornerSplittingFactorsWithItaly() {
+        Map<String, Double> importCornerSplittingFactors = getImportCornerSplittingFactorsWithoutItaly();
         importCornerSplittingFactors.put("10YIT-GRTN-----B", -1.0);
         return importCornerSplittingFactors;
     }
 
-    public static Map<String, Double> getExportCornerSplittingFactorsWithFranceInArea() {
+    public static Map<String, Double> getExportCornerSplittingFactorsWithFranceInAreaWithoutSign() {
+        Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
+        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.7);
+        exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
+        exportCornerSplittingFactors.put("10YSI-ELES-----O", 0.1);
+        exportCornerSplittingFactors.put("10YFR-RTE------C", 0.4);
+        exportCornerSplittingFactors.put("10YIT-GRTN-----B", 0.6);
+        return exportCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getExportCornerSplittingFactorsWithFranceInAreaWithSign() {
         Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
         exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.7);
         exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
@@ -456,7 +491,17 @@ public final class TimeStampTestData {
         return exportCornerSplittingFactors;
     }
 
-    public static Map<String, Double> getExportCornerSplittingFactorsWithFranceOutArea() {
+    public static Map<String, Double> getExportCornerSplittingFactorsWithFranceOutAreaWithoutSign() {
+        Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
+        exportCornerSplittingFactors.put("10YFR-RTE------C", 0.7);
+        exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
+        exportCornerSplittingFactors.put("10YSI-ELES-----O", 0.1);
+        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.4);
+        exportCornerSplittingFactors.put("10YIT-GRTN-----B", 0.6);
+        return exportCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getExportCornerSplittingFactorsWithFranceOutAreaWithSign() {
         Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
         exportCornerSplittingFactors.put("10YFR-RTE------C", 0.7);
         exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);

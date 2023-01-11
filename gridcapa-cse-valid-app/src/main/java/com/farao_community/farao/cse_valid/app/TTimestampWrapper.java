@@ -1,11 +1,15 @@
+/*
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.commons.EICode;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.TSplittingFactors;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.powsybl.iidm.network.Country;
 import xsd.etso_core_cmpts.QuantityType;
@@ -14,7 +18,13 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+/**
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
+ */
 
 public class TTimestampWrapper {
     private final TTimestamp timestamp;
@@ -149,58 +159,47 @@ public class TTimestampWrapper {
 
     //
 
-    public void initExportingCountryMap() {
-        exportingCountryMap = new HashMap<>();
-        List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
-        calculationDirections.forEach(tCalculationDirection -> {
-            if (tCalculationDirection.getInArea().getV().equals(eicCodesConfiguration.getItaly())) {
-                exportingCountryMap.put(tCalculationDirection.getOutArea().getV(), false);
-            } else if (tCalculationDirection.getOutArea().getV().equals(eicCodesConfiguration.getItaly())) {
-                exportingCountryMap.put(tCalculationDirection.getInArea().getV(), true);
-            }
-        });
-        exportingCountryMap.put(toEic(Country.IT), true);
+    Map<String, Boolean> getExportCornerActiveForCountryMap() {
+        if (exportingCountryMap == null) {
+            exportingCountryMap = new HashMap<>();
+            List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+            calculationDirections.forEach(tCalculationDirection -> {
+                if (tCalculationDirection.getInArea().getV().equals(eicCodesConfiguration.getItaly())) {
+                    exportingCountryMap.put(tCalculationDirection.getOutArea().getV(), false);
+                } else if (tCalculationDirection.getOutArea().getV().equals(eicCodesConfiguration.getItaly())) {
+                    exportingCountryMap.put(tCalculationDirection.getInArea().getV(), true);
+                }
+            });
+            exportingCountryMap.put(toEic(Country.IT), true);
+        }
+        return exportingCountryMap;
     }
 
-    public Boolean isFranceExporting() {
-        return exportingCountryMap.get(eicCodesConfiguration.getFrance());
+    public boolean isExportCornerActiveForCountry(String countryEic) {
+        getExportCornerActiveForCountryMap();
+        return Optional.ofNullable(exportingCountryMap.get(countryEic))
+                .orElseThrow(() -> new CseValidInvalidDataException("Country " + countryEic + " must appear in InArea or OutArea"));
+    }
+
+    public boolean isExportCornerActiveForFrance() {
+        return isExportCornerActiveForCountry(eicCodesConfiguration.getFrance());
     }
 
     public Map<String, Double> getImportCornerSplittingFactors() {
-        TSplittingFactors tSplittingFactors = timestamp.getSplittingFactors();
-        Map<String, Double> splittingFactorsMap = tSplittingFactors.getSplittingFactor().stream()
+        return timestamp.getSplittingFactors().getSplittingFactor().stream()
                 .collect(Collectors.toMap(
                     tFactor -> toEic(tFactor.getCountry().getV()),
                     tFactor -> tFactor.getFactor().getV().doubleValue()
                 ));
-        splittingFactorsMap.put(toEic(Country.IT), -1.);
-        return splittingFactorsMap;
     }
 
     public Map<String, Double> getExportCornerSplittingFactors() {
-        TShiftingFactors tShiftingFactors = timestamp.getShiftingFactors();
-        return tShiftingFactors.getShiftingFactor().stream()
+        getExportCornerActiveForCountryMap();
+        return timestamp.getShiftingFactors().getShiftingFactor().stream()
                 .collect(Collectors.toMap(
                     tFactor -> toEic(tFactor.getCountry().getV()),
-                    tFactor -> tFactor.getFactor().getV().doubleValue() * getFactorSignOfCountry(tFactor.getCountry().getV())
-                ));
-    }
-
-    public Map<String, Double> getExportCornerSplittingFactorsMapReduceToFranceAndItaly() {
-        Map<String, Double> result = new HashMap<>();
-        double franceFactor = isFranceExporting() ? -1.0 : 1.0;
-        result.put(toEic(Country.FR), franceFactor);
-        result.put(toEic(Country.IT), franceFactor * -1);
-        return result;
-    }
-
-    private double getFactorSignOfCountry(String country) {
-        String countryEic = toEic(country);
-        Boolean isCountryExporting = exportingCountryMap.get(countryEic);
-        if (isCountryExporting == null) {
-            throw new CseValidInvalidDataException("Country " + country + " must appear in InArea or OutArea");
-        }
-        return isCountryExporting ? -1 : 1;
+                    tFactor -> tFactor.getFactor().getV().doubleValue())
+                );
     }
 
     private String toEic(String country) {

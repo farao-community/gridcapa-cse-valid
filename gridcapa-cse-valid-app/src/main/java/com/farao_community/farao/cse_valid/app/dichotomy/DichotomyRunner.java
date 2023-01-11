@@ -58,7 +58,7 @@ public class DichotomyRunner {
         int npAugmented = timestampWrapper.getMniiIntValue();
         int np = timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue();
         double maxValue = (double) npAugmented - np;
-        Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
+        Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getUrl());
         String jsonCracUrl = getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
@@ -73,8 +73,8 @@ public class DichotomyRunner {
         int npAugmented = timestampWrapper.getMiecIntValue();
         int np = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
         double maxValue = (double) npAugmented - np;
-        Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl());
-        boolean isFranceExporting = timestampWrapper.isFranceExporting();
+        Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getUrl());
+        boolean isFranceExporting = timestampWrapper.isExportCornerActiveForFrance();
         String jsonCracUrl = isFranceExporting
                 ? getJsonCracUrl(cseValidRequest, network, cseValidRequest.getExportCrac().getUrl())
                 : getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());

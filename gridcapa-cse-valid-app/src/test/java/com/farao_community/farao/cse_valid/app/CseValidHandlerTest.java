@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -296,7 +296,7 @@ class CseValidHandlerTest {
 
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
-        doThrow(e).when(cseValidRequestValidator).checkAllFilesExist(cseValidRequest, null);
+        doThrow(e).when(cseValidRequestValidator).checkAllFilesExist(cseValidRequest, false);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
@@ -521,7 +521,7 @@ class CseValidHandlerTest {
         Network network = mock(Network.class);
 
         when(minioAdapter.fileExists(any())).thenReturn(true);
-        when(fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl())).thenReturn(network);
+        when(fileImporter.importNetwork(cseValidRequest.getCgm().getUrl())).thenReturn(network);
         when(cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cseValidRequest.getExportCrac().getUrl())).thenReturn(false);
         when(dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest)).thenReturn(dichotomyResult);
 
@@ -544,7 +544,7 @@ class CseValidHandlerTest {
         Network network = mock(Network.class);
 
         when(minioAdapter.fileExists(any())).thenReturn(true);
-        when(fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl())).thenReturn(network);
+        when(fileImporter.importNetwork(cseValidRequest.getCgm().getUrl())).thenReturn(network);
         when(cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cseValidRequest.getExportCrac().getUrl())).thenReturn(true);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
@@ -567,14 +567,14 @@ class CseValidHandlerTest {
         Network network = mock(Network.class);
 
         when(minioAdapter.fileExists(any())).thenReturn(true);
-        when(fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl())).thenReturn(network);
-        when(cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cseValidRequest.getExportCrac().getUrl())).thenReturn(false);
+        when(fileImporter.importNetwork(cseValidRequest.getCgm().getUrl())).thenReturn(network);
+        when(cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cseValidRequest.getImportCrac().getUrl())).thenReturn(false);
         when(dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest)).thenReturn(dichotomyResult);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
-        verify(cseValidRaoValidator, times(1)).isNetworkSecure(network, cseValidRequest, cseValidRequest.getExportCrac().getUrl());
+        verify(cseValidRaoValidator, times(1)).isNetworkSecure(network, cseValidRequest, cseValidRequest.getImportCrac().getUrl());
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest);
     }
 
@@ -590,13 +590,13 @@ class CseValidHandlerTest {
         Network network = mock(Network.class);
 
         when(minioAdapter.fileExists(any())).thenReturn(true);
-        when(fileImporter.importNetwork(cseValidRequest.getCgm().getFilename(), cseValidRequest.getCgm().getUrl())).thenReturn(network);
-        when(cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cseValidRequest.getExportCrac().getUrl())).thenReturn(true);
+        when(fileImporter.importNetwork(cseValidRequest.getCgm().getUrl())).thenReturn(network);
+        when(cseValidRaoValidator.isNetworkSecure(network, cseValidRequest, cseValidRequest.getImportCrac().getUrl())).thenReturn(true);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
-        verify(cseValidRaoValidator, times(1)).isNetworkSecure(network, cseValidRequest, cseValidRequest.getExportCrac().getUrl());
+        verify(cseValidRaoValidator, times(1)).isNetworkSecure(network, cseValidRequest, cseValidRequest.getImportCrac().getUrl());
         verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
     }
 }

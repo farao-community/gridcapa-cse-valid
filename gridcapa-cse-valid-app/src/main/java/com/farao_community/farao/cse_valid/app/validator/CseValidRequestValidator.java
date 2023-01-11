@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -20,7 +20,7 @@ import java.util.StringJoiner;
 @Component
 public class CseValidRequestValidator {
 
-    public void checkAllFilesExist(CseValidRequest cseValidRequest, Boolean isFranceExporting) throws CseValidRequestValidatorException {
+    public void checkAllFilesExist(CseValidRequest cseValidRequest, boolean franceImporting) throws CseValidRequestValidatorException {
 
         if (cseValidRequest == null) {
             throw new CseValidRequestValidatorException("Request is null");
@@ -30,7 +30,7 @@ public class CseValidRequestValidator {
         final boolean glskFileExists = fileExists(cseValidRequest.getGlsk());
         final boolean importCracFileExists = fileExists(cseValidRequest.getImportCrac());
 
-        if (Boolean.TRUE.equals(isFranceExporting)) {
+        if (franceImporting) {
             final boolean exportCracFileExist = fileExists(cseValidRequest.getExportCrac());
             final boolean allFilesExist = cgmFileExists && glskFileExists && importCracFileExists && exportCracFileExist;
             if (!allFilesExist) {
