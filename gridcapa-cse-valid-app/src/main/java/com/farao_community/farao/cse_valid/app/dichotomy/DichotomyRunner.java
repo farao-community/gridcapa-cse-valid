@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -11,8 +11,6 @@ import com.farao_community.farao.cse_valid.app.CseValidNetworkShifter;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.TTimestampWrapper;
-import com.farao_community.farao.data.crac_api.Crac;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
 import com.farao_community.farao.dichotomy.api.DichotomyEngine;
 import com.farao_community.farao.dichotomy.api.NetworkValidator;
 import com.farao_community.farao.dichotomy.api.index.Index;
@@ -54,47 +52,35 @@ public class DichotomyRunner {
         this.cseValidNetworkShifter = cseValidNetworkShifter;
     }
 
-    public DichotomyResult<RaoResponse> runImportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest) {
+    public DichotomyResult<RaoResponse> runImportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
         int npAugmented = timestampWrapper.getMniiIntValue();
         int np = timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue();
         double maxValue = (double) npAugmented - np;
         Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getUrl());
-        String jsonCracUrl = getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
                 cseValidNetworkShifter.getNetworkShifterWithSplittingFactors(timestampWrapper, network, cseValidRequest.getGlsk().getUrl()),
-                getNetworkValidator(cseValidRequest, jsonCracUrl));
+                getNetworkValidator(cseValidRequest, jsonCracUrl, raoParametersURL));
         return engine.run(network);
     }
 
-    public DichotomyResult<RaoResponse> runExportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest) {
+    public DichotomyResult<RaoResponse> runExportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
         int npAugmented = timestampWrapper.getMiecIntValue();
         int np = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
         double maxValue = (double) npAugmented - np;
         Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getUrl());
-        boolean isFranceExporting = timestampWrapper.isExportCornerActiveForFrance();
-        String jsonCracUrl = isFranceExporting
-                ? getJsonCracUrl(cseValidRequest, network, cseValidRequest.getExportCrac().getUrl())
-                : getJsonCracUrl(cseValidRequest, network, cseValidRequest.getImportCrac().getUrl());
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
                 cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(timestampWrapper, network, cseValidRequest.getGlsk().getUrl()),
-                getNetworkValidator(cseValidRequest, jsonCracUrl));
+                getNetworkValidator(cseValidRequest, jsonCracUrl, raoParametersURL));
         return engine.run(network);
     }
 
-    private String getJsonCracUrl(CseValidRequest cseValidRequest, Network network, String cracUrl) {
-        CseCrac cseCrac = fileImporter.importCseCrac(cracUrl);
-        Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
-        return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
-    }
-
-    private NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl) {
-        String raoParametersURL = fileExporter.saveRaoParameters(cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+    private NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
         return new RaoValidator(
                 cseValidRequest.getProcessType(),
                 cseValidRequest.getId(),
