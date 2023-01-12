@@ -163,7 +163,7 @@ public class CseValidHandler {
         }
     }
 
-    /* --------------- IMPORT CORNER --------------- */
+    /* --------------- FULL IMPORT --------------- */
 
     private void computeTimestampForFullImport(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
         if (irrelevantValuesInTimestampForFullImport(timestampWrapper)) {
@@ -257,7 +257,8 @@ public class CseValidHandler {
             BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
         } else {
-            if (areAllRequiredFilesPresent(timestampWrapper, cseValidRequest, tcDocumentTypeWriter)) {
+            try {
+                cseValidRequestValidator.checkAllFilesExist(cseValidRequest, timestampWrapper.isFranceImportingFromItaly());
                 String cgmUrl = cseValidRequest.getCgm().getUrl();
                 Network network = fileImporter.importNetwork(cgmUrl);
                 double shiftValue = computeShiftValue(timestampWrapper);
@@ -268,7 +269,7 @@ public class CseValidHandler {
                 OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
                 String raoParametersURL = fileExporter.saveRaoParameters(processTargetDateTime, processType);
 
-                String cracUrl = timestampWrapper.isExportCornerActiveForFrance()
+                String cracUrl = timestampWrapper.isFranceImportingFromItaly()
                         ? cseValidRequest.getExportCrac().getUrl()
                         : cseValidRequest.getImportCrac().getUrl();
                 String jsonCracUrl = getJsonCracUrl(cseValidRequest, network, cracUrl);
@@ -277,14 +278,18 @@ public class CseValidHandler {
                 String scaledNetworkName = network.getNameOrId() + ".xiidm";
                 String networkFilePath = scaledNetworkDirPath + scaledNetworkName;
                 String networkFiledUrl = fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType);
+                String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
 
-                RaoResponse raoResponse = cseValidRaoValidator.runRao(cseValidRequest, networkFiledUrl, jsonCracUrl, raoParametersURL);
+                RaoResponse raoResponse = cseValidRaoValidator.runRao(cseValidRequest, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination);
 
                 if (cseValidRaoValidator.isSecure(raoResponse)) {
                     tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
                 } else {
                     runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL);
                 }
+            } catch (CseValidRequestValidatorException e) {
+                businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
+                tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
             }
         }
     }
@@ -307,17 +312,6 @@ public class CseValidHandler {
         final int actualNtc = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
         final int targetNtc = timestampWrapper.getMiecIntValue();
         return actualNtcAboveTargetNtc(timestampWrapper, actualNtc, targetNtc);
-    }
-
-    private boolean areAllRequiredFilesPresent(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
-        try {
-            cseValidRequestValidator.checkAllFilesExist(cseValidRequest, timestampWrapper.isExportCornerActiveForFrance());
-        } catch (CseValidRequestValidatorException e) {
-            businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
-            return false;
-        }
-        return true;
     }
 
     private double computeShiftValue(TTimestampWrapper timestampWrapper) {

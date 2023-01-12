@@ -162,7 +162,7 @@ class CseValidHandlerTest {
         return new CseValidFileResource(filename, Objects.requireNonNull(getClass().getResource("/" + filename)).toExternalForm());
     }
 
-    /* --------------- IMPORT CORNER --------------- */
+    /* --------------- FULL IMPORT --------------- */
 
     @Test
     void computeTimestampDataMissingMniiMnieMiec() {
@@ -593,6 +593,7 @@ class CseValidHandlerTest {
         String scaledNetworkDirPath = basePath + variantName;
         String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
+        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -617,7 +618,7 @@ class CseValidHandlerTest {
         when(network.getVariantManager()).thenReturn(variantManager);
         when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
+        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
 
         when(dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl)).thenReturn(dichotomyResult);
@@ -625,7 +626,7 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl);
+        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl);
     }
@@ -650,6 +651,7 @@ class CseValidHandlerTest {
         String scaledNetworkDirPath = basePath + variantName;
         String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
+        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -673,13 +675,13 @@ class CseValidHandlerTest {
         when(network.getVariantManager()).thenReturn(variantManager);
         when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl)).thenReturn(raoResponse);
+        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl);
+        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
     }
@@ -704,6 +706,7 @@ class CseValidHandlerTest {
         String scaledNetworkDirPath = basePath + variantName;
         String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
+        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -728,7 +731,7 @@ class CseValidHandlerTest {
         when(network.getVariantManager()).thenReturn(variantManager);
         when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl)).thenReturn(raoResponse);
+        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
 
         when(dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl)).thenReturn(dichotomyResult);
@@ -736,7 +739,7 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl);
+        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl);
     }
@@ -761,6 +764,7 @@ class CseValidHandlerTest {
         String scaledNetworkDirPath = basePath + variantName;
         String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
+        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -784,13 +788,13 @@ class CseValidHandlerTest {
         when(network.getVariantManager()).thenReturn(variantManager);
         when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl)).thenReturn(raoResponse);
+        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl);
+        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
     }

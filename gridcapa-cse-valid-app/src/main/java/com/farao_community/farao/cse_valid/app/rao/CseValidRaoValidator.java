@@ -25,7 +25,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class CseValidRaoValidator {
 
-    private static final String RESULTS_DESTINATION = "CSE/VALID/";
     private static final Logger LOGGER = LoggerFactory.getLogger(CseValidRaoValidator.class);
 
     private final FileImporter fileImporter;
@@ -36,9 +35,9 @@ public class CseValidRaoValidator {
         this.raoRunnerClient = raoRunnerClient;
     }
 
-    public RaoResponse runRao(CseValidRequest cseValidRequest, String networkFiledUrl, String jsonCracUrl, String raoParametersURL) {
+    public RaoResponse runRao(CseValidRequest cseValidRequest, String networkFiledUrl, String jsonCracUrl, String raoParametersURL, String resultsDestination) {
         String requestId = cseValidRequest.getId();
-        RaoRequest raoRequest = new RaoRequest(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, RESULTS_DESTINATION);
+        RaoRequest raoRequest = new RaoRequest(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination);
 
         LOGGER.info("RAO request sent: {}", raoRequest);
         RaoResponse raoResponse = raoRunnerClient.runRao(raoRequest);

@@ -47,6 +47,7 @@ class CseValidRaoValidatorTest {
     private static final String JSON_CRAC_URL = "/CSE/VALID/crac.utc";
     private static final String RAO_PARAMETER_URL = "/CSE/VALID/raoParameter.utc";
     private static final String RAO_RESULT_FILE_URL = "raoResultUrl";
+    private static final String RESULTS_DESTINATION = "CSE/VALID/IDCC/2023/01/09/12_30/ARTIFACTS/1234";
 
     /* ------------------- runRao ------------------- */
 
@@ -58,7 +59,7 @@ class CseValidRaoValidatorTest {
 
         when(raoRunnerClient.runRao(any())).thenReturn(raoResponse);
 
-        RaoResponse result = cseValidRaoValidator.runRao(cseValidRequest, NETWORK_FILE_URL, JSON_CRAC_URL, RAO_PARAMETER_URL);
+        RaoResponse result = cseValidRaoValidator.runRao(cseValidRequest, NETWORK_FILE_URL, JSON_CRAC_URL, RAO_PARAMETER_URL, RESULTS_DESTINATION);
 
         assertEquals(raoResponse, result);
 

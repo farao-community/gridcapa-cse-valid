@@ -38,51 +38,49 @@ public class CseValidNetworkShifter {
         this.eicCodesConfiguration = eicCodesConfiguration;
     }
 
-    public NetworkShifter getNetworkShifterWithSplittingFactors(TTimestampWrapper timestampWrapper,
-                                                                Network network,
-                                                                String glskUrl) {
+    public NetworkShifter getNetworkShifter(Map<String, Double> splittiFactorMap,
+                                            Network network,
+                                            String glskUrl) {
         GlskDocument glskDocument = fileImporter.importGlsk(glskUrl);
         return new LinearScaler(
                 glskDocument.getZonalScalable(network),
-                new SplittingFactors(getImportCornerSplittingFactors(timestampWrapper)),
+                new SplittingFactors(splittiFactorMap),
                 SHIFT_TOLERANCE);
     }
 
-    public NetworkShifter getNetworkShifterReduceToFranceAndItaly(TTimestampWrapper timestampWrapper,
-                                                                  Network network,
-                                                                  String glskUrl) {
-        GlskDocument glskDocument = fileImporter.importGlsk(glskUrl);
-        return new LinearScaler(
-                glskDocument.getZonalScalable(network),
-                new SplittingFactors(getExportCornerSplittingFactorsMapReduceToFranceAndItaly(timestampWrapper)),
-                SHIFT_TOLERANCE);
+    public NetworkShifter getNetworkShifterForFullImport(TTimestampWrapper timestampWrapper,
+                                                         Network network,
+                                                         String glskUrl) {
+        return getNetworkShifter(getSplittingFactorsForFullImport(timestampWrapper), network, glskUrl);
     }
 
-    NetworkShifter getNetworkShifterWithShiftingFactors(TTimestampWrapper timestampWrapper,
-                                                        Network network,
-                                                        String glskUrl) {
-        GlskDocument glskDocument = fileImporter.importGlsk(glskUrl);
-        return new LinearScaler(
-                glskDocument.getZonalScalable(network),
-                new SplittingFactors(getExportCornerSplittingFactors(timestampWrapper)),
-                SHIFT_TOLERANCE);
+    public NetworkShifter getNetworkShifterForExportCornerWithItalyFrance(TTimestampWrapper timestampWrapper,
+                                                                          Network network,
+                                                                          String glskUrl) {
+        return getNetworkShifter(getSplittingFactorsForExportCornerWithItalyFrance(timestampWrapper), network, glskUrl);
     }
 
-    Map<String, Double> getImportCornerSplittingFactors(TTimestampWrapper timestampWrapper) {
+    NetworkShifter getNetworkShifterForExportCornerWithAllCountries(TTimestampWrapper timestampWrapper,
+                                                                    Network network,
+                                                                    String glskUrl) {
+        return getNetworkShifter(getSplittingFactorsForExportCornerWithAllCountries(timestampWrapper), network, glskUrl);
+    }
+
+    Map<String, Double> getSplittingFactorsForFullImport(TTimestampWrapper timestampWrapper) {
         Map<String, Double> splittingFactorsMap = timestampWrapper.getImportCornerSplittingFactors();
         splittingFactorsMap.put(eicCodesConfiguration.getItaly(), -1.);
         return splittingFactorsMap;
     }
 
-    Map<String, Double> getExportCornerSplittingFactorsMapReduceToFranceAndItaly(TTimestampWrapper timestampWrapper) {
+    Map<String, Double> getSplittingFactorsForExportCornerWithItalyFrance(TTimestampWrapper timestampWrapper) {
         Map<String, Double> result = new HashMap<>();
-        double franceFactor = timestampWrapper.isExportCornerActiveForFrance() ? -1.0 : 1.0;
+        double franceFactor = timestampWrapper.isFranceImportingFromItaly() ? -1.0 : 1.0;
         result.put(eicCodesConfiguration.getFrance(), franceFactor);
         result.put(eicCodesConfiguration.getItaly(), franceFactor * -1);
         return result;
     }
 
-    Map<String, Double> getExportCornerSplittingFactors(TTimestampWrapper timestampWrapper) {
+    Map<String, Double> getSplittingFactorsForExportCornerWithAllCountries(TTimestampWrapper timestampWrapper) {
         return timestampWrapper.getExportCornerSplittingFactors().entrySet().stream()
                 .collect(Collectors.toMap(
                     Map.Entry::getKey,
@@ -91,11 +89,11 @@ public class CseValidNetworkShifter {
     }
 
     private double getFactorSignOfCountry(TTimestampWrapper timestampWrapper, String countryEic) {
-        return timestampWrapper.isExportCornerActiveForCountry(countryEic) ? -1 : 1;
+        return timestampWrapper.isCountryImportingFromItaly(countryEic) ? -1 : 1;
     }
 
     public void shiftNetwork(double shiftValue, Network network, TTimestampWrapper timestampWrapper, String glskUrl) {
-        NetworkShifter networkShifter = getNetworkShifterWithShiftingFactors(timestampWrapper, network, glskUrl);
+        NetworkShifter networkShifter = getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl);
         try {
             networkShifter.shiftNetwork(shiftValue, network);
         } catch (GlskLimitationException | ShiftingException e) {

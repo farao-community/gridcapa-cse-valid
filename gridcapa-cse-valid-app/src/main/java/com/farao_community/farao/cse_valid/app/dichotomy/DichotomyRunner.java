@@ -61,7 +61,7 @@ public class DichotomyRunner {
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
-                cseValidNetworkShifter.getNetworkShifterWithSplittingFactors(timestampWrapper, network, cseValidRequest.getGlsk().getUrl()),
+                cseValidNetworkShifter.getNetworkShifterForFullImport(timestampWrapper, network, cseValidRequest.getGlsk().getUrl()),
                 getNetworkValidator(cseValidRequest, jsonCracUrl, raoParametersURL));
         return engine.run(network);
     }
@@ -75,7 +75,7 @@ public class DichotomyRunner {
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
-                cseValidNetworkShifter.getNetworkShifterReduceToFranceAndItaly(timestampWrapper, network, cseValidRequest.getGlsk().getUrl()),
+                cseValidNetworkShifter.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, cseValidRequest.getGlsk().getUrl()),
                 getNetworkValidator(cseValidRequest, jsonCracUrl, raoParametersURL));
         return engine.run(network);
     }

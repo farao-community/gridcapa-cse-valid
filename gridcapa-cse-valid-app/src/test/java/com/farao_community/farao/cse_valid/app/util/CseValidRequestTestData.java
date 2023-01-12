@@ -43,7 +43,7 @@ public final class CseValidRequestTestData {
         return new CseValidRequest(id, processType, timestamp, null, null, null, null, null, timestamp);
     }
 
-    /* --------------- IMPORT CORNER --------------- */
+    /* --------------- FULL IMPORT --------------- */
 
     public static CseValidRequest getImportCseValidRequest(ProcessType processType) {
         String id = UUID.randomUUID().toString();

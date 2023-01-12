@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class TTimestampWrapper {
     private final TTimestamp timestamp;
     private final EicCodesConfiguration eicCodesConfiguration;
-    private Map<String, Boolean> exportingCountryMap;
+    private Map<String, Boolean> countryImportingMap;
 
     // Timestamp
     public TTimestampWrapper(TTimestamp timestamp, EicCodesConfiguration eicCodesConfiguration) {
@@ -159,30 +159,29 @@ public class TTimestampWrapper {
 
     //
 
-    Map<String, Boolean> getExportCornerActiveForCountryMap() {
-        if (exportingCountryMap == null) {
-            exportingCountryMap = new HashMap<>();
+    Map<String, Boolean> getCountryImportingFromItalyMap() {
+        if (countryImportingMap == null) {
+            countryImportingMap = new HashMap<>();
             List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
             calculationDirections.forEach(tCalculationDirection -> {
                 if (tCalculationDirection.getInArea().getV().equals(eicCodesConfiguration.getItaly())) {
-                    exportingCountryMap.put(tCalculationDirection.getOutArea().getV(), false);
+                    countryImportingMap.put(tCalculationDirection.getOutArea().getV(), false);
                 } else if (tCalculationDirection.getOutArea().getV().equals(eicCodesConfiguration.getItaly())) {
-                    exportingCountryMap.put(tCalculationDirection.getInArea().getV(), true);
+                    countryImportingMap.put(tCalculationDirection.getInArea().getV(), true);
                 }
             });
-            exportingCountryMap.put(toEic(Country.IT), true);
+            countryImportingMap.put(eicCodesConfiguration.getItaly(), true);
         }
-        return exportingCountryMap;
+        return countryImportingMap;
     }
 
-    public boolean isExportCornerActiveForCountry(String countryEic) {
-        getExportCornerActiveForCountryMap();
-        return Optional.ofNullable(exportingCountryMap.get(countryEic))
+    public boolean isCountryImportingFromItaly(String countryEic) {
+        return Optional.ofNullable(getCountryImportingFromItalyMap().get(countryEic))
                 .orElseThrow(() -> new CseValidInvalidDataException("Country " + countryEic + " must appear in InArea or OutArea"));
     }
 
-    public boolean isExportCornerActiveForFrance() {
-        return isExportCornerActiveForCountry(eicCodesConfiguration.getFrance());
+    public boolean isFranceImportingFromItaly() {
+        return isCountryImportingFromItaly(eicCodesConfiguration.getFrance());
     }
 
     public Map<String, Double> getImportCornerSplittingFactors() {
@@ -194,7 +193,6 @@ public class TTimestampWrapper {
     }
 
     public Map<String, Double> getExportCornerSplittingFactors() {
-        getExportCornerActiveForCountryMap();
         return timestamp.getShiftingFactors().getShiftingFactor().stream()
                 .collect(Collectors.toMap(
                     tFactor -> toEic(tFactor.getCountry().getV()),
@@ -203,10 +201,6 @@ public class TTimestampWrapper {
     }
 
     private String toEic(String country) {
-        return toEic(Country.valueOf(country));
-    }
-
-    private String toEic(Country country) {
-        return new EICode(country).getAreaCode();
+        return new EICode(Country.valueOf(country)).getAreaCode();
     }
 }
