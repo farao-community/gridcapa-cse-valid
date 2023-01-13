@@ -9,7 +9,7 @@ package com.farao_community.farao.cse_valid.app.validator;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
-import com.farao_community.farao.cse_valid.app.util.CseValidRequestTestData;
+import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

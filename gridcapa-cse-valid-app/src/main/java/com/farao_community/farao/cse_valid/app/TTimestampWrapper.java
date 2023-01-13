@@ -6,12 +6,11 @@
  */
 package com.farao_community.farao.cse_valid.app;
 
-import com.farao_community.farao.commons.EICode;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
+import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
-import com.powsybl.iidm.network.Country;
 import xsd.etso_core_cmpts.QuantityType;
 
 import java.math.BigDecimal;
@@ -29,12 +28,14 @@ import java.util.stream.Collectors;
 public class TTimestampWrapper {
     private final TTimestamp timestamp;
     private final EicCodesConfiguration eicCodesConfiguration;
+    private final EicCodesMapper eicCodesMapper;
     private Map<String, Boolean> countryImportingMap;
 
     // Timestamp
-    public TTimestampWrapper(TTimestamp timestamp, EicCodesConfiguration eicCodesConfiguration) {
+    public TTimestampWrapper(TTimestamp timestamp, EicCodesConfiguration eicCodesConfiguration, EicCodesMapper eicCodesMapper) {
         this.timestamp = timestamp;
         this.eicCodesConfiguration = eicCodesConfiguration;
+        this.eicCodesMapper = eicCodesMapper;
     }
 
     public TTimestamp getTimestamp() {
@@ -187,7 +188,7 @@ public class TTimestampWrapper {
     public Map<String, Double> getImportCornerSplittingFactors() {
         return timestamp.getSplittingFactors().getSplittingFactor().stream()
                 .collect(Collectors.toMap(
-                    tFactor -> toEic(tFactor.getCountry().getV()),
+                    tFactor -> eicCodesMapper.mapToEicCodes(tFactor.getCountry().getV()),
                     tFactor -> tFactor.getFactor().getV().doubleValue()
                 ));
     }
@@ -195,12 +196,8 @@ public class TTimestampWrapper {
     public Map<String, Double> getExportCornerSplittingFactors() {
         return timestamp.getShiftingFactors().getShiftingFactor().stream()
                 .collect(Collectors.toMap(
-                    tFactor -> toEic(tFactor.getCountry().getV()),
+                    tFactor -> eicCodesMapper.mapToEicCodes(tFactor.getCountry().getV()),
                     tFactor -> tFactor.getFactor().getV().doubleValue())
                 );
-    }
-
-    private String toEic(String country) {
-        return new EICode(Country.valueOf(country)).getAreaCode();
     }
 }

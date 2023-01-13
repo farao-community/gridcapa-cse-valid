@@ -15,6 +15,7 @@ import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfigurati
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
+import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
@@ -51,6 +52,7 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSIN
 public class CseValidHandler {
     private final DichotomyRunner dichotomyRunner;
     private final EicCodesConfiguration eicCodesConfiguration;
+    private final EicCodesMapper eicCodesMapper;
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final NetPositionService netPositionService;
@@ -62,6 +64,7 @@ public class CseValidHandler {
 
     public CseValidHandler(DichotomyRunner dichotomyRunner,
                            EicCodesConfiguration eicCodesConfiguration,
+                           EicCodesMapper eicCodesMapper,
                            FileImporter fileImporter,
                            FileExporter fileExporter,
                            NetPositionService netPositionService,
@@ -72,6 +75,7 @@ public class CseValidHandler {
                            CseValidRaoValidator cseValidRaoValidator) {
         this.dichotomyRunner = dichotomyRunner;
         this.eicCodesConfiguration = eicCodesConfiguration;
+        this.eicCodesMapper = eicCodesMapper;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.netPositionService = netPositionService;
@@ -89,7 +93,7 @@ public class CseValidHandler {
         if (tcDocumentType != null) {
             TTimestamp timestampData = getTimestampData(cseValidRequest, tcDocumentType);
             if (timestampData != null) {
-                TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestampData, eicCodesConfiguration);
+                TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestampData, eicCodesConfiguration, eicCodesMapper);
                 computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
             } else {
                 String ttcAdjTimestamp = formatTimestamp(cseValidRequest.getTime());

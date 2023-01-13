@@ -15,14 +15,15 @@ import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfigurati
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
+import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.net_position.AreaReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
-import com.farao_community.farao.cse_valid.app.util.CseValidRequestTestData;
-import com.farao_community.farao.cse_valid.app.util.TimeStampTestData;
+import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
+import com.farao_community.farao.cse_valid.app.utils.TimeStampTestData;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
@@ -101,6 +102,9 @@ class CseValidHandlerTest {
     private EicCodesConfiguration eicCodesConfiguration;
 
     @Autowired
+    private EicCodesMapper eicCodesMapper;
+
+    @Autowired
     private CseValidHandler cseValidHandler;
 
     @Test
@@ -168,7 +172,7 @@ class CseValidHandlerTest {
     void computeTimestampDataMissingMniiMnieMiec() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = new TTimestamp();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -181,7 +185,7 @@ class CseValidHandlerTest {
     void computeTimestampContradictoryDataMniiMnie() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMnie();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -194,7 +198,7 @@ class CseValidHandlerTest {
     void computeTimestampContradictoryDataMnieMiec() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMnieMiec();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -207,7 +211,7 @@ class CseValidHandlerTest {
     void computeTimestampContradictoryDataMniiMiec() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMiec();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -220,7 +224,7 @@ class CseValidHandlerTest {
     void computeTimestampMnie() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMnie();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -233,7 +237,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiMibniiAndAntcfinalAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMnii();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -246,7 +250,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiMibniiAndAntcfinalBothZero() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMibniiAndAntcfinalBothZero();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -259,7 +263,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiMibniiAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndAntcfinal();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -272,7 +276,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiAntcfinalAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibnii();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -285,7 +289,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiActualNtcAboveTarget() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcAboveTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -299,7 +303,7 @@ class CseValidHandlerTest {
     void computeTimestampMniiFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
 
@@ -322,7 +326,7 @@ class CseValidHandlerTest {
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
@@ -354,7 +358,7 @@ class CseValidHandlerTest {
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
@@ -393,7 +397,7 @@ class CseValidHandlerTest {
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
@@ -438,7 +442,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecMibiecAndAntcfinalAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMiec();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -451,7 +455,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecMibiecAndAntcfinalBothZero() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMibiecAndAntcfinalBothZero();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -464,7 +468,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecMibiecAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMiecAndAntcfinal();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -477,7 +481,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecAntcfinalAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMiecAndMibiec();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -490,7 +494,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecShiftingFactorsMissing() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithoutShiftingFactors();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -503,7 +507,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecCalculationDirectionsMissing() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithoutCalculationDirections();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -516,7 +520,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecActualNtcAboveTarget() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMiecAndMibiecAndAntcfinalAndActualNtcAboveTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -529,7 +533,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecWhithoutFranceInAreaOrOutAreaShouldThrowAnException() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithoutFranceInAreaOrOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -541,7 +545,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecWithFranceInAreaAndFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -559,7 +563,7 @@ class CseValidHandlerTest {
     void computeTimestampMiecWithFranceOutAreaAndFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
@@ -583,7 +587,7 @@ class CseValidHandlerTest {
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
@@ -641,7 +645,7 @@ class CseValidHandlerTest {
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
@@ -696,7 +700,7 @@ class CseValidHandlerTest {
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
@@ -754,7 +758,7 @@ class CseValidHandlerTest {
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParameterUrl = "/CSE/VALID/raoParameter.utc";

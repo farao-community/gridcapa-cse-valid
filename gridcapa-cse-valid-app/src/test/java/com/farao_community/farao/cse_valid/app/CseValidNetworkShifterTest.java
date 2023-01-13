@@ -10,9 +10,10 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
+import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
-import com.farao_community.farao.cse_valid.app.util.CseValidRequestTestData;
-import com.farao_community.farao.cse_valid.app.util.TimeStampTestData;
+import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
+import com.farao_community.farao.cse_valid.app.utils.TimeStampTestData;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
 import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
@@ -45,6 +46,9 @@ class CseValidNetworkShifterTest {
     @Autowired
     private EicCodesConfiguration eicCodesConfiguration;
 
+    @Autowired
+    private EicCodesMapper eicCodesMapper;
+
     @MockBean
     private FileImporter fileImporter;
 
@@ -56,7 +60,7 @@ class CseValidNetworkShifterTest {
     @Test
     void getSplittingFactorsForFullImport() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForFullImportWithItaly();
         Map<String, Double> splittingFactorsMap = cseValidNetworkShifter.getSplittingFactorsForFullImport(timestampWrapper);
@@ -69,7 +73,7 @@ class CseValidNetworkShifterTest {
     @Test
     void getSplittingFactorsForExportCornerWithItalyFranceAndFranceInArea() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForExportCornerWithItalyFranceAndFranceInArea();
         Map<String, Double> splittingFactorsMap = cseValidNetworkShifter.getSplittingFactorsForExportCornerWithItalyFrance(timestampWrapper);
@@ -80,7 +84,7 @@ class CseValidNetworkShifterTest {
     @Test
     void getSplittingFactorsForExportCornerWithItalyFranceAndFranceOutArea() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForExportCornerWithItalyFranceAndFranceOutArea();
         Map<String, Double> splittingFactorsMap = cseValidNetworkShifter.getSplittingFactorsForExportCornerWithItalyFrance(timestampWrapper);
@@ -93,7 +97,7 @@ class CseValidNetworkShifterTest {
     @Test
     void getSplittingFactorsForExportCornerWithAllCountriesAndFranceInArea() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForExportCornerWithAllCountriesAndFranceInAreaWithSign();
         Map<String, Double> splittingFactorsMap = cseValidNetworkShifter.getSplittingFactorsForExportCornerWithAllCountries(timestampWrapper);
@@ -104,7 +108,7 @@ class CseValidNetworkShifterTest {
     @Test
     void getSplittingFactorsForExportCornerWithAllCountriesAndFranceOutArea() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForExportCornerWithAllCountriesAndFranceOutAreaWithSign();
         Map<String, Double> splittingFactorsMap = cseValidNetworkShifter.getSplittingFactorsForExportCornerWithAllCountries(timestampWrapper);

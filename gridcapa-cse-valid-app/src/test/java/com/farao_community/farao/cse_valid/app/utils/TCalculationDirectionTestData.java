@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.cse_valid.app.util;
+package com.farao_community.farao.cse_valid.app.utils;
 
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import xsd.etso_core_cmpts.AreaType;

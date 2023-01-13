@@ -8,13 +8,14 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
+import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirections;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TFactor;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
-import com.farao_community.farao.cse_valid.app.util.TimeStampTestData;
+import com.farao_community.farao.cse_valid.app.utils.TimeStampTestData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,9 @@ class TTimestampWrapperTest {
     @Autowired
     private EicCodesConfiguration eicCodesConfiguration;
 
+    @Autowired
+    private EicCodesMapper eicCodesMapper;
+
     @BeforeEach
     void initTimestampWrapper() {
         timestamp = new TTimestamp();
@@ -50,7 +54,7 @@ class TTimestampWrapperTest {
         timestamp.getTime().setV("timeValue");
         timestamp.setReferenceCalculationTime(new TTime());
         timestamp.getReferenceCalculationTime().setV("referenceCalculationTimeValue");
-        timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
     }
 
     private void initTimestampFullImport() {
@@ -352,7 +356,7 @@ class TTimestampWrapperTest {
     @Test
     void getCountryImportingFromItalyMapWithFranceInArea() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Boolean> expected = TimeStampTestData.getCountryImportingFromItalyMapWithFranceInArea();
         Map<String, Boolean> exportingCountryMap = timestampWrapper.getCountryImportingFromItalyMap();
@@ -363,7 +367,7 @@ class TTimestampWrapperTest {
     @Test
     void getCountryImportingFromItalyMapWithFranceOutArea() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Boolean> expected = TimeStampTestData.getCountryImportingFromItalyMapWithFranceOutArea();
         Map<String, Boolean> exportingCountryMap = timestampWrapper.getCountryImportingFromItalyMap();
@@ -376,7 +380,7 @@ class TTimestampWrapperTest {
     @Test
     void isCountryImportingFromItalyShouldReturnTrue() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         boolean isCountryExporting = timestampWrapper.isCountryImportingFromItaly(eicCodesConfiguration.getFrance());
 
@@ -386,7 +390,7 @@ class TTimestampWrapperTest {
     @Test
     void isCountryImportingFromItalyShouldReturnFalse() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         boolean isCountryExporting = timestampWrapper.isCountryImportingFromItaly(eicCodesConfiguration.getFrance());
 
@@ -396,7 +400,7 @@ class TTimestampWrapperTest {
     @Test
     void isCountryImportingFromItalyShouldReturnThrowCseValidInvalidDataException() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
         String countryEic = "falseCountry";
         String errorMessage = "Country " + countryEic + " must appear in InArea or OutArea";
 
@@ -412,7 +416,7 @@ class TTimestampWrapperTest {
     @Test
     void isFranceImportingFromItalyShouldReturnTrue() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         boolean isFranceExporting = timestampWrapper.isFranceImportingFromItaly();
 
@@ -422,7 +426,7 @@ class TTimestampWrapperTest {
     @Test
     void isFranceImportingFromItalyShouldReturnFalse() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         boolean isFranceExporting = timestampWrapper.isFranceImportingFromItaly();
 
@@ -434,7 +438,7 @@ class TTimestampWrapperTest {
     @Test
     void getImportCornerSplittingFactors() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForFullImportWithoutItaly();
         Map<String, Double> splittingFactorsMap = timestampWrapper.getImportCornerSplittingFactors();
@@ -447,7 +451,7 @@ class TTimestampWrapperTest {
     @Test
     void getExportCornerSplittingFactorsWithFranceInArea() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForExportCornerWithAllCountriesAndFranceInAreaWithoutSign();
         Map<String, Double> splittingFactorsMap = timestampWrapper.getExportCornerSplittingFactors();
@@ -458,7 +462,7 @@ class TTimestampWrapperTest {
     @Test
     void getExportCornerSplittingFactorsWithFranceOutArea() {
         TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForExportCornerWithAllCountriesAndFranceOutAreaWithoutSign();
         Map<String, Double> splittingFactorsMap = timestampWrapper.getExportCornerSplittingFactors();
