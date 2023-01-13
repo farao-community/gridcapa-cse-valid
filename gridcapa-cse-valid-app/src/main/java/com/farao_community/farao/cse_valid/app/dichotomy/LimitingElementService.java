@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,6 +8,7 @@ package com.farao_community.farao.cse_valid.app.dichotomy;
 
 import com.farao_community.farao.commons.Unit;
 import com.farao_community.farao.cse_valid.app.FileImporter;
+import com.farao_community.farao.cse_valid.app.exception.LimitingElementBuildException;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TArea;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCriticalBranch;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
@@ -18,53 +19,43 @@ import com.farao_community.farao.data.crac_api.Contingency;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_api.NetworkElement;
 import com.farao_community.farao.data.crac_api.cnec.FlowCnec;
+import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
+import com.farao_community.farao.data.crac_creation.creator.cse.outage.CseOutageCreationContext;
 import com.farao_community.farao.data.rao_result_api.OptimizationState;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Branch;
-import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.Substation;
-import com.powsybl.iidm.network.TieLine;
+import com.powsybl.iidm.network.Terminal;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.springframework.stereotype.Service;
 import xsd.etso_core_cmpts.TextType;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
-@Service
 public class LimitingElementService {
-    private final FileImporter fileImporter;
-    private Crac crac;
-    private Network network;
-    private RaoResult raoResult;
 
-    public LimitingElementService(FileImporter fileImporter) {
-        this.fileImporter = fileImporter;
-    }
-
-    public TLimitingElement getLimitingElement(DichotomyStepResult<RaoResponse> stepResult) {
+    public TLimitingElement getLimitingElement(DichotomyStepResult<RaoResponse> stepResult, CseCracCreationContext cracCreationContext, Network network, FileImporter fileImporter) {
         TLimitingElement limitingElement = new TLimitingElement();
-        importFiles(stepResult);
-        ImmutablePair<FlowCnec, Double> worstCnec = getWorstCnecInMW();
+        ImmutablePair<FlowCnec, Double> worstCnec = getWorstCnecInMW(stepResult, fileImporter);
         List<TCriticalBranch> listCriticalBranches = limitingElement.getCriticalBranch();
-        TCriticalBranch criticalBranch = fillCriticalBranch(worstCnec.getLeft());
+        TCriticalBranch criticalBranch = getCriticalBranch(worstCnec.getLeft(), cracCreationContext, network);
         listCriticalBranches.add(criticalBranch);
         return limitingElement;
     }
 
-    private void importFiles(DichotomyStepResult<RaoResponse> stepResult) {
-        this.crac = fileImporter.importCracFromJson(stepResult.getValidationData().getCracFileUrl());
-        this.network = fileImporter.importNetwork(stepResult.getValidationData().getNetworkWithPraFileUrl());
-        this.raoResult = fileImporter.importRaoResult(stepResult.getValidationData().getRaoResultFileUrl(), crac);
-    }
+    private ImmutablePair<FlowCnec, Double> getWorstCnecInMW(DichotomyStepResult<RaoResponse> stepResult, FileImporter fileImporter) {
+        Crac crac = fileImporter.importCracFromJson(stepResult.getValidationData().getCracFileUrl());
+        RaoResult raoResult = fileImporter.importRaoResult(stepResult.getValidationData().getRaoResultFileUrl(), crac);
 
-    private ImmutablePair<FlowCnec, Double> getWorstCnecInMW() {
         FlowCnec worstCnec = null;
         double worstMargin = Double.MAX_VALUE;
         double margin;
@@ -80,116 +71,97 @@ public class LimitingElementService {
         return new ImmutablePair<>(worstCnec, worstMargin);
     }
 
-    private TCriticalBranch fillCriticalBranch(FlowCnec worstCnec) {
+    private TCriticalBranch getCriticalBranch(FlowCnec worstCnec, CseCracCreationContext context, Network network) {
         TCriticalBranch criticalBranch = new TCriticalBranch();
 
-        criticalBranch.setOutage(getOutage(worstCnec));
-        criticalBranch.setMonitoredElement(getMonitoredElement(worstCnec));
+        criticalBranch.setOutage(getOutage(worstCnec, context, network));
+        criticalBranch.setMonitoredElement(getMonitoredElement(worstCnec, network));
 
         return criticalBranch;
     }
 
-    private TOutage getOutage(FlowCnec worstCnec) {
-        TOutage outage = new TOutage();
-        List<TElement> listElements = outage.getElement();
+    private TOutage getOutage(FlowCnec worstCnec, CseCracCreationContext cracCreationContext, Network network) {
         Optional<Contingency> contingency = worstCnec.getState().getContingency();
 
-        if (contingency.isPresent()) {
-            Contingency worstCnecContingency = contingency.get();
-            outage.setName(setOutageName(worstCnecContingency.getId()));
-            for (NetworkElement networkElement : worstCnecContingency.getNetworkElements()) {
-                TElement element = fillElement(network.getBranch(networkElement.getId()));
-                listElements.add(element);
-            }
-        } else {
-            outage.setName(setOutageName("N Situation"));
+        if (worstCnec.getState().isPreventive() || contingency.isEmpty()) {
+            return null; // If preventive state, no outage is associated with the critical branch
         }
+
+        CseOutageCreationContext outageMatchingContingencyId = cracCreationContext.getOutageCreationContexts().stream()
+                .filter(outageCreationContext -> outageCreationContext.isImported()
+                        && outageCreationContext.getCreatedContingencyId().equals(contingency.get().getId()))
+                .collect(toOne());
+
+        TOutage outage = new TOutage();
+        outage.setName(getTextType(outageMatchingContingencyId.getNativeId()));
+
+        contingency.get().getNetworkElements().forEach(contingencyNetworkElement -> {
+            TElement outageElement = getElement(network, contingencyNetworkElement);
+            outage.getElement().add(outageElement);
+        });
 
         return outage;
     }
 
-    private TextType setOutageName(String outageName) {
-        TextType outageNameTextType = new TextType();
-        outageNameTextType.setV(outageName);
-        return outageNameTextType;
+    private TElement getElement(Network network, NetworkElement networkElement) {
+        Branch<?> branch = network.getBranch(networkElement.getId());
+
+        TElement element = new TElement();
+        element.setCode(getTextType(networkElement.getId()));
+        element.setAreafrom(getAreaFrom(branch));
+        element.setAreato(getAreaTo(branch));
+        return element;
     }
 
-    private TMonitoredElement getMonitoredElement(FlowCnec worstCnec) {
-        TMonitoredElement monitoredElement = new TMonitoredElement();
-        List<TElement> listElements = monitoredElement.getElement();
+    private TextType getTextType(String value) {
+        TextType textType = new TextType();
+        textType.setV(value);
+        return textType;
+    }
 
-        listElements.add(fillElement(network.getBranch(worstCnec.getNetworkElement().getId())));
+    private TArea getAreaFrom(Branch<?> branch) {
+        return getArea(branch.getTerminal1());
+    }
+
+    private TArea getAreaTo(Branch<?> branch) {
+        return getArea(branch.getTerminal2());
+    }
+
+    private TArea getArea(Terminal terminal) {
+        Optional<Substation> substation = terminal.getVoltageLevel().getSubstation();
+        String areaTo = substation.map(Substation::getCountry)
+                .flatMap(country -> country.map(Enum::toString))
+                .orElse(null);
+
+        TArea tArea = new TArea();
+        tArea.setV(areaTo);
+        return tArea;
+    }
+
+    private TMonitoredElement getMonitoredElement(FlowCnec worstCnec, Network network) {
+        TMonitoredElement monitoredElement = new TMonitoredElement();
+
+        TElement element = getElement(network, worstCnec.getNetworkElement());
+        element.setName(getTextType(worstCnec.getName()));
+
+        monitoredElement.getElement().add(element);
 
         return monitoredElement;
     }
 
-    private TElement fillElement(Branch<?> branch) {
-        TElement element = new TElement();
-        String elementName;
-        String id;
-
-        if (branch instanceof TieLine) {
-            TieLine tieLine = (TieLine) branch;
-            elementName = tieLine.getProperty("elementName_1", "");
-            id = tieLine.getHalf1().getId();
-        } else {
-            elementName = branch.getProperty("elementName", "");
-            id = branch.getId();
-        }
-
-        element.setName(getElementName(elementName));
-        element.setCode(getCode(id));
-        element.setAreafrom(getAreaFrom(branch));
-        element.setAreato(getAreaTo(branch));
-
-        return element;
-    }
-
-    private TextType getElementName(String elementName) {
-        TextType tElementName = new TextType();
-        tElementName.setV(elementName);
-        return tElementName;
-    }
-
-    private TextType getCode(String id) {
-        TextType tId = new TextType();
-        tId.setV(id);
-        return tId;
-    }
-
-    private TArea getAreaFrom(Branch<?> branch) {
-        TArea tAreaFrom = new TArea();
-
-        String areaFrom = null;
-
-        Optional<Substation> substation = branch.getTerminal1().getVoltageLevel().getSubstation();
-
-        if (substation.isPresent()) {
-            Optional<Country> country = substation.get().getCountry();
-            if (country.isPresent()) {
-                areaFrom = country.get().toString();
+    /**
+     * This collector only allows 1 element in the stream. It returns the result.
+     *
+     * @param <T> Type of the element for the collector.
+     * @return The value if there is exactly one in the stream.
+     * It would throw an exception if there isn't exactly one element (zero or more) in the stream.
+     */
+    public static <T> Collector<T, ?, T> toOne() {
+        return Collectors.collectingAndThen(Collectors.toList(), list -> {
+            if (list.size() == 1) {
+                return list.get(0);
             }
-        }
-
-        tAreaFrom.setV(areaFrom);
-        return tAreaFrom;
-    }
-
-    private TArea getAreaTo(Branch<?> branch) {
-        TArea tAreaTo = new TArea();
-
-        String areaTo = null;
-
-        Optional<Substation> substation = branch.getTerminal2().getVoltageLevel().getSubstation();
-
-        if (substation.isPresent()) {
-            Optional<Country> country = substation.get().getCountry();
-            if (country.isPresent()) {
-                areaTo = country.get().toString();
-            }
-        }
-
-        tAreaTo.setV(areaTo);
-        return tAreaTo;
+            throw new LimitingElementBuildException("Found " + list.size() + " element(s), expected exactly one.");
+        });
     }
 }

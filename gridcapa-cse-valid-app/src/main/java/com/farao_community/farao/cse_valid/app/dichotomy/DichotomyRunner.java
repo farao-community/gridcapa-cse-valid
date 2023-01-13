@@ -52,11 +52,10 @@ public class DichotomyRunner {
         this.cseValidNetworkShifter = cseValidNetworkShifter;
     }
 
-    public DichotomyResult<RaoResponse> runImportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
+    public DichotomyResult<RaoResponse> runImportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL, Network network) {
         int npAugmented = timestampWrapper.getMniiIntValue();
         int np = timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue();
         double maxValue = (double) npAugmented - np;
-        Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getUrl());
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
@@ -66,11 +65,10 @@ public class DichotomyRunner {
         return engine.run(network);
     }
 
-    public DichotomyResult<RaoResponse> runExportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
+    public DichotomyResult<RaoResponse> runExportCornerDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL, Network network) {
         int npAugmented = timestampWrapper.getMiecIntValue();
         int np = timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue();
         double maxValue = (double) npAugmented - np;
-        Network network = fileImporter.importNetwork(cseValidRequest.getCgm().getUrl());
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, DEFAULT_MIN_INDEX, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         DichotomyEngine<RaoResponse> engine = new DichotomyEngine<>(
                 new Index<>(DEFAULT_MIN_INDEX, maxValue, DEFAULT_DICHOTOMY_PRECISION),
