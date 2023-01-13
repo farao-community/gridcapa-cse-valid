@@ -20,9 +20,9 @@ import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,7 +40,7 @@ class CseValidRaoValidatorTest {
     @MockBean
     private RaoRunnerClient raoRunnerClient;
 
-    @SpyBean
+    @Autowired
     private CseValidRaoValidator cseValidRaoValidator;
 
     private static final String NETWORK_FILE_URL = "CSE/Valid/network.utc";

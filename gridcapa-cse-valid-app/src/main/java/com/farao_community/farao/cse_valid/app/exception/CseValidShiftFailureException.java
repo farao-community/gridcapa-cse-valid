@@ -12,7 +12,7 @@ package com.farao_community.farao.cse_valid.app.exception;
 
 public class CseValidShiftFailureException extends RuntimeException {
 
-    public CseValidShiftFailureException(String message) {
-        super(message);
+    public CseValidShiftFailureException(String message, Exception e) {
+        super(message, e);
     }
 }

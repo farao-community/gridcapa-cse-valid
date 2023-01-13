@@ -158,8 +158,6 @@ public class TTimestampWrapper {
         return timestamp.getANTCFinal().getV().intValue();
     }
 
-    //
-
     Map<String, Boolean> getCountryImportingFromItalyMap() {
         if (countryImportingMap == null) {
             countryImportingMap = new HashMap<>();

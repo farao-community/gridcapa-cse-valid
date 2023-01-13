@@ -38,7 +38,7 @@ public class CseValidNetworkShifter {
         this.eicCodesConfiguration = eicCodesConfiguration;
     }
 
-    public NetworkShifter getNetworkShifter(Map<String, Double> splittiFactorMap,
+    private NetworkShifter getNetworkShifter(Map<String, Double> splittiFactorMap,
                                             Network network,
                                             String glskUrl) {
         GlskDocument glskDocument = fileImporter.importGlsk(glskUrl);
@@ -97,7 +97,7 @@ public class CseValidNetworkShifter {
         try {
             networkShifter.shiftNetwork(shiftValue, network);
         } catch (GlskLimitationException | ShiftingException e) {
-            throw new CseValidShiftFailureException(e.getMessage());
+            throw new CseValidShiftFailureException("Export corner initial shift failed to value " + shiftValue, e);
         }
     }
 }
