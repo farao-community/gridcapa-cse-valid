@@ -10,9 +10,9 @@ package com.farao_community.farao.cse_valid.app.exception;
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 
-public class CseValidRequestValidatorException extends Exception {
+public class CseValidShiftFailureException extends RuntimeException {
 
-    public CseValidRequestValidatorException(String message) {
-        super(message);
+    public CseValidShiftFailureException(String message, Exception e) {
+        super(message, e);
     }
 }

@@ -1,18 +1,26 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.cse_valid.app.util;
+package com.farao_community.farao.cse_valid.app.utils;
 
-import com.farao_community.farao.cse_valid.app.ttc_adjustment.*;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirections;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TFactor;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TSplittingFactors;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import xsd.etso_code_lists.CodingSchemeType;
 import xsd.etso_core_cmpts.AreaType;
 import xsd.etso_core_cmpts.QuantityType;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.farao_community.farao.cse_valid.app.Constants.IN_AREA;
 import static com.farao_community.farao.cse_valid.app.Constants.OUT_AREA;
@@ -26,7 +34,7 @@ public final class TimeStampTestData {
     private TimeStampTestData() {
     }
 
-    /* --------------- IMPORT CORNER --------------- */
+    /* --------------- FULL IMPORT --------------- */
 
     public static TTimestamp getTimeStampWithMniiAndMnie() {
         TTimestamp timestamp = new TTimestamp();
@@ -176,6 +184,9 @@ public final class TimeStampTestData {
         QuantityType antcfinalValue = new QuantityType();
         antcfinalValue.setV(BigDecimal.ZERO);
         timestamp.setANTCFinal(antcfinalValue);
+
+        TSplittingFactors tSplittingFactors = TSplittingAndShiftingFactorsTestData.getTSplittingFactors();
+        timestamp.setSplittingFactors(tSplittingFactors);
 
         return timestamp;
     }
@@ -380,23 +391,12 @@ public final class TimeStampTestData {
         antcfinalValue.setV(BigDecimal.ZERO);
         timestamp.setANTCFinal(antcfinalValue);
 
-        TShiftingFactors shiftingFactors = new TShiftingFactors();
-        shiftingFactors.getShiftingFactor().add(new TFactor());
+        TShiftingFactors shiftingFactors = TSplittingAndShiftingFactorsTestData.getTShiftingFactorsWithFranceInArea();
         timestamp.setShiftingFactors(shiftingFactors);
-
-        AreaType inArea = new AreaType();
-        inArea.setV("10YFR-RTE------C");
-
-        AreaType outArea = new AreaType();
-        outArea.setV("10YIT-GRTN-----B");
-
-        TCalculationDirection tCalculationDirection = new TCalculationDirection();
-        tCalculationDirection.setInArea(inArea);
-        tCalculationDirection.setOutArea(outArea);
 
         TCalculationDirections tCalculationDirections = new TCalculationDirections();
         List<TCalculationDirection> tCalculationDirectionList = tCalculationDirections.getCalculationDirection();
-        tCalculationDirectionList.add(tCalculationDirection);
+        tCalculationDirectionList.addAll(TCalculationDirectionTestData.getTCalculationDirectionListWithFranceInArea());
 
         List<TCalculationDirections> tCalculationDirectionsList = timestamp.getCalculationDirections();
         tCalculationDirectionsList.add(tCalculationDirections);
@@ -423,27 +423,105 @@ public final class TimeStampTestData {
         antcfinalValue.setV(BigDecimal.ZERO);
         timestamp.setANTCFinal(antcfinalValue);
 
-        TShiftingFactors shiftingFactors = new TShiftingFactors();
-        shiftingFactors.getShiftingFactor().add(new TFactor());
+        TShiftingFactors shiftingFactors = TSplittingAndShiftingFactorsTestData.getTShiftingFactorsWithFranceOutArea();
         timestamp.setShiftingFactors(shiftingFactors);
-
-        AreaType inArea = new AreaType();
-        inArea.setV("10YIT-GRTN-----B");
-
-        AreaType outArea = new AreaType();
-        outArea.setV("10YFR-RTE------C");
-
-        TCalculationDirection tCalculationDirection = new TCalculationDirection();
-        tCalculationDirection.setInArea(inArea);
-        tCalculationDirection.setOutArea(outArea);
 
         TCalculationDirections tCalculationDirections = new TCalculationDirections();
         List<TCalculationDirection> tCalculationDirectionList = tCalculationDirections.getCalculationDirection();
-        tCalculationDirectionList.add(tCalculationDirection);
+        tCalculationDirectionList.addAll(TCalculationDirectionTestData.getTCalculationDirectionListWithFranceOutArea());
 
         List<TCalculationDirections> tCalculationDirectionsList = timestamp.getCalculationDirections();
         tCalculationDirectionsList.add(tCalculationDirections);
 
         return timestamp;
+    }
+
+    public static Map<String, Boolean> getCountryImportingFromItalyMapWithFranceInArea() {
+        Map<String, Boolean> exportingCountryMap = new HashMap<>();
+        exportingCountryMap.put("10YCH-SWISSGRIDZ", false);
+        exportingCountryMap.put("10YAT-APG------L", false);
+        exportingCountryMap.put("10YSI-ELES-----O", false);
+        exportingCountryMap.put("10YFR-RTE------C", true);
+        exportingCountryMap.put("10YIT-GRTN-----B", true);
+        return exportingCountryMap;
+    }
+
+    public static Map<String, Boolean> getCountryImportingFromItalyMapWithFranceOutArea() {
+        Map<String, Boolean> exportingCountryMap = new HashMap<>();
+        exportingCountryMap.put("10YFR-RTE------C", false);
+        exportingCountryMap.put("10YAT-APG------L", false);
+        exportingCountryMap.put("10YSI-ELES-----O", false);
+        exportingCountryMap.put("10YCH-SWISSGRIDZ", true);
+        exportingCountryMap.put("10YIT-GRTN-----B", true);
+        return exportingCountryMap;
+    }
+
+    public static Map<String, Double> getSplittingFactorsForFullImportWithoutItaly() {
+        Map<String, Double> importCornerSplittingFactors = new HashMap<>();
+        importCornerSplittingFactors.put("10YAT-APG------L", 0.2);
+        importCornerSplittingFactors.put("10YSI-ELES-----O", 0.3);
+        importCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.1);
+        importCornerSplittingFactors.put("10YFR-RTE------C", 0.4);
+        return importCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getSplittingFactorsForFullImportWithItaly() {
+        Map<String, Double> importCornerSplittingFactors = getSplittingFactorsForFullImportWithoutItaly();
+        importCornerSplittingFactors.put("10YIT-GRTN-----B", -1.0);
+        return importCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getSplittingFactorsForExportCornerWithAllCountriesAndFranceInAreaWithoutSign() {
+        Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
+        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.7);
+        exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
+        exportCornerSplittingFactors.put("10YSI-ELES-----O", 0.1);
+        exportCornerSplittingFactors.put("10YFR-RTE------C", 0.4);
+        exportCornerSplittingFactors.put("10YIT-GRTN-----B", 0.6);
+        return exportCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getSplittingFactorsForExportCornerWithAllCountriesAndFranceInAreaWithSign() {
+        Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
+        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.7);
+        exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
+        exportCornerSplittingFactors.put("10YSI-ELES-----O", 0.1);
+        exportCornerSplittingFactors.put("10YFR-RTE------C", -0.4);
+        exportCornerSplittingFactors.put("10YIT-GRTN-----B", -0.6);
+        return exportCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getSplittingFactorsForExportCornerWithAllCountriesAndFranceOutAreaWithoutSign() {
+        Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
+        exportCornerSplittingFactors.put("10YFR-RTE------C", 0.7);
+        exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
+        exportCornerSplittingFactors.put("10YSI-ELES-----O", 0.1);
+        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.4);
+        exportCornerSplittingFactors.put("10YIT-GRTN-----B", 0.6);
+        return exportCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getSplittingFactorsForExportCornerWithAllCountriesAndFranceOutAreaWithSign() {
+        Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
+        exportCornerSplittingFactors.put("10YFR-RTE------C", 0.7);
+        exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
+        exportCornerSplittingFactors.put("10YSI-ELES-----O", 0.1);
+        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", -0.4);
+        exportCornerSplittingFactors.put("10YIT-GRTN-----B", -0.6);
+        return exportCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getSplittingFactorsForExportCornerWithItalyFranceAndFranceInArea() {
+        Map<String, Double> importCornerSplittingFactors = new HashMap<>();
+        importCornerSplittingFactors.put("10YFR-RTE------C", -1.0);
+        importCornerSplittingFactors.put("10YIT-GRTN-----B", 1.0);
+        return importCornerSplittingFactors;
+    }
+
+    public static Map<String, Double> getSplittingFactorsForExportCornerWithItalyFranceAndFranceOutArea() {
+        Map<String, Double> importCornerSplittingFactors = new HashMap<>();
+        importCornerSplittingFactors.put("10YFR-RTE------C", 1.0);
+        importCornerSplittingFactors.put("10YIT-GRTN-----B", -1.0);
+        return importCornerSplittingFactors;
     }
 }

@@ -7,7 +7,12 @@
 package com.farao_community.farao.cse_valid.app.configuration;
 
 import com.farao_community.farao.cse_valid.app.CseValidListener;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.AsyncAmqpTemplate;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

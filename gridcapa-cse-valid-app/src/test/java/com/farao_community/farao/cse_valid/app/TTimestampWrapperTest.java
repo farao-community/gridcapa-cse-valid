@@ -1,21 +1,51 @@
+/*
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package com.farao_community.farao.cse_valid.app;
 
+import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
+import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirections;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TFactor;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TShiftingFactors;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTime;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
-import org.assertj.core.api.Assertions;
+import com.farao_community.farao.cse_valid.app.utils.TimeStampTestData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import xsd.etso_core_cmpts.QuantityType;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
+ */
+
+@SpringBootTest
 class TTimestampWrapperTest {
     private TTimestamp timestamp;
     private TTimestampWrapper timestampWrapper;
+
+    @Autowired
+    private EicCodesConfiguration eicCodesConfiguration;
+
+    @Autowired
+    private EicCodesMapper eicCodesMapper;
 
     @BeforeEach
     void initTimestampWrapper() {
@@ -24,7 +54,7 @@ class TTimestampWrapperTest {
         timestamp.getTime().setV("timeValue");
         timestamp.setReferenceCalculationTime(new TTime());
         timestamp.getReferenceCalculationTime().setV("referenceCalculationTimeValue");
-        timestampWrapper = new TTimestampWrapper(timestamp);
+        timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
     }
 
     private void initTimestampFullImport() {
@@ -54,270 +84,389 @@ class TTimestampWrapperTest {
 
     @Test
     void getTimestamp() {
-        Assertions.assertThat(timestampWrapper.getTimestamp()).isEqualTo(timestamp);
+        assertEquals(timestampWrapper.getTimestamp(), timestamp);
     }
 
     @Test
     void hasMniiTrue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.hasMnii()).isTrue();
+        assertTrue(timestampWrapper.hasMnii());
     }
 
     @Test
     void hasMniiFalse() {
-        Assertions.assertThat(timestampWrapper.hasMnii()).isFalse();
+        assertFalse(timestampWrapper.hasMnii());
 
         timestamp.setMNII(new QuantityType());
-        Assertions.assertThat(timestampWrapper.hasMnii()).isFalse();
+        assertFalse(timestampWrapper.hasMnii());
     }
 
     @Test
     void hasMnieTrue() {
         initTimestampFullExport();
-        Assertions.assertThat(timestampWrapper.hasMnie()).isTrue();
+        assertTrue(timestampWrapper.hasMnie());
     }
 
     @Test
     void hasMnieFalse() {
-        Assertions.assertThat(timestampWrapper.hasMnie()).isFalse();
+        assertFalse(timestampWrapper.hasMnie());
 
         timestamp.setMNIE(new QuantityType());
-        Assertions.assertThat(timestampWrapper.hasMnie()).isFalse();
+        assertFalse(timestampWrapper.hasMnie());
     }
 
     @Test
     void hasMiecTrue() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.hasMiec()).isTrue();
+        assertTrue(timestampWrapper.hasMiec());
     }
 
     @Test
     void hasMiecFalse() {
-        Assertions.assertThat(timestampWrapper.hasMiec()).isFalse();
+        assertFalse(timestampWrapper.hasMiec());
 
         timestamp.setMIEC(new QuantityType());
-        Assertions.assertThat(timestampWrapper.hasMiec()).isFalse();
+        assertFalse(timestampWrapper.hasMiec());
     }
 
     @Test
     void hasMibniiTrue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.hasMibnii()).isTrue();
+        assertTrue(timestampWrapper.hasMibnii());
     }
 
     @Test
     void hasMibniiFalse() {
-        Assertions.assertThat(timestampWrapper.hasMibnii()).isFalse();
+        assertFalse(timestampWrapper.hasMibnii());
     }
 
     @Test
     void hasMibiecTrue() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.hasMibiec()).isTrue();
+        assertTrue(timestampWrapper.hasMibiec());
     }
 
     @Test
     void hasMibiecFalse() {
-        Assertions.assertThat(timestampWrapper.hasMibiec()).isFalse();
+        assertFalse(timestampWrapper.hasMibiec());
     }
 
     @Test
     void hasAntcfinalTrue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.hasAntcfinal()).isTrue();
+        assertTrue(timestampWrapper.hasAntcfinal());
     }
 
     @Test
     void hasAntcfinalFalse() {
-        Assertions.assertThat(timestampWrapper.hasAntcfinal()).isFalse();
+        assertFalse(timestampWrapper.hasAntcfinal());
     }
 
     @Test
     void hasShiftingFactorsTrue() {
         timestamp.setShiftingFactors(new TShiftingFactors());
         timestamp.getShiftingFactors().getShiftingFactor().add(new TFactor());
-        Assertions.assertThat(timestampWrapper.hasShiftingFactors()).isTrue();
+        assertTrue(timestampWrapper.hasShiftingFactors());
     }
 
     @Test
     void hasShiftingFactorsFalse() {
-        Assertions.assertThat(timestampWrapper.hasShiftingFactors()).isFalse();
+        assertFalse(timestampWrapper.hasShiftingFactors());
 
         timestamp.setShiftingFactors(new TShiftingFactors());
-        Assertions.assertThat(timestampWrapper.hasShiftingFactors()).isFalse();
+        assertFalse(timestampWrapper.hasShiftingFactors());
     }
 
     @Test
     void hasCalculationDirectionsTrue() {
         timestamp.getCalculationDirections().add(new TCalculationDirections());
         timestamp.getCalculationDirections().get(0).getCalculationDirection().add(new TCalculationDirection());
-        Assertions.assertThat(timestampWrapper.hasCalculationDirections()).isTrue();
+        assertTrue(timestampWrapper.hasCalculationDirections());
     }
 
     @Test
     void hasCalculationDirectionsFalse() {
-        Assertions.assertThat(timestampWrapper.hasCalculationDirections()).isFalse();
+        assertFalse(timestampWrapper.hasCalculationDirections());
 
         timestamp.getCalculationDirections().add(new TCalculationDirections());
-        Assertions.assertThat(timestampWrapper.hasCalculationDirections()).isFalse();
+        assertFalse(timestampWrapper.hasCalculationDirections());
     }
 
     @Test
     void hasNoneOfMniiMnieMiecTrue() {
-        Assertions.assertThat(timestampWrapper.hasNoneOfMniiMnieMiec()).isTrue();
+        assertTrue(timestampWrapper.hasNoneOfMniiMnieMiec());
     }
 
     @Test
     void hasNoneOfMniiMnieMiecFalseFullImport() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.hasNoneOfMniiMnieMiec()).isFalse();
+        assertFalse(timestampWrapper.hasNoneOfMniiMnieMiec());
     }
 
     @Test
     void hasNoneOfMniiMnieMiecFalseExportCorner() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.hasNoneOfMniiMnieMiec()).isFalse();
+        assertFalse(timestampWrapper.hasNoneOfMniiMnieMiec());
     }
 
     @Test
     void hasNoneOfMniiMnieMiecFalseFullExport() {
         initTimestampFullExport();
-        Assertions.assertThat(timestampWrapper.hasNoneOfMniiMnieMiec()).isFalse();
+        assertFalse(timestampWrapper.hasNoneOfMniiMnieMiec());
     }
 
     @Test
     void hasMultipleMniiMnieMiecTrueMniiMiec() {
         initTimestampFullImport();
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.hasMultipleMniiMnieMiec()).isTrue();
+        assertTrue(timestampWrapper.hasMultipleMniiMnieMiec());
     }
 
     @Test
     void hasMultipleMniiMnieMiecTrueMnieMiec() {
         initTimestampFullExport();
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.hasMultipleMniiMnieMiec()).isTrue();
+        assertTrue(timestampWrapper.hasMultipleMniiMnieMiec());
     }
 
     @Test
     void hasMultipleMniiMnieMiecTrueMniiMnie() {
         initTimestampFullImport();
         initTimestampFullExport();
-        Assertions.assertThat(timestampWrapper.hasMultipleMniiMnieMiec()).isTrue();
+        assertTrue(timestampWrapper.hasMultipleMniiMnieMiec());
     }
 
     @Test
     void hasMultipleMniiMnieMiecFalseMnii() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.hasMultipleMniiMnieMiec()).isFalse();
+        assertFalse(timestampWrapper.hasMultipleMniiMnieMiec());
     }
 
     @Test
     void hasMultipleMniiMnieMiecFalseMnie() {
         initTimestampFullExport();
-        Assertions.assertThat(timestampWrapper.hasMultipleMniiMnieMiec()).isFalse();
+        assertFalse(timestampWrapper.hasMultipleMniiMnieMiec());
     }
 
     @Test
     void hasMultipleMniiMnieMiecFalseMiec() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.hasMultipleMniiMnieMiec()).isFalse();
+        assertFalse(timestampWrapper.hasMultipleMniiMnieMiec());
     }
 
     @Test
     void getTimeValue() {
-        Assertions.assertThat(timestampWrapper.getTimeValue()).isEqualTo("timeValue");
+        assertEquals(timestampWrapper.getTimeValue(), "timeValue");
     }
 
     @Test
     void getReferenceCalculationTimeValue() {
-        Assertions.assertThat(timestampWrapper.getReferenceCalculationTimeValue()).isEqualTo("referenceCalculationTimeValue");
+        assertEquals(timestampWrapper.getReferenceCalculationTimeValue(), "referenceCalculationTimeValue");
     }
 
     @Test
     void getMibnii() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.getMibnii()).isNotNull();
-        Assertions.assertThat(timestampWrapper.getMibnii().getV()).isEqualTo(BigDecimal.ONE);
+        assertNotNull(timestampWrapper.getMibnii());
+        assertEquals(timestampWrapper.getMibnii().getV(), BigDecimal.ONE);
     }
 
     @Test
     void getMibiec() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.getMibiec()).isNotNull();
-        Assertions.assertThat(timestampWrapper.getMibiec().getV()).isEqualTo(BigDecimal.ONE);
+        assertNotNull(timestampWrapper.getMibiec());
+        assertEquals(timestampWrapper.getMibiec().getV(), BigDecimal.ONE);
     }
 
     @Test
     void getAntcfinal() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.getAntcfinal()).isNotNull();
-        Assertions.assertThat(timestampWrapper.getAntcfinal().getV()).isEqualTo(BigDecimal.valueOf(2));
+        assertNotNull(timestampWrapper.getAntcfinal());
+        assertEquals(timestampWrapper.getAntcfinal().getV(), BigDecimal.valueOf(2));
     }
 
     @Test
     void getMniiValue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.getMniiValue()).isEqualTo(BigDecimal.TEN);
+        assertEquals(timestampWrapper.getMniiValue(), BigDecimal.TEN);
     }
 
     @Test
     void getMiecValue() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.getMiecValue()).isEqualTo(BigDecimal.TEN);
+        assertEquals(timestampWrapper.getMiecValue(), BigDecimal.TEN);
     }
 
     @Test
     void getMnieValue() {
         initTimestampFullExport();
-        Assertions.assertThat(timestampWrapper.getMnieValue()).isEqualTo(BigDecimal.TEN);
+        assertEquals(timestampWrapper.getMnieValue(), BigDecimal.TEN);
     }
 
     @Test
     void getMibniiValue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.getMibniiValue()).isEqualTo(BigDecimal.ONE);
+        assertEquals(timestampWrapper.getMibniiValue(), BigDecimal.ONE);
     }
 
     @Test
     void getMibiecValue() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.getMibiecValue()).isEqualTo(BigDecimal.ONE);
+        assertEquals(timestampWrapper.getMibiecValue(), BigDecimal.ONE);
     }
 
     @Test
     void getAntcfinalValue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.getAntcfinalValue()).isEqualTo(BigDecimal.valueOf(2));
+        assertEquals(timestampWrapper.getAntcfinalValue(), BigDecimal.valueOf(2));
     }
 
     @Test
     void getMniiIntValue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.getMniiIntValue()).isEqualTo(10);
+        assertEquals(timestampWrapper.getMniiIntValue(), 10);
     }
 
     @Test
     void getMiecIntValue() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.getMiecIntValue()).isEqualTo(10);
+        assertEquals(timestampWrapper.getMiecIntValue(), 10);
     }
 
     @Test
     void getMibniiIntValue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.getMibniiIntValue()).isEqualTo(1);
+        assertEquals(timestampWrapper.getMibniiIntValue(), 1);
     }
 
     @Test
     void getMibiecIntValue() {
         initTimestampExportCorner();
-        Assertions.assertThat(timestampWrapper.getMibiecIntValue()).isEqualTo(1);
+        assertEquals(timestampWrapper.getMibiecIntValue(), 1);
     }
 
     @Test
     void getAntcfinalIntValue() {
         initTimestampFullImport();
-        Assertions.assertThat(timestampWrapper.getAntcfinalIntValue()).isEqualTo(2);
+        assertEquals(timestampWrapper.getAntcfinalIntValue(), 2);
+    }
+
+    /* ------------------- getCountryImportingFromItalyMap ------------------- */
+
+    @Test
+    void getCountryImportingFromItalyMapWithFranceInArea() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        Map<String, Boolean> expected = TimeStampTestData.getCountryImportingFromItalyMapWithFranceInArea();
+        Map<String, Boolean> exportingCountryMap = timestampWrapper.getCountryImportingFromItalyMap();
+
+        assertEquals(expected, exportingCountryMap);
+    }
+
+    @Test
+    void getCountryImportingFromItalyMapWithFranceOutArea() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        Map<String, Boolean> expected = TimeStampTestData.getCountryImportingFromItalyMapWithFranceOutArea();
+        Map<String, Boolean> exportingCountryMap = timestampWrapper.getCountryImportingFromItalyMap();
+
+        assertEquals(expected, exportingCountryMap);
+    }
+
+    /* ------------------- isCountryImportingFromItaly ------------------- */
+
+    @Test
+    void isCountryImportingFromItalyShouldReturnTrue() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        boolean isCountryExporting = timestampWrapper.isCountryImportingFromItaly(eicCodesConfiguration.getFrance());
+
+        assertTrue(isCountryExporting);
+    }
+
+    @Test
+    void isCountryImportingFromItalyShouldReturnFalse() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        boolean isCountryExporting = timestampWrapper.isCountryImportingFromItaly(eicCodesConfiguration.getFrance());
+
+        assertFalse(isCountryExporting);
+    }
+
+    @Test
+    void isCountryImportingFromItalyShouldReturnThrowCseValidInvalidDataException() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+        String countryEic = "falseCountry";
+        String errorMessage = "Country " + countryEic + " must appear in InArea or OutArea";
+
+        CseValidInvalidDataException thrown = assertThrows(CseValidInvalidDataException.class, () -> {
+            timestampWrapper.isCountryImportingFromItaly(countryEic);
+        }, "CseValidInvalidDataException error was expected");
+
+        assertEquals(errorMessage, thrown.getMessage());
+    }
+
+    /* ------------------- isFranceImportingFromItaly ------------------- */
+
+    @Test
+    void isFranceImportingFromItalyShouldReturnTrue() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        boolean isFranceExporting = timestampWrapper.isFranceImportingFromItaly();
+
+        assertTrue(isFranceExporting);
+    }
+
+    @Test
+    void isFranceImportingFromItalyShouldReturnFalse() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        boolean isFranceExporting = timestampWrapper.isFranceImportingFromItaly();
+
+        assertFalse(isFranceExporting);
+    }
+
+    /* ------------------- getImportCornerSplittingFactors ------------------- */
+
+    @Test
+    void getImportCornerSplittingFactors() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForFullImportWithoutItaly();
+        Map<String, Double> splittingFactorsMap = timestampWrapper.getImportCornerSplittingFactors();
+
+        assertEquals(expected, splittingFactorsMap);
+    }
+
+    /* ------------------- getExportCornerSplittingFactors ------------------- */
+
+    @Test
+    void getExportCornerSplittingFactorsWithFranceInArea() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForExportCornerWithAllCountriesAndFranceInAreaWithoutSign();
+        Map<String, Double> splittingFactorsMap = timestampWrapper.getExportCornerSplittingFactors();
+
+        assertEquals(expected, splittingFactorsMap);
+    }
+
+    @Test
+    void getExportCornerSplittingFactorsWithFranceOutArea() {
+        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        Map<String, Double> expected = TimeStampTestData.getSplittingFactorsForExportCornerWithAllCountriesAndFranceOutAreaWithoutSign();
+        Map<String, Double> splittingFactorsMap = timestampWrapper.getExportCornerSplittingFactors();
+
+        assertEquals(expected, splittingFactorsMap);
     }
 }

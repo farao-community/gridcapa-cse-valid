@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.cse_valid.app.util;
+package com.farao_community.farao.cse_valid.app.utils;
 
 import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
@@ -43,7 +43,7 @@ public final class CseValidRequestTestData {
         return new CseValidRequest(id, processType, timestamp, null, null, null, null, null, timestamp);
     }
 
-    /* --------------- IMPORT CORNER --------------- */
+    /* --------------- FULL IMPORT --------------- */
 
     public static CseValidRequest getImportCseValidRequest(ProcessType processType) {
         String id = UUID.randomUUID().toString();

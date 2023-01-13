@@ -1,16 +1,41 @@
+/*
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package com.farao_community.farao.cse_valid.app;
 
+import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
+import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
+import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCalculationDirection;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import xsd.etso_core_cmpts.QuantityType;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/**
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
+ */
 
 public class TTimestampWrapper {
     private final TTimestamp timestamp;
+    private final EicCodesConfiguration eicCodesConfiguration;
+    private final EicCodesMapper eicCodesMapper;
+    private Map<String, Boolean> countryImportingMap;
 
     // Timestamp
-    public TTimestampWrapper(TTimestamp timestamp) {
+    public TTimestampWrapper(TTimestamp timestamp, EicCodesConfiguration eicCodesConfiguration, EicCodesMapper eicCodesMapper) {
         this.timestamp = timestamp;
+        this.eicCodesConfiguration = eicCodesConfiguration;
+        this.eicCodesMapper = eicCodesMapper;
     }
 
     public TTimestamp getTimestamp() {
@@ -131,5 +156,46 @@ public class TTimestampWrapper {
 
     public int getAntcfinalIntValue() {
         return timestamp.getANTCFinal().getV().intValue();
+    }
+
+    Map<String, Boolean> getCountryImportingFromItalyMap() {
+        if (countryImportingMap == null) {
+            countryImportingMap = new HashMap<>();
+            List<TCalculationDirection> calculationDirections = timestamp.getCalculationDirections().get(0).getCalculationDirection();
+            calculationDirections.forEach(tCalculationDirection -> {
+                if (tCalculationDirection.getInArea().getV().equals(eicCodesConfiguration.getItaly())) {
+                    countryImportingMap.put(tCalculationDirection.getOutArea().getV(), false);
+                } else if (tCalculationDirection.getOutArea().getV().equals(eicCodesConfiguration.getItaly())) {
+                    countryImportingMap.put(tCalculationDirection.getInArea().getV(), true);
+                }
+            });
+            countryImportingMap.put(eicCodesConfiguration.getItaly(), true);
+        }
+        return countryImportingMap;
+    }
+
+    public boolean isCountryImportingFromItaly(String countryEic) {
+        return Optional.ofNullable(getCountryImportingFromItalyMap().get(countryEic))
+                .orElseThrow(() -> new CseValidInvalidDataException("Country " + countryEic + " must appear in InArea or OutArea"));
+    }
+
+    public boolean isFranceImportingFromItaly() {
+        return isCountryImportingFromItaly(eicCodesConfiguration.getFrance());
+    }
+
+    public Map<String, Double> getImportCornerSplittingFactors() {
+        return timestamp.getSplittingFactors().getSplittingFactor().stream()
+                .collect(Collectors.toMap(
+                    tFactor -> eicCodesMapper.mapToEicCodes(tFactor.getCountry().getV()),
+                    tFactor -> tFactor.getFactor().getV().doubleValue()
+                ));
+    }
+
+    public Map<String, Double> getExportCornerSplittingFactors() {
+        return timestamp.getShiftingFactors().getShiftingFactor().stream()
+                .collect(Collectors.toMap(
+                    tFactor -> eicCodesMapper.mapToEicCodes(tFactor.getCountry().getV()),
+                    tFactor -> tFactor.getFactor().getV().doubleValue())
+                );
     }
 }
