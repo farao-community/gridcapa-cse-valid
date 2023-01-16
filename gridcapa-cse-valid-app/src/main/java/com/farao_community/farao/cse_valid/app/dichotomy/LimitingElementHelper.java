@@ -41,9 +41,13 @@ import java.util.stream.Collectors;
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
-public class LimitingElementService {
+public class LimitingElementHelper {
 
-    public TLimitingElement getLimitingElement(DichotomyStepResult<RaoResponse> stepResult, CseCracCreationContext cracCreationContext, Network network, FileImporter fileImporter) {
+    private LimitingElementHelper() {
+        // Helper class, no instance needed
+    }
+
+    public static TLimitingElement getLimitingElement(DichotomyStepResult<RaoResponse> stepResult, CseCracCreationContext cracCreationContext, Network network, FileImporter fileImporter) {
         TLimitingElement limitingElement = new TLimitingElement();
         ImmutablePair<FlowCnec, Double> worstCnec = getWorstCnecInMW(stepResult, fileImporter);
         List<TCriticalBranch> listCriticalBranches = limitingElement.getCriticalBranch();
@@ -52,7 +56,7 @@ public class LimitingElementService {
         return limitingElement;
     }
 
-    private ImmutablePair<FlowCnec, Double> getWorstCnecInMW(DichotomyStepResult<RaoResponse> stepResult, FileImporter fileImporter) {
+    private static ImmutablePair<FlowCnec, Double> getWorstCnecInMW(DichotomyStepResult<RaoResponse> stepResult, FileImporter fileImporter) {
         Crac crac = fileImporter.importCracFromJson(stepResult.getValidationData().getCracFileUrl());
         RaoResult raoResult = fileImporter.importRaoResult(stepResult.getValidationData().getRaoResultFileUrl(), crac);
 
@@ -71,7 +75,7 @@ public class LimitingElementService {
         return new ImmutablePair<>(worstCnec, worstMargin);
     }
 
-    private TCriticalBranch getCriticalBranch(FlowCnec worstCnec, CseCracCreationContext context, Network network) {
+    private static TCriticalBranch getCriticalBranch(FlowCnec worstCnec, CseCracCreationContext context, Network network) {
         TCriticalBranch criticalBranch = new TCriticalBranch();
 
         criticalBranch.setOutage(getOutage(worstCnec, context, network));
@@ -80,7 +84,7 @@ public class LimitingElementService {
         return criticalBranch;
     }
 
-    private TOutage getOutage(FlowCnec worstCnec, CseCracCreationContext cracCreationContext, Network network) {
+    private static TOutage getOutage(FlowCnec worstCnec, CseCracCreationContext cracCreationContext, Network network) {
         Optional<Contingency> contingency = worstCnec.getState().getContingency();
 
         if (worstCnec.getState().isPreventive() || contingency.isEmpty()) {
@@ -103,7 +107,7 @@ public class LimitingElementService {
         return outage;
     }
 
-    private TElement getElement(Network network, NetworkElement networkElement) {
+    private static TElement getElement(Network network, NetworkElement networkElement) {
         Branch<?> branch = network.getBranch(networkElement.getId());
 
         TElement element = new TElement();
@@ -113,21 +117,21 @@ public class LimitingElementService {
         return element;
     }
 
-    private TextType getTextType(String value) {
+    private static TextType getTextType(String value) {
         TextType textType = new TextType();
         textType.setV(value);
         return textType;
     }
 
-    private TArea getAreaFrom(Branch<?> branch) {
+    private static TArea getAreaFrom(Branch<?> branch) {
         return getArea(branch.getTerminal1());
     }
 
-    private TArea getAreaTo(Branch<?> branch) {
+    private static TArea getAreaTo(Branch<?> branch) {
         return getArea(branch.getTerminal2());
     }
 
-    private TArea getArea(Terminal terminal) {
+    private static TArea getArea(Terminal terminal) {
         Optional<Substation> substation = terminal.getVoltageLevel().getSubstation();
         String areaTo = substation.map(Substation::getCountry)
                 .flatMap(country -> country.map(Enum::toString))
@@ -138,7 +142,7 @@ public class LimitingElementService {
         return tArea;
     }
 
-    private TMonitoredElement getMonitoredElement(FlowCnec worstCnec, Network network) {
+    private static TMonitoredElement getMonitoredElement(FlowCnec worstCnec, Network network) {
         TMonitoredElement monitoredElement = new TMonitoredElement();
 
         TElement element = getElement(network, worstCnec.getNetworkElement());
