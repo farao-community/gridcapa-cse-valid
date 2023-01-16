@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
-public class LimitingElementHelper {
+public final class LimitingElementHelper {
 
     private LimitingElementHelper() {
         // Helper class, no instance needed
