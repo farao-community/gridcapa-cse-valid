@@ -29,14 +29,14 @@ import static com.farao_community.farao.cse_valid.app.Constants.OUT_AREA;
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 
-public final class TimeStampTestData {
+public final class TimestampTestData {
 
-    private TimeStampTestData() {
+    private TimestampTestData() {
     }
 
     /* --------------- FULL IMPORT --------------- */
 
-    public static TTimestamp getTimeStampWithMniiAndMnie() {
+    public static TTimestamp getTimestampWithMniiAndMnie() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType mniiValue = new QuantityType();
@@ -50,7 +50,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMnieMiec() {
+    public static TTimestamp getTimestampWithMnieMiec() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType mnieValue = new QuantityType();
@@ -64,7 +64,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMniiAndMiec() {
+    public static TTimestamp getTimestampWithMniiAndMiec() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType mniiValue = new QuantityType();
@@ -78,7 +78,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMnie() {
+    public static TTimestamp getTimestampWithMnie() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType mnieValue = new QuantityType();
@@ -88,7 +88,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMnii() {
+    public static TTimestamp getTimestampWithMnii() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType mniiValue = new QuantityType();
@@ -98,7 +98,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMibniiAndAntcfinalBothZero() {
+    public static TTimestamp getTimestampWithMibniiAndAntcfinalBothZero() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType mniiValue = new QuantityType();
@@ -116,7 +116,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMniiAndAntcfinal() {
+    public static TTimestamp getTimestampWithMniiAndAntcfinal() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType mniiValue = new QuantityType();
@@ -130,7 +130,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMniiAndMibnii() {
+    public static TTimestamp getTimestampWithMniiAndMibnii() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType mniiValue = new QuantityType();
@@ -144,7 +144,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcAboveTarget() {
+    public static TTimestamp getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcAboveTarget() {
         TTimestamp timestamp = new TTimestamp();
 
         TTime timeValue = new TTime();
@@ -166,7 +166,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget() {
+    public static TTimestamp getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget() {
         TTimestamp timestamp = new TTimestamp();
 
         TTime timeValue = new TTime();
@@ -193,7 +193,7 @@ public final class TimeStampTestData {
 
     /* --------------- EXPORT CORNER --------------- */
 
-    public static TTimestamp getTimeStampWithMiec() {
+    public static TTimestamp getTimestampWithMiec() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType miecValue = new QuantityType();
@@ -203,7 +203,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMibiecAndAntcfinalBothZero() {
+    public static TTimestamp getTimestampWithMibiecAndAntcfinalBothZero() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType miecValue = new QuantityType();
@@ -221,7 +221,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMiecAndAntcfinal() {
+    public static TTimestamp getTimestampWithMiecAndAntcfinal() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType miecValue = new QuantityType();
@@ -235,7 +235,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMiecAndMibiec() {
+    public static TTimestamp getTimestampWithMiecAndMibiec() {
         TTimestamp timestamp = new TTimestamp();
 
         QuantityType miecValue = new QuantityType();
@@ -249,7 +249,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithoutShiftingFactors() {
+    public static TTimestamp getTimestampWithoutShiftingFactors() {
         TTimestamp timestamp = new TTimestamp();
 
         TTime timeValue = new TTime();
@@ -271,7 +271,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithoutCalculationDirections() {
+    public static TTimestamp getTimestampWithoutCalculationDirections() {
         TTimestamp timestamp = new TTimestamp();
 
         TTime timeValue = new TTime();
@@ -297,7 +297,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithMiecAndMibiecAndAntcfinalAndActualNtcAboveTarget() {
+    public static TTimestamp getTimestampWithMiecAndMibiecAndAntcfinalAndActualNtcAboveTarget() {
         TTimestamp timestamp = new TTimestamp();
 
         TTime timeValue = new TTime();
@@ -327,7 +327,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithoutFranceInAreaOrOutArea() {
+    public static TTimestamp getTimestampWithoutFranceInAreaOrOutArea() {
         TTimestamp timestamp = new TTimestamp();
 
         TTime timeValue = new TTime();
@@ -372,7 +372,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithFranceInArea() {
+    public static TTimestamp getTimestampWithFranceInArea() {
         TTimestamp timestamp = new TTimestamp();
 
         TTime timeValue = new TTime();
@@ -404,7 +404,7 @@ public final class TimeStampTestData {
         return timestamp;
     }
 
-    public static TTimestamp getTimeStampWithFranceOutArea() {
+    public static TTimestamp getTimestampWithFranceOutArea() {
         TTimestamp timestamp = new TTimestamp();
 
         TTime timeValue = new TTime();
