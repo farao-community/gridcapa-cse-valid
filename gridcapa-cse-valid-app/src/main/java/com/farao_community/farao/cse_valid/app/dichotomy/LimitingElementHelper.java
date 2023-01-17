@@ -49,15 +49,15 @@ public final class LimitingElementHelper {
 
     public static TLimitingElement getLimitingElement(DichotomyStepResult<RaoResponse> stepResult, CseCracCreationContext cracCreationContext, Network network, FileImporter fileImporter) {
         TLimitingElement limitingElement = new TLimitingElement();
-        ImmutablePair<FlowCnec, Double> worstCnec = getWorstCnecInMW(stepResult, fileImporter);
+        ImmutablePair<FlowCnec, Double> worstCnec = getWorstCnecInMW(stepResult, cracCreationContext, fileImporter);
         List<TCriticalBranch> listCriticalBranches = limitingElement.getCriticalBranch();
         TCriticalBranch criticalBranch = getCriticalBranch(worstCnec.getLeft(), cracCreationContext, network);
         listCriticalBranches.add(criticalBranch);
         return limitingElement;
     }
 
-    private static ImmutablePair<FlowCnec, Double> getWorstCnecInMW(DichotomyStepResult<RaoResponse> stepResult, FileImporter fileImporter) {
-        Crac crac = fileImporter.importCracFromJson(stepResult.getValidationData().getCracFileUrl());
+    private static ImmutablePair<FlowCnec, Double> getWorstCnecInMW(DichotomyStepResult<RaoResponse> stepResult, CseCracCreationContext cracCreationContext, FileImporter fileImporter) {
+        Crac crac = cracCreationContext.getCrac();
         RaoResult raoResult = fileImporter.importRaoResult(stepResult.getValidationData().getRaoResultFileUrl(), crac);
 
         FlowCnec worstCnec = null;

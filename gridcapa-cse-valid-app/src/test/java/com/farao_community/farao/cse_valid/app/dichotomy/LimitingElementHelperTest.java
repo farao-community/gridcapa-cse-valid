@@ -56,6 +56,7 @@ class LimitingElementHelperTest {
         // given
         DichotomyStepResult<RaoResponse> stepResult = mock(DichotomyStepResult.class);
         Network network = mock(Network.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         FileImporter fileImporter = mock(FileImporter.class);
 
         RaoResponse validationData = getValidationData();
@@ -67,7 +68,7 @@ class LimitingElementHelperTest {
 
         Crac crac = getCrac(worstCnec);
         RaoResult raoResult = getRaoResult(worstCnec);
-        when(fileImporter.importCracFromJson("cracFileUrl")).thenReturn(crac);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
         when(fileImporter.importRaoResult("raoResultFileUrl", crac)).thenReturn(raoResult);
 
         OptimizationState optimizationState = mock(OptimizationState.class);
@@ -81,7 +82,7 @@ class LimitingElementHelperTest {
                     .thenReturn(optimizationState);
 
             // when
-            TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(stepResult, null, network, fileImporter);
+            TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(stepResult, cracCreationContext, network, fileImporter);
 
             // then
             Assertions.assertThat(limitingElement).isNotNull();
@@ -112,7 +113,7 @@ class LimitingElementHelperTest {
 
         Crac crac = getCrac(worstCnec);
         RaoResult raoResult = getRaoResult(worstCnec);
-        when(fileImporter.importCracFromJson("cracFileUrl")).thenReturn(crac);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
         when(fileImporter.importRaoResult("raoResultFileUrl", crac)).thenReturn(raoResult);
 
         OptimizationState optimizationState = mock(OptimizationState.class);
@@ -143,7 +144,6 @@ class LimitingElementHelperTest {
     @NotNull
     private static RaoResponse getValidationData() {
         RaoResponse validationData = mock(RaoResponse.class);
-        when(validationData.getCracFileUrl()).thenReturn("cracFileUrl");
         when(validationData.getRaoResultFileUrl()).thenReturn("raoResultFileUrl");
         return validationData;
     }
