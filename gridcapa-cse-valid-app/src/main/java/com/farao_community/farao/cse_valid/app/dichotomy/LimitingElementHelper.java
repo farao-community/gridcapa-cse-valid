@@ -160,7 +160,7 @@ public final class LimitingElementHelper {
      * @return The value if there is exactly one in the stream.
      * It would throw an exception if there isn't exactly one element (zero or more) in the stream.
      */
-    public static <T> Collector<T, ?, T> toOne() {
+    private static <T> Collector<T, ?, T> toOne() {
         return Collectors.collectingAndThen(Collectors.toList(), list -> {
             if (list.size() == 1) {
                 return list.get(0);
