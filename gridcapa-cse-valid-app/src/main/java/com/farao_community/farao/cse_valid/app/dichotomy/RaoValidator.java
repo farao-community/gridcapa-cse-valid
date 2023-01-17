@@ -51,7 +51,7 @@ public class RaoValidator implements NetworkValidator<RaoResponse> {
     }
 
     @Override
-    public DichotomyStepResult<RaoResponse> validateNetwork(Network network) throws ValidationException {
+    public DichotomyStepResult<RaoResponse> validateNetwork(Network network, DichotomyStepResult<RaoResponse> dichotomyStepResult) throws ValidationException {
         String scaledNetworkDirPath = generateScaledNetworkDirPath(network);
         String scaledNetworkName = network.getNameOrId() + ".xiidm";
         String networkPresignedUrl = fileExporter.saveNetworkInArtifact(network, scaledNetworkDirPath + scaledNetworkName, "", processTargetDateTime, processType);
@@ -76,5 +76,4 @@ public class RaoValidator implements NetworkValidator<RaoResponse> {
         String variantName = network.getVariantManager().getWorkingVariantId();
         return String.format("%s/%s-%s/", basePath, ++variantCounter, variantName);
     }
-
 }

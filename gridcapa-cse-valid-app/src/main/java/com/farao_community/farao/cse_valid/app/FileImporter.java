@@ -19,7 +19,6 @@ import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.data.rao_result_json.RaoResultImporter;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.glsk.api.io.GlskDocumentImporters;
-import com.powsybl.iidm.import_.Importers;
 import com.powsybl.iidm.network.Network;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBIntrospector;
@@ -81,7 +80,7 @@ public class FileImporter {
 
     public Network importNetwork(String filename, String cgmUrl) {
         try (InputStream is = openUrlStream(cgmUrl)) {
-            return Importers.loadNetwork(filename, is);
+            return Network.read(filename, is);
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Error importing network at %s", cgmUrl), e);
         }
