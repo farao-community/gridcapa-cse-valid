@@ -7,7 +7,6 @@
 package com.farao_community.farao.cse_valid.app.dichotomy;
 
 import com.farao_community.farao.commons.Unit;
-import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCriticalBranch;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
@@ -20,7 +19,6 @@ import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationC
 import com.farao_community.farao.data.crac_creation.creator.cse.outage.CseOutageCreationContext;
 import com.farao_community.farao.data.rao_result_api.OptimizationState;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
-import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Country;
@@ -54,13 +52,8 @@ class LimitingElementHelperTest {
     @Test
     void getLimitingElementNoOutage() {
         // given
-        DichotomyStepResult<RaoResponse> stepResult = mock(DichotomyStepResult.class);
         Network network = mock(Network.class);
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
-        FileImporter fileImporter = mock(FileImporter.class);
-
-        RaoResponse validationData = getValidationData();
-        when(stepResult.getValidationData()).thenReturn(validationData);
 
         State state = mock(State.class);
         NetworkElement networkElement = mock(NetworkElement.class);
@@ -69,7 +62,6 @@ class LimitingElementHelperTest {
         Crac crac = getCrac(worstCnec);
         RaoResult raoResult = getRaoResult(worstCnec);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        when(fileImporter.importRaoResult("raoResultFileUrl", crac)).thenReturn(raoResult);
 
         OptimizationState optimizationState = mock(OptimizationState.class);
         when(state.isPreventive()).thenReturn(true); // outage = null
@@ -82,7 +74,7 @@ class LimitingElementHelperTest {
                     .thenReturn(optimizationState);
 
             // when
-            TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(stepResult, cracCreationContext, network, fileImporter);
+            TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
 
             // then
             Assertions.assertThat(limitingElement).isNotNull();
@@ -99,13 +91,8 @@ class LimitingElementHelperTest {
     @Test
     void getLimitingElementWithOutage() {
         // given
-        DichotomyStepResult<RaoResponse> stepResult = mock(DichotomyStepResult.class);
         Network network = mock(Network.class);
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
-        FileImporter fileImporter = mock(FileImporter.class);
-
-        RaoResponse validationData = getValidationData();
-        when(stepResult.getValidationData()).thenReturn(validationData);
 
         State state = mock(State.class);
         NetworkElement cnecNetworkElement = mock(NetworkElement.class);
@@ -114,7 +101,6 @@ class LimitingElementHelperTest {
         Crac crac = getCrac(worstCnec);
         RaoResult raoResult = getRaoResult(worstCnec);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        when(fileImporter.importRaoResult("raoResultFileUrl", crac)).thenReturn(raoResult);
 
         OptimizationState optimizationState = mock(OptimizationState.class);
         initMocksForOutage(network, cracCreationContext, state);
@@ -127,7 +113,7 @@ class LimitingElementHelperTest {
                     .thenReturn(optimizationState);
 
             // when
-            TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(stepResult, cracCreationContext, network, fileImporter);
+            TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
 
             // then
             Assertions.assertThat(limitingElement).isNotNull();
@@ -151,6 +137,7 @@ class LimitingElementHelperTest {
     @NotNull
     private static FlowCnec getWorstCnec(State state, NetworkElement networkElement) {
         FlowCnec worstCnec = mock(FlowCnec.class);
+        when(worstCnec.isOptimized()).thenReturn(true);
         when(worstCnec.getName()).thenReturn("name");
         when(worstCnec.getState()).thenReturn(state);
         when(worstCnec.getNetworkElement()).thenReturn(networkElement);

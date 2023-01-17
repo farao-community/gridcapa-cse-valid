@@ -27,6 +27,7 @@ import com.farao_community.farao.cse_valid.app.utils.TimestampTestData;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
+import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
@@ -349,47 +350,6 @@ class CseValidHandlerTest {
     }
 
     @Test
-    void computeTimestampMniiRunDichotomySuccessHighestValidStepNull() {
-        CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
-        String cracUrl = cseValidRequest.getImportCrac().getUrl();
-        ProcessType processType = cseValidRequest.getProcessType();
-        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
-
-        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
-
-        String jsonCracUrl = "/CSE/VALID/crac.utc";
-        String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
-        TLimitingElement limitingElement = new TLimitingElement();
-
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        Network network = mock(Network.class);
-        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
-        Crac crac = mock(Crac.class);
-        when(cracCreationContext.getCrac()).thenReturn(crac);
-        DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
-
-        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
-        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
-        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
-
-        when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(dichotomyResult);
-        when(dichotomyResult.hasValidStep()).thenReturn(true);
-        when(dichotomyResult.getHighestValidStep()).thenReturn(null);
-
-        try (MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class)) {
-            limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(null, cracCreationContext, network, fileImporter))
-                    .thenReturn(limitingElement);
-
-            cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-        }
-
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.ONE, limitingElement);
-    }
-
-    @Test
     void computeTimestampMniiRunDichotomySuccessHighestValidStepNotNull() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
@@ -411,6 +371,7 @@ class CseValidHandlerTest {
         when(cracCreationContext.getCrac()).thenReturn(crac);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
+        RaoResult raoResult = mock(RaoResult.class);
         NetPositionReport netPositionReport = mock(NetPositionReport.class);
         DichotomyStepResult<RaoResponse> highestValidStep = mock(DichotomyStepResult.class);
 
@@ -421,16 +382,18 @@ class CseValidHandlerTest {
 
         when(dichotomyResult.hasValidStep()).thenReturn(true);
         when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
+        when(highestValidStep.getValidationData()).thenReturn(raoResponse);
+        when(raoResponse.getRaoResultFileUrl()).thenReturn("raoResultFileUrl");
+        when(fileImporter.importRaoResult("raoResultFileUrl", crac)).thenReturn(raoResult);
         when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(dichotomyResult);
 
-        when(highestValidStep.getValidationData()).thenReturn(raoResponse);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn("finalNetworkWithPra");
         when(netPositionService.generateNetPositionReport("finalNetworkWithPra")).thenReturn(netPositionReport);
         Map<String, Double> borderExchanges = Map.of("FR", 1.0, "CH", 2.0, "AT", 4.0, "SI", 8.0);
         when(netPositionReport.getAreasReport()).thenReturn(Map.of("IT", new AreaReport("id", 42.0, borderExchanges)));
 
         try (MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class)) {
-            limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(highestValidStep, cracCreationContext, network, fileImporter))
+            limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network))
                     .thenReturn(limitingElement);
 
             cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
