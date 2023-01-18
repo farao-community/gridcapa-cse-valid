@@ -15,7 +15,6 @@ import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.rao_api.json.JsonRaoParameters;
 import com.farao_community.farao.rao_api.parameters.RaoParameters;
 import com.powsybl.commons.datasource.MemDataSource;
-import com.powsybl.iidm.export.Exporters;
 import com.powsybl.iidm.network.Network;
 import org.springframework.stereotype.Service;
 
@@ -75,7 +74,7 @@ public class FileExporter {
 
     private InputStream getNetworkInputStreamInXiidmFormat(Network network) throws IOException {
         MemDataSource memDataSource = new MemDataSource();
-        Exporters.export("XIIDM", network, new Properties(), memDataSource);
+        network.write("XIIDM", new Properties(), memDataSource);
         return memDataSource.newInputStream("", "xiidm");
     }
 
