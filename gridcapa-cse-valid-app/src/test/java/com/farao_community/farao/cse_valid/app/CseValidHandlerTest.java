@@ -13,7 +13,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
-import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
+import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.net_position.AreaReport;
@@ -23,17 +23,21 @@ import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
-import com.farao_community.farao.cse_valid.app.utils.TimeStampTestData;
+import com.farao_community.farao.cse_valid.app.utils.TimestampTestData;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.data.crac_api.Crac;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
+import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
+import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManager;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -49,7 +53,6 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRA
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_CALCULATION_DIRECTIONS;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_SHIFTING_FACTORS;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -82,9 +85,6 @@ class CseValidHandlerTest {
 
     @MockBean
     private NetPositionService netPositionService;
-
-    @MockBean
-    private LimitingElementService limitingElementService;
 
     @MockBean
     private Logger businessLogger;
@@ -157,7 +157,7 @@ class CseValidHandlerTest {
                 new CseValidFileResource("glsk.xml", "file://glsk.xml"),
                 OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
         when(minioAdapter.fileExists(any())).thenReturn(true);
-        when(dichotomyRunner.runImportCornerDichotomy(any(), any(), any(), any())).thenReturn(null);
+        when(dichotomyRunner.runImportCornerDichotomy(any(), any(), any(), any(), any())).thenReturn(null);
         CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
         assertEquals("id", cseValidResponse.getId());
     }
@@ -184,7 +184,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampContradictoryDataMniiMnie() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMnie();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMnie();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -197,7 +197,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampContradictoryDataMnieMiec() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMnieMiec();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMnieMiec();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -210,7 +210,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampContradictoryDataMniiMiec() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMiec();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMiec();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -223,7 +223,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMnie() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMnie();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMnie();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -236,7 +236,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMniiMibniiAndAntcfinalAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMnii();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMnii();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -249,7 +249,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMniiMibniiAndAntcfinalBothZero() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMibniiAndAntcfinalBothZero();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMibniiAndAntcfinalBothZero();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -262,7 +262,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMniiMibniiAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndAntcfinal();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndAntcfinal();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -275,7 +275,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMniiAntcfinalAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibnii();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibnii();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -288,7 +288,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMniiActualNtcAboveTarget() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcAboveTarget();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcAboveTarget();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -302,7 +302,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMniiFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
@@ -314,7 +314,7 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), eq(e.getMessage()));
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, e.getMessage());
     }
 
     @Test
@@ -325,7 +325,7 @@ class CseValidHandlerTest {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
@@ -333,59 +333,20 @@ class CseValidHandlerTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         Network network = mock(Network.class);
-        CseCrac cseCrac = mock(CseCrac.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCseCrac(cracUrl)).thenReturn(cseCrac);
-        when(fileImporter.importCrac(cseCrac, processTargetDateTime, network)).thenReturn(crac);
-        when(fileImporter.importCracFromJson(jsonCracUrl)).thenReturn(crac);
+        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
 
-        when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl)).thenReturn(null);
+        when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(null);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
-    }
-
-    @Test
-    void computeTimestampMniiRunDichotomySuccessHighestValidStepNull() {
-        CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
-        String cracUrl = cseValidRequest.getImportCrac().getUrl();
-        ProcessType processType = cseValidRequest.getProcessType();
-        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
-
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
-
-        String jsonCracUrl = "/CSE/VALID/crac.utc";
-        String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
-        TLimitingElement limitingElement = new TLimitingElement();
-
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        Network network = mock(Network.class);
-        CseCrac cseCrac = mock(CseCrac.class);
-        Crac crac = mock(Crac.class);
-        DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
-
-        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCseCrac(cracUrl)).thenReturn(cseCrac);
-        when(fileImporter.importCrac(cseCrac, processTargetDateTime, network)).thenReturn(crac);
-        when(fileImporter.importCracFromJson(jsonCracUrl)).thenReturn(crac);
-
-        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
-        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
-
-        when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl)).thenReturn(dichotomyResult);
-        when(dichotomyResult.hasValidStep()).thenReturn(true);
-        when(dichotomyResult.getHighestValidStep()).thenReturn(null);
-        when(limitingElementService.getLimitingElement(null)).thenReturn(limitingElement);
-
-        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.ONE, limitingElement);
     }
 
     @Test
@@ -396,7 +357,7 @@ class CseValidHandlerTest {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
@@ -405,33 +366,38 @@ class CseValidHandlerTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         Network network = mock(Network.class);
-        CseCrac cseCrac = mock(CseCrac.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
+        RaoResult raoResult = mock(RaoResult.class);
         NetPositionReport netPositionReport = mock(NetPositionReport.class);
         DichotomyStepResult<RaoResponse> highestValidStep = mock(DichotomyStepResult.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCseCrac(cracUrl)).thenReturn(cseCrac);
-        when(fileImporter.importCrac(cseCrac, processTargetDateTime, network)).thenReturn(crac);
-        when(fileImporter.importCracFromJson(jsonCracUrl)).thenReturn(crac);
-
+        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
 
         when(dichotomyResult.hasValidStep()).thenReturn(true);
         when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
-        when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl)).thenReturn(dichotomyResult);
-
-        when(limitingElementService.getLimitingElement(highestValidStep)).thenReturn(limitingElement);
         when(highestValidStep.getValidationData()).thenReturn(raoResponse);
+        when(raoResponse.getRaoResultFileUrl()).thenReturn("raoResultFileUrl");
+        when(fileImporter.importRaoResult("raoResultFileUrl", crac)).thenReturn(raoResult);
+        when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(dichotomyResult);
+
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn("finalNetworkWithPra");
         when(netPositionService.generateNetPositionReport("finalNetworkWithPra")).thenReturn(netPositionReport);
         Map<String, Double> borderExchanges = Map.of("FR", 1.0, "CH", 2.0, "AT", 4.0, "SI", 8.0);
         when(netPositionReport.getAreasReport()).thenReturn(Map.of("IT", new AreaReport("id", 42.0, borderExchanges)));
 
-        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        try (MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class)) {
+            limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network))
+                    .thenReturn(limitingElement);
+
+            cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        }
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.valueOf(-15), limitingElement);
     }
@@ -441,7 +407,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMiecMibiecAndAntcfinalAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMiec();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMiec();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -454,7 +420,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMiecMibiecAndAntcfinalBothZero() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMibiecAndAntcfinalBothZero();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMibiecAndAntcfinalBothZero();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -467,7 +433,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMiecMibiecAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMiecAndAntcfinal();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMiecAndAntcfinal();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -480,7 +446,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMiecAntcfinalAbsent() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMiecAndMibiec();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMiecAndMibiec();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -493,7 +459,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMiecShiftingFactorsMissing() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithoutShiftingFactors();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithoutShiftingFactors();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -506,7 +472,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMiecCalculationDirectionsMissing() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithoutCalculationDirections();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithoutCalculationDirections();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -519,7 +485,7 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMiecActualNtcAboveTarget() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithMiecAndMibiecAndAntcfinalAndActualNtcAboveTarget();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMiecAndMibiecAndAntcfinalAndActualNtcAboveTarget();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -532,19 +498,19 @@ class CseValidHandlerTest {
     @Test
     void computeTimestampMiecWhithoutFranceInAreaOrOutAreaShouldThrowAnException() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithoutFranceInAreaOrOutArea();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithoutFranceInAreaOrOutArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        assertThatExceptionOfType(CseValidInvalidDataException.class)
+        Assertions.assertThatExceptionOfType(CseValidInvalidDataException.class)
                 .isThrownBy(() -> cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter));
     }
 
     @Test
     void computeTimestampMiecWithFranceInAreaAndFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceInArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -556,13 +522,13 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), eq(e.getMessage()));
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, e.getMessage());
     }
 
     @Test
     void computeTimestampMiecWithFranceOutAreaAndFilesNotExisting() throws CseValidRequestValidatorException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceOutArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -574,7 +540,7 @@ class CseValidHandlerTest {
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(eq(timestamp), eq(e.getMessage()));
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, e.getMessage());
     }
 
     @Test
@@ -586,7 +552,7 @@ class CseValidHandlerTest {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceInArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
@@ -602,17 +568,15 @@ class CseValidHandlerTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         Network network = mock(Network.class);
-        CseCrac cseCrac = mock(CseCrac.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
         VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCseCrac(cracUrl)).thenReturn(cseCrac);
-        when(fileImporter.importCrac(cseCrac, processTargetDateTime, network)).thenReturn(crac);
-        when(fileImporter.importCracFromJson(jsonCracUrl)).thenReturn(crac);
-
+        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
         when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
@@ -625,14 +589,14 @@ class CseValidHandlerTest {
         when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
 
-        when(dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl)).thenReturn(dichotomyResult);
+        when(dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network)).thenReturn(dichotomyResult);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
         verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
-        verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl);
+        verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network);
     }
 
     @Test
@@ -644,7 +608,7 @@ class CseValidHandlerTest {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceInArea();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceInArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
@@ -660,16 +624,14 @@ class CseValidHandlerTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         Network network = mock(Network.class);
-        CseCrac cseCrac = mock(CseCrac.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
         VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCseCrac(cracUrl)).thenReturn(cseCrac);
-        when(fileImporter.importCrac(cseCrac, processTargetDateTime, network)).thenReturn(crac);
-        when(fileImporter.importCracFromJson(jsonCracUrl)).thenReturn(crac);
-
+        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
         when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
@@ -699,7 +661,7 @@ class CseValidHandlerTest {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceOutArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
@@ -715,17 +677,15 @@ class CseValidHandlerTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         Network network = mock(Network.class);
-        CseCrac cseCrac = mock(CseCrac.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
         VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCseCrac(cracUrl)).thenReturn(cseCrac);
-        when(fileImporter.importCrac(cseCrac, processTargetDateTime, network)).thenReturn(crac);
-        when(fileImporter.importCracFromJson(jsonCracUrl)).thenReturn(crac);
-
+        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
         when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
@@ -738,14 +698,14 @@ class CseValidHandlerTest {
         when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
 
-        when(dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl)).thenReturn(dichotomyResult);
+        when(dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(dichotomyResult);
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
         verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
-        verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl);
+        verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network);
     }
 
     @Test
@@ -757,7 +717,7 @@ class CseValidHandlerTest {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
 
-        TTimestamp timestamp = TimeStampTestData.getTimeStampWithFranceOutArea();
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceOutArea();
         TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
@@ -773,16 +733,14 @@ class CseValidHandlerTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         Network network = mock(Network.class);
-        CseCrac cseCrac = mock(CseCrac.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
         VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCseCrac(cracUrl)).thenReturn(cseCrac);
-        when(fileImporter.importCrac(cseCrac, processTargetDateTime, network)).thenReturn(crac);
-        when(fileImporter.importCracFromJson(jsonCracUrl)).thenReturn(crac);
-
+        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
         when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
