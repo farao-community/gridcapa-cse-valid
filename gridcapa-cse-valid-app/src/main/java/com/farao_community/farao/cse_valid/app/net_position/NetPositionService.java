@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,6 +8,8 @@ package com.farao_community.farao.cse_valid.app.net_position;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.app.FileImporter;
+import com.powsybl.balances_adjustment.util.CountryAreaFactory;
+import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.loadflow.LoadFlow;
 import com.powsybl.loadflow.LoadFlowParameters;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 @Service
 public class NetPositionService {
@@ -33,6 +36,11 @@ public class NetPositionService {
         Network network = fileImporter.importNetwork(networkUrl);
         runLoadFlow(network);
         return NetPositionCalculator.generateNetPositionReport(network);
+    }
+
+    public double computeFranceImportFromItaly(Network network) {
+        runLoadFlow(network);
+        return new CountryAreaFactory(Country.IT).create(network).getLeavingFlowToCountry(new CountryAreaFactory(Country.FR).create(network));
     }
 
     private void runLoadFlow(Network network) {

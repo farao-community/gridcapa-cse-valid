@@ -221,7 +221,7 @@ public class CseValidHandler {
             BigDecimal mibniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
             BigDecimal mniiValue = computeMnii(dichotomyResult).map(Math::round).map(BigDecimal::valueOf).orElse(mibniiValue);
 
-            tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(timestampWrapper.getTimestamp(), mibniiValue, mniiValue, tLimitingElement);
+            tcDocumentTypeWriter.fillTimestampWithFullImportDichotomyResponse(timestampWrapper.getTimestamp(), mibniiValue, mniiValue, tLimitingElement);
         } else {
             tcDocumentTypeWriter.fillDichotomyError(timestampWrapper.getTimestamp());
         }
@@ -321,6 +321,32 @@ public class CseValidHandler {
 
     private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL, Network network, CseCracCreationContext cracCreationContext) {
         DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network);
-        // TODO
+        if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
+            String raoResultFileUrl = dichotomyResult.getHighestValidStep().getValidationData().getRaoResultFileUrl();
+            RaoResult raoResult = fileImporter.importRaoResult(raoResultFileUrl, cracCreationContext.getCrac());
+            TLimitingElement tLimitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
+            BigDecimal value = computeValueForExportCorner(timestampWrapper, dichotomyResult)
+                    .map(Math::round)
+                    .map(BigDecimal::valueOf)
+                    .orElse(BigDecimal.ZERO);
+            tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(timestampWrapper.getTimestamp(), tLimitingElement, value, timestampWrapper.isFranceImportingFromItaly());
+        }
+    }
+
+    private Optional<Double> computeValueForExportCorner(TTimestampWrapper timestampWrapper, DichotomyResult<RaoResponse> dichotomyResult) {
+
+        if (dichotomyResult.getHighestValidStep() == null) {
+            return Optional.empty();
+        }
+
+        String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
+        Network network = fileImporter.importNetwork(finalNetworkWithPraUrl);
+
+        double value = netPositionService.computeFranceImportFromItaly(network);
+        if (!timestampWrapper.isFranceImportingFromItaly()) {
+            value *= -1;
+        }
+
+        return Optional.of(value);
     }
 }

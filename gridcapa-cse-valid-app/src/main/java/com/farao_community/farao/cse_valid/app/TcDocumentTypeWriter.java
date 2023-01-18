@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,6 +8,9 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.CountryType;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.NTCTypes;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.NTCvaluesType;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TNumber;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TResultTimeseries;
@@ -73,6 +76,8 @@ import static com.farao_community.farao.cse_valid.app.Constants.TIMESERIES_IDENT
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 public class TcDocumentTypeWriter {
 
@@ -243,7 +248,7 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
     }
 
-    public void fillTimestampWithDichotomyResponse(TTimestamp initialTs, BigDecimal mibniiValue, BigDecimal mniiValue, TLimitingElement tLimitingElement) {
+    public void fillTimestampWithFullImportDichotomyResponse(TTimestamp initialTs, BigDecimal mibniiValue, BigDecimal mniiValue, TLimitingElement tLimitingElement) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
@@ -257,6 +262,42 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
 
         listTimestamps.sort(Comparator.comparing(c -> OffsetDateTime.parse(c.getTime().getV())));
+    }
+
+    public void fillTimestampWithExportCornerDichotomyResponse(TTimestamp initialTs,
+                                                               TLimitingElement tLimitingElement,
+                                                               BigDecimal value,
+                                                               boolean isFranceImportingFromItaly) {
+        fillEmptyValidationResults();
+        List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
+        TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
+
+        fillNtcValuesType(ts, value, isFranceImportingFromItaly);
+
+        completeFillingWithStatusSuccess(ts, initialTs);
+        ts.setLimitingElement(tLimitingElement); // override initial value set in completeFillingWithStatusSuccess by default
+
+        listTimestamps.add(ts);
+
+        listTimestamps.sort(Comparator.comparing(c -> OffsetDateTime.parse(c.getTime().getV())));
+    }
+
+    private void fillNtcValuesType(TTimestamp ts, BigDecimal value, boolean isFranceImportingFromItaly) {
+        NTCvaluesType ntcValuesType = new NTCvaluesType();
+
+        NTCTypes ntcTypes = new NTCTypes();
+        ntcTypes.setNTC(buildQuantityType(value));
+        CountryType countryType = new CountryType();
+        countryType.setV("FR");
+        ntcTypes.setCountry(countryType);
+
+        List<NTCTypes> ntcTypesList = isFranceImportingFromItaly
+                ? ntcValuesType.getNTCvalueExport()
+                : ntcValuesType.getNTCvalueImport();
+
+        ntcTypesList.add(ntcTypes);
+
+        ts.setNTCvalues(ntcValuesType);
     }
 
     public void fillDichotomyError(TTimestamp initialTs) {
