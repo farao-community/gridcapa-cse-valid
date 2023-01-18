@@ -217,7 +217,7 @@ class TcDocumentTypeWriterTest {
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
-        tcDocumentTypeWriter.fillTimestampWithFullImportDichotomyResponse(initialTs, BigDecimal.ONE, BigDecimal.TEN, tLimitingElement);
+        tcDocumentTypeWriter.fillTimestampWithFullImportDichotomyResponse(initialTs, BigDecimal.ONE, 10.0, tLimitingElement);
 
         Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
         Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
@@ -245,7 +245,7 @@ class TcDocumentTypeWriterTest {
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
-        tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(initialTs, tLimitingElement, BigDecimal.TEN, true);
+        tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(initialTs, tLimitingElement, 10.0, true);
 
         Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
         Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
@@ -274,7 +274,7 @@ class TcDocumentTypeWriterTest {
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
-        tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(initialTs, tLimitingElement, BigDecimal.TEN, false);
+        tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(initialTs, tLimitingElement, 10.0, false);
 
         Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
         Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();

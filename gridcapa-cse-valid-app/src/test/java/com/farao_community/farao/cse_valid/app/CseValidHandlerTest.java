@@ -397,7 +397,7 @@ class CseValidHandlerTest {
             cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithFullImportDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.TEN, limitingElement);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithFullImportDichotomyResponse(timestamp, BigDecimal.ONE, fullImportValue, limitingElement);
     }
 
     /* --------------- EXPORT CORNER --------------- */
@@ -723,7 +723,7 @@ class CseValidHandlerTest {
         verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network);
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, BigDecimal.TEN, true);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, true);
     }
 
     @Test
@@ -802,6 +802,6 @@ class CseValidHandlerTest {
         verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(dichotomyRunner, times(1)).runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network);
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, BigDecimal.TEN, false);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, false);
     }
 }

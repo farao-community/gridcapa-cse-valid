@@ -13,8 +13,8 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
-import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
+import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
@@ -213,7 +213,7 @@ public class CseValidHandler {
             TLimitingElement tLimitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
 
             BigDecimal mibniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
-            BigDecimal mniiValue = BigDecimal.valueOf(Math.round(computeMnii(dichotomyResult)));
+            double mniiValue = computeMnii(dichotomyResult);
 
             tcDocumentTypeWriter.fillTimestampWithFullImportDichotomyResponse(timestampWrapper.getTimestamp(), mibniiValue, mniiValue, tLimitingElement);
         } else {
@@ -311,7 +311,7 @@ public class CseValidHandler {
             String raoResultFileUrl = dichotomyResult.getHighestValidStep().getValidationData().getRaoResultFileUrl();
             RaoResult raoResult = fileImporter.importRaoResult(raoResultFileUrl, cracCreationContext.getCrac());
             TLimitingElement tLimitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
-            BigDecimal value = BigDecimal.valueOf(Math.round(computeValueForExportCorner(timestampWrapper, dichotomyResult)));
+            double value = computeValueForExportCorner(timestampWrapper, dichotomyResult);
             tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(timestampWrapper.getTimestamp(), tLimitingElement, value, timestampWrapper.isFranceImportingFromItaly());
         }
     }
@@ -320,11 +320,6 @@ public class CseValidHandler {
         String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
         Network network = fileImporter.importNetwork(finalNetworkWithPraUrl);
         double value = NetPositionHelper.computeFranceImportFromItaly(network);
-
-        if (!timestampWrapper.isFranceImportingFromItaly()) {
-            value *= -1;
-        }
-
-        return value;
+        return timestampWrapper.isFranceImportingFromItaly() ? value : value * -1;
     }
 }

@@ -248,13 +248,13 @@ public class TcDocumentTypeWriter {
         listTimestamps.add(ts);
     }
 
-    public void fillTimestampWithFullImportDichotomyResponse(TTimestamp initialTs, BigDecimal mibniiValue, BigDecimal mniiValue, TLimitingElement tLimitingElement) {
+    public void fillTimestampWithFullImportDichotomyResponse(TTimestamp initialTs, BigDecimal mibniiValue, double mniiValue, TLimitingElement tLimitingElement) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
         TTimestamp ts = initializeNewTimestampWithExistingTimeData(initialTs);
 
         ts.setMiBNII(buildQuantityType(mibniiValue));
-        ts.setMNII(buildQuantityType(mniiValue));
+        ts.setMNII(buildQuantityType(BigDecimal.valueOf(Math.round(mniiValue))));
 
         completeFillingWithStatusSuccess(ts, initialTs);
         ts.setLimitingElement(tLimitingElement); // override initial value set in completeFillingWithStatusSuccess by default
@@ -266,7 +266,7 @@ public class TcDocumentTypeWriter {
 
     public void fillTimestampWithExportCornerDichotomyResponse(TTimestamp initialTs,
                                                                TLimitingElement tLimitingElement,
-                                                               BigDecimal value,
+                                                               double value,
                                                                boolean isFranceImportingFromItaly) {
         fillEmptyValidationResults();
         List<TTimestamp> listTimestamps = tcDocumentType.getValidationResults().get(0).getTimestamp();
@@ -282,11 +282,11 @@ public class TcDocumentTypeWriter {
         listTimestamps.sort(Comparator.comparing(c -> OffsetDateTime.parse(c.getTime().getV())));
     }
 
-    private void fillNtcValuesType(TTimestamp ts, BigDecimal value, boolean isFranceImportingFromItaly) {
+    private void fillNtcValuesType(TTimestamp ts, double value, boolean isFranceImportingFromItaly) {
         NTCvaluesType ntcValuesType = new NTCvaluesType();
 
         NTCTypes ntcTypes = new NTCTypes();
-        ntcTypes.setNTC(buildQuantityType(value));
+        ntcTypes.setNTC(buildQuantityType(BigDecimal.valueOf(Math.round(value))));
         CountryType countryType = new CountryType();
         countryType.setV("FR");
         ntcTypes.setCountry(countryType);
