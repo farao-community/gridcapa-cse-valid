@@ -13,6 +13,7 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_creation.creator.api.CracCreators;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
+import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCracImporter;
 import com.farao_community.farao.data.crac_io_api.CracImporters;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
@@ -94,16 +95,13 @@ public class FileImporter {
         }
     }
 
-    public CseCrac importCseCrac(String cracUrl) {
+    public CseCracCreationContext importCracCreationContext(String cracUrl, OffsetDateTime targetProcessDateTime, Network network) {
         try (InputStream is = openUrlStream(cracUrl)) {
-            return new CseCracImporter().importNativeCrac(is);
+            CseCrac nativeCseCrac = new CseCracImporter().importNativeCrac(is);
+            return (CseCracCreationContext) CracCreators.createCrac(nativeCseCrac, network, targetProcessDateTime);
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Error importing native CRAC at %s", cracUrl), e);
         }
-    }
-
-    public Crac importCrac(CseCrac cseCrac, OffsetDateTime targetProcessDateTime, Network network) {
-        return CracCreators.createCrac(cseCrac, network, targetProcessDateTime).getCrac();
     }
 
     public Crac importCracFromJson(String cracUrl) {

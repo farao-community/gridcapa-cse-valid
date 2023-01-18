@@ -11,7 +11,6 @@ import com.farao_community.farao.cse_valid.api.exception.CseValidInternalExcepti
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_io_api.CracExporters;
-import com.farao_community.farao.minio_adapter.starter.GridcapaFileGroup;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.rao_api.json.JsonRaoParameters;
 import com.farao_community.farao.rao_api.parameters.RaoParameters;
@@ -65,40 +64,18 @@ public class FileExporter {
     }
 
     public String saveNetworkInArtifact(Network network, String networkFilePath, String fileType, OffsetDateTime processTargetDateTime, ProcessType processType) {
-        exportAndUploadNetwork(network, "XIIDM", GridcapaFileGroup.ARTIFACT, networkFilePath, fileType, processTargetDateTime, processType);
-        return minioAdapter.generatePreSignedUrl(networkFilePath);
-    }
-
-    String exportAndUploadNetwork(Network network, String format, GridcapaFileGroup fileGroup, String filePath, String fileType, OffsetDateTime offsetDateTime, ProcessType processType) {
-        try (InputStream is = getNetworkInputStream(network, format)) {
-            switch (fileGroup) {
-                case OUTPUT:
-                    minioAdapter.uploadOutputForTimestamp(filePath, is, adaptTargetProcessName(processType), fileType, offsetDateTime);
-                    break;
-                case ARTIFACT:
-                    minioAdapter.uploadArtifactForTimestamp(filePath, is, adaptTargetProcessName(processType), fileType, offsetDateTime);
-                    break;
-                default:
-                    throw new UnsupportedOperationException(String.format("File group %s not supported", fileGroup));
-            }
+        try (InputStream is = getNetworkInputStreamInXiidmFormat(network)) {
+            minioAdapter.uploadArtifactForTimestamp(networkFilePath, is, adaptTargetProcessName(processType), fileType, processTargetDateTime);
         } catch (IOException e) {
             throw new CseValidInternalException("Error while trying to save network", e);
         }
-        return minioAdapter.generatePreSignedUrl(filePath);
+        return minioAdapter.generatePreSignedUrl(networkFilePath);
     }
 
-    private InputStream getNetworkInputStream(Network network, String format) throws IOException {
+    private InputStream getNetworkInputStreamInXiidmFormat(Network network) throws IOException {
         MemDataSource memDataSource = new MemDataSource();
-        switch (format) {
-            case "UCTE":
-                network.write("UCTE", new Properties(), memDataSource);
-                return memDataSource.newInputStream("", "uct");
-            case "XIIDM":
-                network.write("XIIDM", new Properties(), memDataSource);
-                return memDataSource.newInputStream("", "xiidm");
-            default:
-                throw new UnsupportedOperationException(String.format("Network format %s not supported", format));
-        }
+        network.write("XIIDM", new Properties(), memDataSource);
+        return memDataSource.newInputStream("", "xiidm");
     }
 
     public String saveRaoParameters(OffsetDateTime offsetDateTime, ProcessType processType) {

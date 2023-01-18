@@ -13,7 +13,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
-import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementService;
+import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
@@ -23,8 +23,8 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
-import com.farao_community.farao.data.crac_api.Crac;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
+import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
+import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Network;
@@ -56,7 +56,6 @@ public class CseValidHandler {
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final NetPositionService netPositionService;
-    private final LimitingElementService limitingElementService;
     private final Logger businessLogger;
     private final CseValidRequestValidator cseValidRequestValidator;
     private final CseValidNetworkShifter cseValidNetworkShifter;
@@ -68,7 +67,6 @@ public class CseValidHandler {
                            FileImporter fileImporter,
                            FileExporter fileExporter,
                            NetPositionService netPositionService,
-                           LimitingElementService limitingElementService,
                            Logger businessLogger,
                            CseValidRequestValidator cseValidRequestValidator,
                            CseValidNetworkShifter cseValidNetworkShifter,
@@ -79,7 +77,6 @@ public class CseValidHandler {
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.netPositionService = netPositionService;
-        this.limitingElementService = limitingElementService;
         this.businessLogger = businessLogger;
         this.cseValidRequestValidator = cseValidRequestValidator;
         this.cseValidNetworkShifter = cseValidNetworkShifter;
@@ -128,12 +125,6 @@ public class CseValidHandler {
     private String formatTimestamp(OffsetDateTime offsetDateTime) {
         // format to "yyy-MM-ddThh:mmZ"
         return offsetDateTime.withOffsetSameInstant(ZoneOffset.UTC).toString();
-    }
-
-    private String getJsonCracUrl(CseValidRequest cseValidRequest, Network network, String cracUrl) {
-        CseCrac cseCrac = fileImporter.importCseCrac(cracUrl);
-        Crac crac = fileImporter.importCrac(cseCrac, cseValidRequest.getTimestamp(), network);
-        return fileExporter.saveCracInJsonFormat(crac, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
     }
 
     private String generateScaledNetworkDirPath(Network network, OffsetDateTime processTargetDateTime, ProcessType processType) {
@@ -185,13 +176,14 @@ public class CseValidHandler {
                 Network network = fileImporter.importNetwork(cgmUrl);
 
                 String cracUrl = cseValidRequest.getImportCrac().getUrl();
-                String jsonCracUrl = getJsonCracUrl(cseValidRequest, network, cracUrl);
+                CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, cseValidRequest.getTimestamp(), network);
+                String jsonCracUrl = fileExporter.saveCracInJsonFormat(cracCreationContext.getCrac(), cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
 
                 ProcessType processType = cseValidRequest.getProcessType();
                 OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
                 String raoParametersURL = fileExporter.saveRaoParameters(processTargetDateTime, processType);
 
-                runDichotomyForFullImport(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL);
+                runDichotomyForFullImport(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL, network, cracCreationContext);
             } catch (CseValidRequestValidatorException e) {
                 businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
                 tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
@@ -219,12 +211,16 @@ public class CseValidHandler {
         return actualNtcAboveTargetNtc(timestampWrapper, actualNtc, targetNtc);
     }
 
-    private void runDichotomyForFullImport(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL) {
-        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL);
+    private void runDichotomyForFullImport(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL, Network network, CseCracCreationContext cracCreationContext) {
+        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network);
         if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
-            TLimitingElement tLimitingElement = this.limitingElementService.getLimitingElement(dichotomyResult.getHighestValidStep());
+            String raoResultFileUrl = dichotomyResult.getHighestValidStep().getValidationData().getRaoResultFileUrl();
+            RaoResult raoResult = fileImporter.importRaoResult(raoResultFileUrl, cracCreationContext.getCrac());
+            TLimitingElement tLimitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
+
             BigDecimal mibniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
             BigDecimal mniiValue = computeMnii(dichotomyResult).map(Math::round).map(BigDecimal::valueOf).orElse(mibniiValue);
+
             tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(timestampWrapper.getTimestamp(), mibniiValue, mniiValue, tLimitingElement);
         } else {
             tcDocumentTypeWriter.fillDichotomyError(timestampWrapper.getTimestamp());
@@ -276,7 +272,8 @@ public class CseValidHandler {
                 String cracUrl = timestampWrapper.isFranceImportingFromItaly()
                         ? cseValidRequest.getExportCrac().getUrl()
                         : cseValidRequest.getImportCrac().getUrl();
-                String jsonCracUrl = getJsonCracUrl(cseValidRequest, network, cracUrl);
+                CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, cseValidRequest.getTimestamp(), network);
+                String jsonCracUrl = fileExporter.saveCracInJsonFormat(cracCreationContext.getCrac(), cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
 
                 String scaledNetworkDirPath = generateScaledNetworkDirPath(network, processTargetDateTime, processType);
                 String scaledNetworkName = network.getNameOrId() + ".xiidm";
@@ -289,7 +286,7 @@ public class CseValidHandler {
                 if (cseValidRaoValidator.isSecure(raoResponse)) {
                     tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
                 } else {
-                    runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL);
+                    runDichotomyForExportCorner(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL, network, cracCreationContext);
                 }
             } catch (CseValidRequestValidatorException e) {
                 businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
@@ -322,8 +319,8 @@ public class CseValidHandler {
         return (double) timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
     }
 
-    private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL) {
-        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL);
+    private void runDichotomyForExportCorner(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL, Network network, CseCracCreationContext cracCreationContext) {
+        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network);
         // TODO
     }
 }
