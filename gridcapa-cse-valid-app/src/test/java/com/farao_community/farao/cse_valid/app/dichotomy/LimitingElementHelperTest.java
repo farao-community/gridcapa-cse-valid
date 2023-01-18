@@ -7,6 +7,7 @@
 package com.farao_community.farao.cse_valid.app.dichotomy;
 
 import com.farao_community.farao.commons.Unit;
+import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCriticalBranch;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;

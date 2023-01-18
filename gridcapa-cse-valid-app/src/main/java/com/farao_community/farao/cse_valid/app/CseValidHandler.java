@@ -13,11 +13,10 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
-import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementHelper;
+import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
+import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
@@ -35,8 +34,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Map;
-import java.util.Optional;
 
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_CALCULATION_DIRECTIONS;
@@ -55,7 +52,6 @@ public class CseValidHandler {
     private final EicCodesMapper eicCodesMapper;
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
-    private final NetPositionService netPositionService;
     private final Logger businessLogger;
     private final CseValidRequestValidator cseValidRequestValidator;
     private final CseValidNetworkShifter cseValidNetworkShifter;
@@ -66,7 +62,6 @@ public class CseValidHandler {
                            EicCodesMapper eicCodesMapper,
                            FileImporter fileImporter,
                            FileExporter fileExporter,
-                           NetPositionService netPositionService,
                            Logger businessLogger,
                            CseValidRequestValidator cseValidRequestValidator,
                            CseValidNetworkShifter cseValidNetworkShifter,
@@ -76,7 +71,6 @@ public class CseValidHandler {
         this.eicCodesMapper = eicCodesMapper;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
-        this.netPositionService = netPositionService;
         this.businessLogger = businessLogger;
         this.cseValidRequestValidator = cseValidRequestValidator;
         this.cseValidNetworkShifter = cseValidNetworkShifter;
@@ -219,7 +213,7 @@ public class CseValidHandler {
             TLimitingElement tLimitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
 
             BigDecimal mibniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
-            BigDecimal mniiValue = computeMnii(dichotomyResult).map(Math::round).map(BigDecimal::valueOf).orElse(mibniiValue);
+            BigDecimal mniiValue = BigDecimal.valueOf(Math.round(computeMnii(dichotomyResult)));
 
             tcDocumentTypeWriter.fillTimestampWithFullImportDichotomyResponse(timestampWrapper.getTimestamp(), mibniiValue, mniiValue, tLimitingElement);
         } else {
@@ -227,18 +221,10 @@ public class CseValidHandler {
         }
     }
 
-    private Optional<Double> computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
-        if (dichotomyResult.getHighestValidStep() == null) {
-            return Optional.empty();
-        }
+    private double computeMnii(DichotomyResult<RaoResponse> dichotomyResult) {
         String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
-        NetPositionReport netPositionReport = netPositionService.generateNetPositionReport(finalNetworkWithPraUrl);
-        Map<String, Double> italianBordersExchange = netPositionReport.getAreasReport().get("IT").getBordersExchanges();
-        double italianCseNetPosition = italianBordersExchange.get("FR") +
-                italianBordersExchange.get("CH") +
-                italianBordersExchange.get("AT") +
-                italianBordersExchange.get("SI");
-        return Optional.of(-italianCseNetPosition);
+        Network network = fileImporter.importNetwork(finalNetworkWithPraUrl);
+        return NetPositionHelper.computeItalianImport(network);
     }
 
     /* --------------- EXPORT CORNER --------------- */
@@ -325,28 +311,20 @@ public class CseValidHandler {
             String raoResultFileUrl = dichotomyResult.getHighestValidStep().getValidationData().getRaoResultFileUrl();
             RaoResult raoResult = fileImporter.importRaoResult(raoResultFileUrl, cracCreationContext.getCrac());
             TLimitingElement tLimitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
-            BigDecimal value = computeValueForExportCorner(timestampWrapper, dichotomyResult)
-                    .map(Math::round)
-                    .map(BigDecimal::valueOf)
-                    .orElse(BigDecimal.ZERO);
+            BigDecimal value = BigDecimal.valueOf(Math.round(computeValueForExportCorner(timestampWrapper, dichotomyResult)));
             tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(timestampWrapper.getTimestamp(), tLimitingElement, value, timestampWrapper.isFranceImportingFromItaly());
         }
     }
 
-    private Optional<Double> computeValueForExportCorner(TTimestampWrapper timestampWrapper, DichotomyResult<RaoResponse> dichotomyResult) {
-
-        if (dichotomyResult.getHighestValidStep() == null) {
-            return Optional.empty();
-        }
-
+    private double computeValueForExportCorner(TTimestampWrapper timestampWrapper, DichotomyResult<RaoResponse> dichotomyResult) {
         String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
         Network network = fileImporter.importNetwork(finalNetworkWithPraUrl);
+        double value = NetPositionHelper.computeFranceImportFromItaly(network);
 
-        double value = netPositionService.computeFranceImportFromItaly(network);
         if (!timestampWrapper.isFranceImportingFromItaly()) {
             value *= -1;
         }
 
-        return Optional.of(value);
+        return value;
     }
 }

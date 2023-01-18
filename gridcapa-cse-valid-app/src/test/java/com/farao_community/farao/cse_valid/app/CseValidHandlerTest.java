@@ -13,12 +13,10 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
-import com.farao_community.farao.cse_valid.app.dichotomy.LimitingElementHelper;
+import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
+import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
-import com.farao_community.farao.cse_valid.app.net_position.AreaReport;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionReport;
-import com.farao_community.farao.cse_valid.app.net_position.NetPositionService;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
@@ -46,7 +44,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Map;
 import java.util.Objects;
 
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
@@ -82,9 +79,6 @@ class CseValidHandlerTest {
 
     @MockBean
     private FileExporter fileExporter;
-
-    @MockBean
-    private NetPositionService netPositionService;
 
     @MockBean
     private Logger businessLogger;
@@ -362,7 +356,10 @@ class CseValidHandlerTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
+        String networkFileUrl = "CSE/Valid/network.utc";
+        String raoResultFileUrl = "CSE/VALID/raoResult.utc";
         TLimitingElement limitingElement = new TLimitingElement();
+        double fullImportValue = 10.0;
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
         Network network = mock(Network.class);
@@ -372,34 +369,35 @@ class CseValidHandlerTest {
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         RaoResult raoResult = mock(RaoResult.class);
-        NetPositionReport netPositionReport = mock(NetPositionReport.class);
         DichotomyStepResult<RaoResponse> highestValidStep = mock(DichotomyStepResult.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
         when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
+
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
 
         when(dichotomyResult.hasValidStep()).thenReturn(true);
         when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
         when(highestValidStep.getValidationData()).thenReturn(raoResponse);
-        when(raoResponse.getRaoResultFileUrl()).thenReturn("raoResultFileUrl");
-        when(fileImporter.importRaoResult("raoResultFileUrl", crac)).thenReturn(raoResult);
+        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
         when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(dichotomyResult);
 
-        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn("finalNetworkWithPra");
-        when(netPositionService.generateNetPositionReport("finalNetworkWithPra")).thenReturn(netPositionReport);
-        Map<String, Double> borderExchanges = Map.of("FR", 1.0, "CH", 2.0, "AT", 4.0, "SI", 8.0);
-        when(netPositionReport.getAreasReport()).thenReturn(Map.of("IT", new AreaReport("id", 42.0, borderExchanges)));
-
-        try (MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class)) {
+        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
+        when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
+        try (
+                MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class);
+                MockedStatic<NetPositionHelper> netPositionMockedStatic = Mockito.mockStatic(NetPositionHelper.class)
+        ) {
             limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network))
                     .thenReturn(limitingElement);
-
+            netPositionMockedStatic.when(() -> NetPositionHelper.computeItalianImport(network))
+                    .thenReturn(fullImportValue);
             cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithFullImportDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.valueOf(-15), limitingElement);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithFullImportDichotomyResponse(timestamp, BigDecimal.ONE, BigDecimal.TEN, limitingElement);
     }
 
     /* --------------- EXPORT CORNER --------------- */
@@ -710,10 +708,14 @@ class CseValidHandlerTest {
         when(dichotomyResult.hasValidStep()).thenReturn(true);
         when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
         when(highestValidStep.getValidationData()).thenReturn(raoResponse);
-        when(netPositionService.computeFranceImportFromItaly(network)).thenReturn(exportCornerValue);
-        try (MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class)) {
+        try (
+                MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class);
+                MockedStatic<NetPositionHelper> netPositionMockedStatic = Mockito.mockStatic(NetPositionHelper.class)
+        ) {
             limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network))
                     .thenReturn(limitingElement);
+            netPositionMockedStatic.when(() -> NetPositionHelper.computeFranceImportFromItaly(network))
+                    .thenReturn(exportCornerValue);
             cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
@@ -785,10 +787,14 @@ class CseValidHandlerTest {
         when(dichotomyResult.hasValidStep()).thenReturn(true);
         when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
         when(highestValidStep.getValidationData()).thenReturn(raoResponse);
-        when(netPositionService.computeFranceImportFromItaly(network)).thenReturn(exportCornerValue * -1);
-        try (MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class)) {
+        try (
+                MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class);
+                MockedStatic<NetPositionHelper> netPositionMockedStatic = Mockito.mockStatic(NetPositionHelper.class)
+        ) {
             limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network))
                     .thenReturn(limitingElement);
+            netPositionMockedStatic.when(() -> NetPositionHelper.computeFranceImportFromItaly(network))
+                    .thenReturn(exportCornerValue * -1);
             cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
