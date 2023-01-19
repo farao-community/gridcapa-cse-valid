@@ -198,7 +198,7 @@ class TcDocumentTypeWriterTest {
     }
 
     @Test
-    void fillTimestampWithDichotomyResponse() {
+    void fillTimestampWithFullImportDichotomyResponse() {
         // CseValidRequest
         CseValidRequest cseValidRequest = initCseValidRequest();
         initTcDocumentTypeWriter(cseValidRequest);
@@ -217,7 +217,7 @@ class TcDocumentTypeWriterTest {
         // Mock
         Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
 
-        tcDocumentTypeWriter.fillTimestampWithDichotomyResponse(initialTs, BigDecimal.ONE, BigDecimal.TEN, tLimitingElement);
+        tcDocumentTypeWriter.fillTimestampWithFullImportDichotomyResponse(initialTs, BigDecimal.ONE, 10.0, tLimitingElement);
 
         Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
         Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
@@ -228,6 +228,64 @@ class TcDocumentTypeWriterTest {
         assertions.assertThat(resultTs.getLimitingElement()).isEqualTo(tLimitingElement);
         assertions.assertThat(resultTs.getMiBNII().getV()).isEqualTo(BigDecimal.ONE);
         assertions.assertThat(resultTs.getMNII().getV()).isEqualTo(BigDecimal.TEN);
+        assertions.assertAll();
+    }
+
+    @Test
+    void fillTimestampWithExportCornerDichotomyResponseWithFranceInArea() {
+        // CseValidRequest
+        CseValidRequest cseValidRequest = initCseValidRequest();
+        initTcDocumentTypeWriter(cseValidRequest);
+        // TTimestamp
+        TTimestamp initialTs = new TTimestamp();
+        initTimeDataInTimestamp(initialTs);
+        initSuccessDataInTimestamp(initialTs);
+        TLimitingElement tLimitingElement = new TLimitingElement();
+        initialTs.setLimitingElement(tLimitingElement);
+        // Mock
+        Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
+
+        tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(initialTs, tLimitingElement, 10.0, true);
+
+        Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
+        Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
+        TTimestamp resultTs = this.tcDocumentType.getValidationResults().get(0).getTimestamp().get(0);
+        SoftAssertions assertions = new SoftAssertions();
+        assertTimeDataValidInResultTimestamp(resultTs, assertions);
+        assertSuccessDataValidInResultTimestamp(resultTs, assertions);
+        assertions.assertThat(resultTs.getLimitingElement()).isEqualTo(tLimitingElement);
+        assertions.assertThat(resultTs.getNTCvalues().getNTCvalueExport().get(0).getNTC().getV()).isEqualTo(BigDecimal.TEN);
+        assertions.assertThat(resultTs.getNTCvalues().getNTCvalueExport().get(0).getCountry().getV()).isEqualTo("FR");
+        assertions.assertThat(resultTs.getNTCvalues().getNTCvalueImport()).isEmpty();
+        assertions.assertAll();
+    }
+
+    @Test
+    void fillTimestampWithExportCornerDichotomyResponseWithFranceOutArea() {
+        // CseValidRequest
+        CseValidRequest cseValidRequest = initCseValidRequest();
+        initTcDocumentTypeWriter(cseValidRequest);
+        // TTimestamp
+        TTimestamp initialTs = new TTimestamp();
+        initTimeDataInTimestamp(initialTs);
+        initSuccessDataInTimestamp(initialTs);
+        TLimitingElement tLimitingElement = new TLimitingElement();
+        initialTs.setLimitingElement(tLimitingElement);
+        // Mock
+        Mockito.when(tcDocumentType.getValidationResults()).thenReturn(new ArrayList<>());
+
+        tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(initialTs, tLimitingElement, 10.0, false);
+
+        Assertions.assertThat(this.tcDocumentType.getValidationResults()).isNotEmpty();
+        Assertions.assertThat(this.tcDocumentType.getValidationResults().get(0).getTimestamp()).isNotEmpty();
+        TTimestamp resultTs = this.tcDocumentType.getValidationResults().get(0).getTimestamp().get(0);
+        SoftAssertions assertions = new SoftAssertions();
+        assertTimeDataValidInResultTimestamp(resultTs, assertions);
+        assertSuccessDataValidInResultTimestamp(resultTs, assertions);
+        assertions.assertThat(resultTs.getLimitingElement()).isEqualTo(tLimitingElement);
+        assertions.assertThat(resultTs.getNTCvalues().getNTCvalueImport().get(0).getNTC().getV()).isEqualTo(BigDecimal.TEN);
+        assertions.assertThat(resultTs.getNTCvalues().getNTCvalueImport().get(0).getCountry().getV()).isEqualTo("FR");
+        assertions.assertThat(resultTs.getNTCvalues().getNTCvalueExport()).isEmpty();
         assertions.assertAll();
     }
 
