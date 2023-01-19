@@ -285,7 +285,7 @@ class TcDocumentTypeWriterTest {
         assertions.assertThat(resultTs.getLimitingElement()).isEqualTo(tLimitingElement);
         assertions.assertThat(resultTs.getNTCvalues().getNTCvalueImport().get(0).getNTC().getV()).isEqualTo(BigDecimal.TEN);
         assertions.assertThat(resultTs.getNTCvalues().getNTCvalueImport().get(0).getCountry().getV()).isEqualTo("FR");
-        assertions.assertThat(resultTs.getNTCvalues().getNTCvalueExport().isEmpty());
+        assertions.assertThat(resultTs.getNTCvalues().getNTCvalueExport()).isEmpty();
         assertions.assertAll();
     }
 
