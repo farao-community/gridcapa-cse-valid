@@ -9,7 +9,6 @@ package com.farao_community.farao.cse_valid.app.validator;
 import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
-import org.springframework.stereotype.Component;
 
 import java.util.StringJoiner;
 
@@ -17,10 +16,12 @@ import java.util.StringJoiner;
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 
-@Component
-public class CseValidRequestValidator {
+public final class CseValidRequestValidator {
 
-    public void checkAllFilesExist(CseValidRequest cseValidRequest, boolean isFranceImportingFromItaly) throws CseValidRequestValidatorException {
+    private CseValidRequestValidator() {
+    }
+
+    public static void checkAllFilesExist(CseValidRequest cseValidRequest, boolean isFranceImportingFromItaly) throws CseValidRequestValidatorException {
 
         if (cseValidRequest == null) {
             throw new CseValidRequestValidatorException("Request is null");

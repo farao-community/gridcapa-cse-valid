@@ -53,7 +53,6 @@ public class CseValidHandler {
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final Logger businessLogger;
-    private final CseValidRequestValidator cseValidRequestValidator;
     private final CseValidNetworkShifter cseValidNetworkShifter;
     private final CseValidRaoValidator cseValidRaoValidator;
 
@@ -63,7 +62,6 @@ public class CseValidHandler {
                            FileImporter fileImporter,
                            FileExporter fileExporter,
                            Logger businessLogger,
-                           CseValidRequestValidator cseValidRequestValidator,
                            CseValidNetworkShifter cseValidNetworkShifter,
                            CseValidRaoValidator cseValidRaoValidator) {
         this.dichotomyRunner = dichotomyRunner;
@@ -72,7 +70,6 @@ public class CseValidHandler {
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.businessLogger = businessLogger;
-        this.cseValidRequestValidator = cseValidRequestValidator;
         this.cseValidNetworkShifter = cseValidNetworkShifter;
         this.cseValidRaoValidator = cseValidRaoValidator;
     }
@@ -164,7 +161,7 @@ public class CseValidHandler {
             tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), mniiValue);
         } else {
             try {
-                cseValidRequestValidator.checkAllFilesExist(cseValidRequest, false);
+                CseValidRequestValidator.checkAllFilesExist(cseValidRequest, false);
 
                 String cgmUrl = cseValidRequest.getCgm().getUrl();
                 Network network = fileImporter.importNetwork(cgmUrl);
@@ -244,7 +241,7 @@ public class CseValidHandler {
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
         } else {
             try {
-                cseValidRequestValidator.checkAllFilesExist(cseValidRequest, timestampWrapper.isFranceImportingFromItaly());
+                CseValidRequestValidator.checkAllFilesExist(cseValidRequest, timestampWrapper.isFranceImportingFromItaly());
                 String cgmUrl = cseValidRequest.getCgm().getUrl();
                 Network network = fileImporter.importNetwork(cgmUrl);
                 double shiftValue = computeShiftValue(timestampWrapper);

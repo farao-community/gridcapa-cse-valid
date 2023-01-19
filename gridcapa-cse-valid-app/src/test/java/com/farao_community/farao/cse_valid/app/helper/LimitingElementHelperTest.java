@@ -4,10 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package com.farao_community.farao.cse_valid.app.dichotomy;
+package com.farao_community.farao.cse_valid.app.helper;
 
 import com.farao_community.farao.commons.Unit;
-import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCriticalBranch;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
@@ -32,7 +31,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +45,6 @@ import static org.mockito.Mockito.when;
  * @author Vincent BOCHET {@literal <vincent.bochet at rte-france.com>}
  */
 
-@SpringBootTest
 class LimitingElementHelperTest {
 
     @Test

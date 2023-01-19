@@ -13,8 +13,8 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
-import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
+import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
@@ -54,7 +54,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -82,9 +81,6 @@ class CseValidHandlerTest {
 
     @MockBean
     private Logger businessLogger;
-
-    @MockBean
-    private CseValidRequestValidator cseValidRequestValidator;
 
     @MockBean
     private CseValidNetworkShifter cseValidNetworkShifter;
@@ -303,9 +299,11 @@ class CseValidHandlerTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        doThrow(e).when(cseValidRequestValidator).checkAllFilesExist(cseValidRequest, false);
-
-        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        try (MockedStatic<CseValidRequestValidator> cseValidRequestValidatorMockedStatic = Mockito.mockStatic(CseValidRequestValidator.class)) {
+            cseValidRequestValidatorMockedStatic.when(() -> CseValidRequestValidator.checkAllFilesExist(cseValidRequest, false))
+                    .thenThrow(e);
+            cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        }
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, e.getMessage());
@@ -515,9 +513,12 @@ class CseValidHandlerTest {
 
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file, CRAC Transit.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
-        doThrow(e).when(cseValidRequestValidator).checkAllFilesExist(cseValidRequest, true);
 
-        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        try (MockedStatic<CseValidRequestValidator> cseValidRequestValidatorMockedStatic = Mockito.mockStatic(CseValidRequestValidator.class)) {
+            cseValidRequestValidatorMockedStatic.when(() -> CseValidRequestValidator.checkAllFilesExist(cseValidRequest, true))
+                    .thenThrow(e);
+            cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        }
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, e.getMessage());
@@ -533,9 +534,12 @@ class CseValidHandlerTest {
 
         String errorMessage = "Process fail during TSO validation phase: Missing CGM file, CRAC file, GLSK file.";
         CseValidRequestValidatorException e = new CseValidRequestValidatorException(errorMessage);
-        doThrow(e).when(cseValidRequestValidator).checkAllFilesExist(cseValidRequest, false);
 
-        cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        try (MockedStatic<CseValidRequestValidator> cseValidRequestValidatorMockedStatic = Mockito.mockStatic(CseValidRequestValidator.class)) {
+            cseValidRequestValidatorMockedStatic.when(() -> CseValidRequestValidator.checkAllFilesExist(cseValidRequest, false))
+                    .thenThrow(e);
+            cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        }
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, e.getMessage());

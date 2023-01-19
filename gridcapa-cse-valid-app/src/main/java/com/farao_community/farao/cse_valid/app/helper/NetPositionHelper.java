@@ -23,7 +23,10 @@ import java.util.stream.Stream;
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 
-public class NetPositionHelper {
+public final class NetPositionHelper {
+
+    private NetPositionHelper() {
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NetPositionHelper.class);
 
