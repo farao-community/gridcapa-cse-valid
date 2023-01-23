@@ -12,8 +12,8 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
-import com.farao_community.farao.cse_valid.app.service.ComputeExportCornerService;
-import com.farao_community.farao.cse_valid.app.service.ComputeFullImportService;
+import com.farao_community.farao.cse_valid.app.service.ExportCornerComputationService;
+import com.farao_community.farao.cse_valid.app.service.FullImportComputationService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import org.slf4j.Logger;
@@ -38,23 +38,23 @@ public class CseValidHandler {
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final Logger businessLogger;
-    private final ComputeFullImportService computeFullImportService;
-    private final ComputeExportCornerService computeExportCornerService;
+    private final FullImportComputationService fullImportComputationService;
+    private final ExportCornerComputationService exportCornerComputationService;
 
     public CseValidHandler(EicCodesConfiguration eicCodesConfiguration,
                            EicCodesMapper eicCodesMapper,
                            FileImporter fileImporter,
                            FileExporter fileExporter,
                            Logger businessLogger,
-                           ComputeFullImportService computeFullImportService,
-                           ComputeExportCornerService computeExportCornerService) {
+                           FullImportComputationService fullImportComputationService,
+                           ExportCornerComputationService exportCornerComputationService) {
         this.eicCodesConfiguration = eicCodesConfiguration;
         this.eicCodesMapper = eicCodesMapper;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.businessLogger = businessLogger;
-        this.computeFullImportService = computeFullImportService;
-        this.computeExportCornerService = computeExportCornerService;
+        this.fullImportComputationService = fullImportComputationService;
+        this.exportCornerComputationService = exportCornerComputationService;
     }
 
     public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
@@ -107,9 +107,9 @@ public class CseValidHandler {
         } else if (timestampWrapper.hasMultipleMniiMnieMiec()) {
             tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_CONTRADICTORY_DATA);
         } else if (timestampWrapper.hasMnii()) {
-            computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         } else if (timestampWrapper.hasMiec()) {
-            computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         } else if (timestampWrapper.hasMnie()) {
             tcDocumentTypeWriter.fillTimestampFullExportSuccess(timestampWrapper.getTimestamp(), timestampWrapper.getMnieValue());
         } else {

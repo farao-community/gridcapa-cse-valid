@@ -42,7 +42,7 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSIN
  */
 
 @Service
-public class ComputeExportCornerService {
+public class ExportCornerComputationService {
 
     private final DichotomyRunner dichotomyRunner;
     private final FileImporter fileImporter;
@@ -51,12 +51,12 @@ public class ComputeExportCornerService {
     private final CseValidNetworkShifter cseValidNetworkShifter;
     private final CseValidRaoValidator cseValidRaoValidator;
 
-    public ComputeExportCornerService(DichotomyRunner dichotomyRunner,
-                                      FileImporter fileImporter,
-                                      FileExporter fileExporter,
-                                      Logger businessLogger,
-                                      CseValidNetworkShifter cseValidNetworkShifter,
-                                      CseValidRaoValidator cseValidRaoValidator) {
+    public ExportCornerComputationService(DichotomyRunner dichotomyRunner,
+                                          FileImporter fileImporter,
+                                          FileExporter fileExporter,
+                                          Logger businessLogger,
+                                          CseValidNetworkShifter cseValidNetworkShifter,
+                                          CseValidRaoValidator cseValidRaoValidator) {
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;

@@ -37,17 +37,17 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSIN
  */
 
 @Service
-public class ComputeFullImportService {
+public class FullImportComputationService {
 
     private final DichotomyRunner dichotomyRunner;
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final Logger businessLogger;
 
-    public ComputeFullImportService(DichotomyRunner dichotomyRunner,
-                                    FileImporter fileImporter,
-                                    FileExporter fileExporter,
-                                    Logger businessLogger) {
+    public FullImportComputationService(DichotomyRunner dichotomyRunner,
+                                        FileImporter fileImporter,
+                                        FileExporter fileExporter,
+                                        Logger businessLogger) {
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;

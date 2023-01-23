@@ -12,8 +12,8 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
-import com.farao_community.farao.cse_valid.app.service.ComputeExportCornerService;
-import com.farao_community.farao.cse_valid.app.service.ComputeFullImportService;
+import com.farao_community.farao.cse_valid.app.service.ExportCornerComputationService;
+import com.farao_community.farao.cse_valid.app.service.FullImportComputationService;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
 import com.farao_community.farao.cse_valid.app.utils.TimestampTestData;
@@ -60,10 +60,10 @@ class CseValidHandlerTest {
     private Logger businessLogger;
 
     @MockBean
-    private ComputeFullImportService computeFullImportService;
+    private FullImportComputationService fullImportComputationService;
 
     @MockBean
-    private ComputeExportCornerService computeExportCornerService;
+    private ExportCornerComputationService exportCornerComputationService;
 
     @Autowired
     private EicCodesConfiguration eicCodesConfiguration;
@@ -196,7 +196,7 @@ class CseValidHandlerTest {
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(computeFullImportService, times(1)).computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        verify(fullImportComputationService, times(1)).computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
     }
 
     @Test
@@ -209,7 +209,7 @@ class CseValidHandlerTest {
 
         cseValidHandler.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(computeExportCornerService, times(1)).computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        verify(exportCornerComputationService, times(1)).computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
     }
 
     @Test

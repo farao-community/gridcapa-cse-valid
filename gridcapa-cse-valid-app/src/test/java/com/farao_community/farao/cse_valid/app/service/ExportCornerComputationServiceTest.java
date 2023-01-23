@@ -62,7 +62,7 @@ import static org.mockito.Mockito.when;
  */
 
 @SpringBootTest
-class ComputeExportCornerServiceTest {
+class ExportCornerComputationServiceTest {
 
     @MockBean
     private DichotomyRunner dichotomyRunner;
@@ -89,7 +89,7 @@ class ComputeExportCornerServiceTest {
     private EicCodesMapper eicCodesMapper;
 
     @Autowired
-    private ComputeExportCornerService computeExportCornerService;
+    private ExportCornerComputationService exportCornerComputationService;
 
     /* ------------------- computeTimestamp ------------------- */
 
@@ -101,7 +101,7 @@ class ComputeExportCornerServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, BigDecimal.ZERO);
     }
@@ -114,7 +114,7 @@ class ComputeExportCornerServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, BigDecimal.ZERO);
     }
@@ -127,7 +127,7 @@ class ComputeExportCornerServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
     }
@@ -140,7 +140,7 @@ class ComputeExportCornerServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
     }
@@ -153,7 +153,7 @@ class ComputeExportCornerServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_SHIFTING_FACTORS);
     }
@@ -166,7 +166,7 @@ class ComputeExportCornerServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_CALCULATION_DIRECTIONS);
     }
@@ -179,7 +179,7 @@ class ComputeExportCornerServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, BigDecimal.TEN);
     }
@@ -193,7 +193,7 @@ class ComputeExportCornerServiceTest {
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
         Assertions.assertThatExceptionOfType(CseValidInvalidDataException.class)
-                .isThrownBy(() -> computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter));
+                .isThrownBy(() -> exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter));
     }
 
     @Test
@@ -210,7 +210,7 @@ class ComputeExportCornerServiceTest {
         try (MockedStatic<CseValidRequestValidator> cseValidRequestValidatorMockedStatic = Mockito.mockStatic(CseValidRequestValidator.class)) {
             cseValidRequestValidatorMockedStatic.when(() -> CseValidRequestValidator.checkAllFilesExist(cseValidRequest, true))
                     .thenThrow(e);
-            computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
@@ -231,7 +231,7 @@ class ComputeExportCornerServiceTest {
         try (MockedStatic<CseValidRequestValidator> cseValidRequestValidatorMockedStatic = Mockito.mockStatic(CseValidRequestValidator.class)) {
             cseValidRequestValidatorMockedStatic.when(() -> CseValidRequestValidator.checkAllFilesExist(cseValidRequest, false))
                     .thenThrow(e);
-            computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
@@ -283,7 +283,7 @@ class ComputeExportCornerServiceTest {
         when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
         verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination);
@@ -336,7 +336,7 @@ class ComputeExportCornerServiceTest {
         when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
-        computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
         verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination);
@@ -413,7 +413,7 @@ class ComputeExportCornerServiceTest {
                     .thenReturn(limitingElement);
             netPositionMockedStatic.when(() -> NetPositionHelper.computeFranceImportFromItaly(network))
                     .thenReturn(exportCornerValue);
-            computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
@@ -492,7 +492,7 @@ class ComputeExportCornerServiceTest {
                     .thenReturn(limitingElement);
             netPositionMockedStatic.when(() -> NetPositionHelper.computeFranceImportFromItaly(network))
                     .thenReturn(exportCornerValue * -1);
-            computeExportCornerService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
         verify(cseValidNetworkShifter, times(1)).shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);

@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
  */
 
 @SpringBootTest
-class ComputeFullImportServiceTest {
+class FullImportComputationServiceTest {
 
     @MockBean
     private DichotomyRunner dichotomyRunner;
@@ -76,7 +76,7 @@ class ComputeFullImportServiceTest {
     private EicCodesMapper eicCodesMapper;
 
     @Autowired
-    private ComputeFullImportService computeFullImportService;
+    private FullImportComputationService fullImportComputationService;
 
     /* ------------------- computeTimestamp ------------------- */
 
@@ -88,7 +88,7 @@ class ComputeFullImportServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampFullImportSuccess(timestamp, BigDecimal.ZERO);
     }
@@ -101,7 +101,7 @@ class ComputeFullImportServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampFullImportSuccess(timestamp, BigDecimal.ZERO);
     }
@@ -114,7 +114,7 @@ class ComputeFullImportServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
     }
@@ -127,7 +127,7 @@ class ComputeFullImportServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
     }
@@ -140,7 +140,7 @@ class ComputeFullImportServiceTest {
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
 
-        computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(businessLogger, times(1)).info(anyString(), eq("time"));
         verify(tcDocumentTypeWriter, times(1)).fillTimestampFullImportSuccess(timestamp, BigDecimal.TEN);
@@ -159,7 +159,7 @@ class ComputeFullImportServiceTest {
         try (MockedStatic<CseValidRequestValidator> cseValidRequestValidatorMockedStatic = Mockito.mockStatic(CseValidRequestValidator.class)) {
             cseValidRequestValidatorMockedStatic.when(() -> CseValidRequestValidator.checkAllFilesExist(cseValidRequest, false))
                     .thenThrow(e);
-            computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
         verify(businessLogger, times(1)).error(anyString(), eq("time"));
@@ -193,7 +193,7 @@ class ComputeFullImportServiceTest {
 
         when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(null);
 
-        computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
@@ -249,7 +249,7 @@ class ComputeFullImportServiceTest {
                     .thenReturn(limitingElement);
             netPositionMockedStatic.when(() -> NetPositionHelper.computeItalianImport(network))
                     .thenReturn(fullImportValue);
-            computeFullImportService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+            fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithFullImportDichotomyResponse(timestamp, BigDecimal.ONE, fullImportValue, limitingElement);
