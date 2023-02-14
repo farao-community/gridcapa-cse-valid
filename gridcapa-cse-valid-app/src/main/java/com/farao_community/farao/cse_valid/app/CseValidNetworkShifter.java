@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.cse_valid.app;
 
+import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
@@ -13,7 +14,6 @@ import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationExceptio
 import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
 import com.farao_community.farao.dichotomy.shift.LinearScaler;
 import com.farao_community.farao.dichotomy.shift.SplittingFactors;
-import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.iidm.network.Network;
 import org.springframework.stereotype.Component;
 
@@ -30,40 +30,43 @@ public class CseValidNetworkShifter {
 
     private static final double SHIFT_TOLERANCE = 1;
 
-    private final FileImporter fileImporter;
     private final EicCodesConfiguration eicCodesConfiguration;
+    private final ZonalScalableProvider zonalScalableProvider;
 
-    public CseValidNetworkShifter(FileImporter fileImporter, EicCodesConfiguration eicCodesConfiguration) {
-        this.fileImporter = fileImporter;
+    public CseValidNetworkShifter(EicCodesConfiguration eicCodesConfiguration, ZonalScalableProvider zonalScalableProvider) {
         this.eicCodesConfiguration = eicCodesConfiguration;
+        this.zonalScalableProvider = zonalScalableProvider;
     }
 
     private NetworkShifter getNetworkShifter(Map<String, Double> splittiFactorMap,
-                                            Network network,
-                                            String glskUrl) {
-        GlskDocument glskDocument = fileImporter.importGlsk(glskUrl);
+                                             Network network,
+                                             String glskUrl,
+                                             ProcessType processType) {
         return new LinearScaler(
-                glskDocument.getZonalScalable(network),
-                new SplittingFactors(splittiFactorMap),
-                SHIFT_TOLERANCE);
+            zonalScalableProvider.get(glskUrl, network, processType),
+            new SplittingFactors(splittiFactorMap),
+            SHIFT_TOLERANCE);
     }
 
     public NetworkShifter getNetworkShifterForFullImport(TTimestampWrapper timestampWrapper,
                                                          Network network,
-                                                         String glskUrl) {
-        return getNetworkShifter(getSplittingFactorsForFullImport(timestampWrapper), network, glskUrl);
+                                                         String glskUrl,
+                                                         ProcessType processType) {
+        return getNetworkShifter(getSplittingFactorsForFullImport(timestampWrapper), network, glskUrl, processType);
     }
 
     public NetworkShifter getNetworkShifterForExportCornerWithItalyFrance(TTimestampWrapper timestampWrapper,
                                                                           Network network,
-                                                                          String glskUrl) {
-        return getNetworkShifter(getSplittingFactorsForExportCornerWithItalyFrance(timestampWrapper), network, glskUrl);
+                                                                          String glskUrl,
+                                                                          ProcessType processType) {
+        return getNetworkShifter(getSplittingFactorsForExportCornerWithItalyFrance(timestampWrapper), network, glskUrl, processType);
     }
 
     NetworkShifter getNetworkShifterForExportCornerWithAllCountries(TTimestampWrapper timestampWrapper,
                                                                     Network network,
-                                                                    String glskUrl) {
-        return getNetworkShifter(getSplittingFactorsForExportCornerWithAllCountries(timestampWrapper), network, glskUrl);
+                                                                    String glskUrl,
+                                                                    ProcessType processType) {
+        return getNetworkShifter(getSplittingFactorsForExportCornerWithAllCountries(timestampWrapper), network, glskUrl, processType);
     }
 
     Map<String, Double> getSplittingFactorsForFullImport(TTimestampWrapper timestampWrapper) {
@@ -82,18 +85,18 @@ public class CseValidNetworkShifter {
 
     Map<String, Double> getSplittingFactorsForExportCornerWithAllCountries(TTimestampWrapper timestampWrapper) {
         return timestampWrapper.getExportCornerSplittingFactors().entrySet().stream()
-                .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    stringDoubleEntry -> stringDoubleEntry.getValue() * getFactorSignOfCountry(timestampWrapper, stringDoubleEntry.getKey())
-                ));
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                stringDoubleEntry -> stringDoubleEntry.getValue() * getFactorSignOfCountry(timestampWrapper, stringDoubleEntry.getKey())
+            ));
     }
 
     private double getFactorSignOfCountry(TTimestampWrapper timestampWrapper, String countryEic) {
         return timestampWrapper.isCountryImportingFromItaly(countryEic) ? -1 : 1;
     }
 
-    public void shiftNetwork(double shiftValue, Network network, TTimestampWrapper timestampWrapper, String glskUrl) {
-        NetworkShifter networkShifter = getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl);
+    public void shiftNetwork(double shiftValue, Network network, TTimestampWrapper timestampWrapper, String glskUrl, ProcessType processType) {
+        NetworkShifter networkShifter = getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType);
         try {
             networkShifter.shiftNetwork(shiftValue, network);
         } catch (GlskLimitationException | ShiftingException e) {

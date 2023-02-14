@@ -122,15 +122,16 @@ class CseValidNetworkShifterTest {
     void shiftNetwork() throws GlskLimitationException, ShiftingException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String glskUrl = cseValidRequest.getGlsk().getUrl();
+        ProcessType processType = cseValidRequest.getProcessType();
         double shiftValue = 1000.0;
 
         Network network = mock(Network.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
         TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
-        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl);
+        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType);
 
-        cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
+        cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl, processType);
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
     }
@@ -139,6 +140,7 @@ class CseValidNetworkShifterTest {
     void shiftNetworkShouldThrowCseValidShiftFailureExceptionBecauseGlskLimitationExceptionWasThrownWhenShifting() throws GlskLimitationException, ShiftingException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String glskUrl = cseValidRequest.getGlsk().getUrl();
+        ProcessType processType = cseValidRequest.getProcessType();
         double shiftValue = 1000.0;
 
         Network network = mock(Network.class);
@@ -146,10 +148,10 @@ class CseValidNetworkShifterTest {
         TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
         doThrow(GlskLimitationException.class).when(networkShifter).shiftNetwork(shiftValue, network);
-        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl);
+        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType);
 
         assertThrows(CseValidShiftFailureException.class, () -> {
-            cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
+            cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl, processType);
         }, "CseValidShiftFailureException error was expected");
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
@@ -159,6 +161,7 @@ class CseValidNetworkShifterTest {
     void shiftNetworkShouldThrowCseValidShiftFailureExceptionBecauseShiftingExceptionWasThrownWhenShifting() throws GlskLimitationException, ShiftingException {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String glskUrl = cseValidRequest.getGlsk().getUrl();
+        ProcessType processType = cseValidRequest.getProcessType();
         double shiftValue = 1000.0;
 
         Network network = mock(Network.class);
@@ -166,10 +169,10 @@ class CseValidNetworkShifterTest {
         TTimestampWrapper timestampWrapper = mock(TTimestampWrapper.class);
 
         doThrow(ShiftingException.class).when(networkShifter).shiftNetwork(shiftValue, network);
-        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl);
+        doReturn(networkShifter).when(cseValidNetworkShifter).getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType);
 
         assertThrows(CseValidShiftFailureException.class, () -> {
-            cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
+            cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl, processType);
         }, "CseValidShiftFailureException error was expected");
 
         verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
