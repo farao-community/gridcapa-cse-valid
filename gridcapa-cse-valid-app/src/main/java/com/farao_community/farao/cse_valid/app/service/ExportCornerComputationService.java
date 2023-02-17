@@ -91,7 +91,7 @@ public class ExportCornerComputationService {
                 Network network = fileImporter.importNetwork(cgmUrl);
                 double shiftValue = computeShiftValue(timestampWrapper);
                 String glskUrl = cseValidRequest.getGlsk().getUrl();
-                cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl);
+                cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl, cseValidRequest.getProcessType());
 
                 ProcessType processType = cseValidRequest.getProcessType();
                 OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();

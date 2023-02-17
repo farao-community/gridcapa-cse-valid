@@ -10,6 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+import java.util.Set;
+
 @ConstructorBinding
 @EnableConfigurationProperties
 @ConfigurationProperties("cse-valid-runner.eic-codes")
@@ -46,5 +48,9 @@ public class EicCodesConfiguration {
 
     public String getSwitzerland() {
         return switzerland;
+    }
+
+    public Set<String> getCseCodes() {
+        return Set.of(austria, france, italy, slovenia, switzerland);
     }
 }

@@ -5,6 +5,8 @@ import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfigurati
 import com.powsybl.iidm.network.Country;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 public class EicCodesMapper {
 
@@ -14,8 +16,13 @@ public class EicCodesMapper {
         this.eicCodesConfiguration = eicCodesConfiguration;
     }
 
-    public String mapToEicCodes(String countryStr) {
+    public String mapToEic(String countryStr) {
         Country country = Country.valueOf(countryStr);
+        return Optional.ofNullable(mapToEic(country))
+            .orElseThrow(() -> new CseValidInvalidDataException("Invalid country " + countryStr));
+    }
+
+    public String mapToEic(Country country) {
         switch (country) {
             case AT:
                 return eicCodesConfiguration.getAustria();
@@ -28,7 +35,7 @@ public class EicCodesMapper {
             case CH:
                 return eicCodesConfiguration.getSwitzerland();
             default:
-                throw new CseValidInvalidDataException("Invalid country " + countryStr);
+                return null;
         }
     }
 }
