@@ -31,49 +31,49 @@ class EicCodesMapperTest {
     @Test
     void mapToEicCodesShouldReturnAustriaCode() {
         String expected = eicCodesConfiguration.getAustria();
-        String eicCode = eicCodesMapper.mapToEicCodes("AT");
+        String eicCode = eicCodesMapper.mapToEic("AT");
         assertEquals(expected, eicCode);
     }
 
     @Test
     void mapToEicCodesShouldReturnFranceCode() {
         String expected = eicCodesConfiguration.getFrance();
-        String eicCode = eicCodesMapper.mapToEicCodes("FR");
+        String eicCode = eicCodesMapper.mapToEic("FR");
         assertEquals(expected, eicCode);
     }
 
     @Test
     void mapToEicCodesShouldReturnItalyCode() {
         String expected = eicCodesConfiguration.getItaly();
-        String eicCode = eicCodesMapper.mapToEicCodes("IT");
+        String eicCode = eicCodesMapper.mapToEic("IT");
         assertEquals(expected, eicCode);
     }
 
     @Test
     void mapToEicCodesShouldReturnSloveniaCode() {
         String expected = eicCodesConfiguration.getSlovenia();
-        String eicCode = eicCodesMapper.mapToEicCodes("SI");
+        String eicCode = eicCodesMapper.mapToEic("SI");
         assertEquals(expected, eicCode);
     }
 
     @Test
     void mapToEicCodesShouldReturnSwitzerlandCode() {
         String expected = eicCodesConfiguration.getSwitzerland();
-        String eicCode = eicCodesMapper.mapToEicCodes("CH");
+        String eicCode = eicCodesMapper.mapToEic("CH");
         assertEquals(expected, eicCode);
     }
 
     @Test
     void mapToEicCodesShouldThrowCseValidInvalidDataException() {
         assertThrows(CseValidInvalidDataException.class, () -> {
-            eicCodesMapper.mapToEicCodes("TN");
+            eicCodesMapper.mapToEic("TN");
         }, "CseValidInvalidDataException error was expected");
     }
 
     @Test
     void mapToEicCodesShouldThrowIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> {
-            eicCodesMapper.mapToEicCodes("");
+            eicCodesMapper.mapToEic("");
         }, "IllegalArgumentException error was expected");
     }
 }

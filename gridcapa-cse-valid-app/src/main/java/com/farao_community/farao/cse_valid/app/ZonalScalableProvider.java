@@ -10,9 +10,9 @@ package com.farao_community.farao.cse_valid.app;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
+import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.powsybl.glsk.commons.ZonalData;
 import com.powsybl.iidm.modification.scalable.Scalable;
-import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Load;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.Substation;
@@ -29,10 +29,12 @@ public class ZonalScalableProvider {
 
     private final FileImporter fileImporter;
     private final EicCodesConfiguration eicCodesConfiguration;
+    private final EicCodesMapper eicCodesMapper;
 
-    public ZonalScalableProvider(FileImporter fileImporter, EicCodesConfiguration eicCodesConfiguration) {
+    public ZonalScalableProvider(FileImporter fileImporter, EicCodesConfiguration eicCodesConfiguration, EicCodesMapper eicCodesMapper) {
         this.fileImporter = fileImporter;
         this.eicCodesConfiguration = eicCodesConfiguration;
+        this.eicCodesMapper = eicCodesMapper;
     }
 
     public ZonalData<Scalable> get(String glskUrl, Network network, ProcessType processType) {
@@ -63,19 +65,19 @@ public class ZonalScalableProvider {
         });
     }
 
-    private double getZoneSumOfActiveLoads(Network network, String cseCountry) {
+    private double getZoneSumOfActiveLoads(Network network, String eiCode) {
         return network.getLoadStream()
-            .filter(load -> isLoadCorrespondingToTheCountry(load, cseCountry))
+            .filter(load -> isLoadCorrespondingToTheCountry(load, eiCode))
             .map(Load::getP0)
             .reduce(0., Double::sum);
     }
 
-    private Scalable getStackedScalable(String cseCountry, Scalable scalable, Network network, double sum) {
+    private Scalable getStackedScalable(String eiCode, Scalable scalable, Network network, double sum) {
         List<Float> percentageList = new ArrayList<>();
         List<Scalable> scalableList = new ArrayList<>();
 
         network.getLoadStream()
-            .filter(load -> isLoadCorrespondingToTheCountry(load, cseCountry))
+            .filter(load -> isLoadCorrespondingToTheCountry(load, eiCode))
             .forEach(load -> {
                 percentageList.add((float) (load.getP0() / sum) * 100);
                 scalableList.add(Scalable.onLoad(load.getId()));
@@ -84,28 +86,11 @@ public class ZonalScalableProvider {
         return Scalable.stack(scalable, Scalable.proportional(percentageList, scalableList, true));
     }
 
-    private boolean isLoadCorrespondingToTheCountry(Load load, String cseCountry) {
+    private boolean isLoadCorrespondingToTheCountry(Load load, String eiCode) {
         return load.getTerminal().getVoltageLevel().getSubstation()
             .flatMap(Substation::getCountry)
-            .map(this::getEicFromCountry)
-            .map(cseCountry::equals)
+            .map(eicCodesMapper::mapToEic)
+            .map(eiCode::equals)
             .orElse(false);
-    }
-
-    private String getEicFromCountry(Country country) {
-        switch (country) {
-            case AT:
-                return eicCodesConfiguration.getAustria();
-            case FR:
-                return eicCodesConfiguration.getFrance();
-            case IT:
-                return eicCodesConfiguration.getItaly();
-            case SI:
-                return eicCodesConfiguration.getSlovenia();
-            case CH:
-                return eicCodesConfiguration.getSwitzerland();
-            default:
-                return null;
-        }
     }
 }

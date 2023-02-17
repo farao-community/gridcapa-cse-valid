@@ -186,7 +186,7 @@ public class TTimestampWrapper {
     public Map<String, Double> getImportCornerSplittingFactors() {
         return timestamp.getSplittingFactors().getSplittingFactor().stream()
                 .collect(Collectors.toMap(
-                    tFactor -> eicCodesMapper.mapToEicCodes(tFactor.getCountry().getV()),
+                    tFactor -> eicCodesMapper.mapToEic(tFactor.getCountry().getV()),
                     tFactor -> tFactor.getFactor().getV().doubleValue()
                 ));
     }
@@ -194,7 +194,7 @@ public class TTimestampWrapper {
     public Map<String, Double> getExportCornerSplittingFactors() {
         return timestamp.getShiftingFactors().getShiftingFactor().stream()
                 .collect(Collectors.toMap(
-                    tFactor -> eicCodesMapper.mapToEicCodes(tFactor.getCountry().getV()),
+                    tFactor -> eicCodesMapper.mapToEic(tFactor.getCountry().getV()),
                     tFactor -> tFactor.getFactor().getV().doubleValue())
                 );
     }
