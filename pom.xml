@@ -49,8 +49,8 @@
     <properties>
         <commons.lang.version>3.12.0</commons.lang.version>
         <commons.io.version>2.11.0</commons.io.version>
-        <farao.dependencies.version>1.9.0</farao.dependencies.version>
-        <farao.dichotomy.version>4.9.0</farao.dichotomy.version>
+        <farao.dependencies.version>1.11.0</farao.dependencies.version>
+        <farao.dichotomy.version>4.9.1</farao.dichotomy.version>
         <gridcapa.rao.runner.version>1.11.0</gridcapa.rao.runner.version>
         <gridcapa.starter.minio.version>1.0.0</gridcapa.starter.minio.version>
         <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
