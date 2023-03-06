@@ -191,7 +191,7 @@ class FullImportComputationServiceTest {
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
 
-        when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(null);
+        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network, false)).thenReturn(null);
 
         fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
@@ -237,7 +237,7 @@ class FullImportComputationServiceTest {
         when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
         when(highestValidStep.getValidationData()).thenReturn(raoResponse);
         when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
-        when(dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network)).thenReturn(dichotomyResult);
+        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network, false)).thenReturn(dichotomyResult);
 
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);

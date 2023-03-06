@@ -84,11 +84,15 @@ public class CseValidNetworkShifter {
     }
 
     Map<String, Double> getSplittingFactorsForExportCornerWithAllCountries(TTimestampWrapper timestampWrapper) {
-        return timestampWrapper.getExportCornerSplittingFactors().entrySet().stream()
+        Map<String, Double> exportCornerSplittingFactors =  timestampWrapper.getExportCornerSplittingFactors().entrySet().stream()
+            .filter(stringDoubleEntry -> !stringDoubleEntry.getKey().equals(eicCodesConfiguration.getItaly()))
             .collect(Collectors.toMap(
                 Map.Entry::getKey,
                 stringDoubleEntry -> stringDoubleEntry.getValue() * getFactorSignOfCountry(timestampWrapper, stringDoubleEntry.getKey())
             ));
+        double sum = exportCornerSplittingFactors.values().stream().mapToDouble(Double::doubleValue).sum();
+        exportCornerSplittingFactors.put(eicCodesConfiguration.getItaly(), -1 * sum);
+        return exportCornerSplittingFactors;
     }
 
     private double getFactorSignOfCountry(TTimestampWrapper timestampWrapper, String countryEic) {

@@ -37,11 +37,11 @@ public final class TSplittingAndShiftingFactorsTestData {
     public static TShiftingFactors getTShiftingFactorsWithFranceInArea() {
         TShiftingFactors tShiftingFactors = new TShiftingFactors();
 
-        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.7), "CH"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.7), "IT"));
         tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.2), "AT"));
         tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.1), "SI"));
-        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.4), "FR"));
-        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.6), "IT"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.4), "CH"));
+        tShiftingFactors.getShiftingFactor().add(getTFactor(BigDecimal.valueOf(0.6), "FR"));
 
         return tShiftingFactors;
     }

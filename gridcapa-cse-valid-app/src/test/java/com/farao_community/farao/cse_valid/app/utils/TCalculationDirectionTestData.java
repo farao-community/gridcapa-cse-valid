@@ -22,9 +22,9 @@ public final class TCalculationDirectionTestData {
 
     public static List<TCalculationDirection> getTCalculationDirectionListWithFranceInArea() {
         return List.of(
-                getTCalculationDirection("10YIT-GRTN-----B", "10YCH-SWISSGRIDZ"),
                 getTCalculationDirection("10YIT-GRTN-----B", "10YAT-APG------L"),
                 getTCalculationDirection("10YIT-GRTN-----B", "10YSI-ELES-----O"),
+                getTCalculationDirection("10YCH-SWISSGRIDZ", "10YIT-GRTN-----B"),
                 getTCalculationDirection("10YFR-RTE------C", "10YIT-GRTN-----B")
         );
     }

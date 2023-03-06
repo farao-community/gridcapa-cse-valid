@@ -148,18 +148,20 @@ public class ExportCornerComputationService {
         return false;
     }
 
-    private double computeShiftValue(TTimestampWrapper timestampWrapper) {
+    private static double computeShiftValue(TTimestampWrapper timestampWrapper) {
         return (double) timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
     }
 
     private void runDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL, Network network, CseCracCreationContext cracCreationContext) {
-        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runExportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network);
+        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network, true);
         if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
             String raoResultFileUrl = dichotomyResult.getHighestValidStep().getValidationData().getRaoResultFileUrl();
             RaoResult raoResult = fileImporter.importRaoResult(raoResultFileUrl, cracCreationContext.getCrac());
             TLimitingElement tLimitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
             double value = computeExportCornerValue(timestampWrapper, dichotomyResult);
             tcDocumentTypeWriter.fillTimestampWithExportCornerDichotomyResponse(timestampWrapper.getTimestamp(), tLimitingElement, value, timestampWrapper.isFranceImportingFromItaly());
+        } else {
+            tcDocumentTypeWriter.fillDichotomyError(timestampWrapper.getTimestamp());
         }
     }
 
