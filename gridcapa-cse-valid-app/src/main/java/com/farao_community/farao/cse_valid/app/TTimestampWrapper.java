@@ -169,7 +169,6 @@ public class TTimestampWrapper {
                     countryImportingMap.put(tCalculationDirection.getInArea().getV(), true);
                 }
             });
-            countryImportingMap.put(eicCodesConfiguration.getItaly(), true);
         }
         return countryImportingMap;
     }

@@ -438,11 +438,10 @@ public final class TimestampTestData {
 
     public static Map<String, Boolean> getCountryImportingFromItalyMapWithFranceInArea() {
         Map<String, Boolean> exportingCountryMap = new HashMap<>();
-        exportingCountryMap.put("10YCH-SWISSGRIDZ", false);
         exportingCountryMap.put("10YAT-APG------L", false);
         exportingCountryMap.put("10YSI-ELES-----O", false);
+        exportingCountryMap.put("10YCH-SWISSGRIDZ", true);
         exportingCountryMap.put("10YFR-RTE------C", true);
-        exportingCountryMap.put("10YIT-GRTN-----B", true);
         return exportingCountryMap;
     }
 
@@ -452,7 +451,6 @@ public final class TimestampTestData {
         exportingCountryMap.put("10YAT-APG------L", false);
         exportingCountryMap.put("10YSI-ELES-----O", false);
         exportingCountryMap.put("10YCH-SWISSGRIDZ", true);
-        exportingCountryMap.put("10YIT-GRTN-----B", true);
         return exportingCountryMap;
     }
 
@@ -473,21 +471,21 @@ public final class TimestampTestData {
 
     public static Map<String, Double> getSplittingFactorsForExportCornerWithAllCountriesAndFranceInAreaWithoutSign() {
         Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
-        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.7);
+        exportCornerSplittingFactors.put("10YIT-GRTN-----B", 0.7);
         exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
         exportCornerSplittingFactors.put("10YSI-ELES-----O", 0.1);
-        exportCornerSplittingFactors.put("10YFR-RTE------C", 0.4);
-        exportCornerSplittingFactors.put("10YIT-GRTN-----B", 0.6);
+        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.4);
+        exportCornerSplittingFactors.put("10YFR-RTE------C", 0.6);
         return exportCornerSplittingFactors;
     }
 
     public static Map<String, Double> getSplittingFactorsForExportCornerWithAllCountriesAndFranceInAreaWithSign() {
         Map<String, Double> exportCornerSplittingFactors = new HashMap<>();
-        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", 0.7);
+        exportCornerSplittingFactors.put("10YIT-GRTN-----B", 0.7);
         exportCornerSplittingFactors.put("10YAT-APG------L", 0.2);
         exportCornerSplittingFactors.put("10YSI-ELES-----O", 0.1);
-        exportCornerSplittingFactors.put("10YFR-RTE------C", -0.4);
-        exportCornerSplittingFactors.put("10YIT-GRTN-----B", -0.6);
+        exportCornerSplittingFactors.put("10YCH-SWISSGRIDZ", -0.4);
+        exportCornerSplittingFactors.put("10YFR-RTE------C", -0.6);
         return exportCornerSplittingFactors;
     }
 

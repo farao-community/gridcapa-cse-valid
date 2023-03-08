@@ -111,7 +111,7 @@ public class FullImportComputationService {
     }
 
     private void runDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL, Network network, CseCracCreationContext cracCreationContext) {
-        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runImportCornerDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network);
+        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network, false);
         if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
             String raoResultFileUrl = dichotomyResult.getHighestValidStep().getValidationData().getRaoResultFileUrl();
             RaoResult raoResult = fileImporter.importRaoResult(raoResultFileUrl, cracCreationContext.getCrac());
