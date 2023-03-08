@@ -68,13 +68,10 @@ public class DichotomyRunner {
             Network initialNetwork = fileImporter.importNetwork(cseValidRequest.getCgm().getUrl());
             double franceImportBeforeShifting = NetPositionHelper.computeFranceImportFromItaly(initialNetwork);
             double franceImportAfterShifting = NetPositionHelper.computeFranceImportFromItaly(network);
-            if (timestampWrapper.isFranceImportingFromItaly()) {
-                minValue = franceImportBeforeShifting - franceImportAfterShifting;
-                maxValue = DEFAULT_MAX_INDEX;
-            } else {
-                minValue = franceImportAfterShifting - franceImportBeforeShifting;
-                maxValue = DEFAULT_MAX_INDEX;
-            }
+            minValue = timestampWrapper.isFranceImportingFromItaly()
+                    ? franceImportBeforeShifting - franceImportAfterShifting
+                    : franceImportAfterShifting - franceImportBeforeShifting;
+            maxValue = DEFAULT_MAX_INDEX;
             networkShifter = cseValidNetworkShifter.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, cseValidRequest.getGlsk().getUrl(), cseValidRequest.getProcessType());
         } else {
             minValue = DEFAULT_MIN_INDEX;
