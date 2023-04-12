@@ -65,7 +65,7 @@ public class FileImporter {
 
     public GlskDocument importGlsk(String glskUrl) {
         try (InputStream is = openUrlStream(glskUrl)) {
-            return GlskDocumentImporters.importGlsk(is);
+            return GlskDocumentImporters.importGlskWithCalculationDirections(is);
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Error importing GLSK file at %s", glskUrl), e);
         }
