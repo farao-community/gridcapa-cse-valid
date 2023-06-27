@@ -59,7 +59,7 @@
         <jsonapi.converter.version>0.11</jsonapi.converter.version>
         <logstash.version>7.0.1</logstash.version>
         <maven.jaxb2.version>3.1.0</maven.jaxb2.version>
-        <task-manager.version>1.16.0</task-manager.version>
+        <task-manager.version>1.18.0</task-manager.version>
         <jakarta.activation-api.version>2.1.0</jakarta.activation-api.version>
     </properties>
 
