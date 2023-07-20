@@ -51,7 +51,7 @@
         <commons.io.version>2.11.0</commons.io.version>
         <farao.dependencies.version>1.13.0</farao.dependencies.version>
         <farao.dichotomy.version>4.10.0</farao.dichotomy.version>
-        <gridcapa.rao.runner.version>1.13.0</gridcapa.rao.runner.version>
+        <gridcapa.rao.runner.version>1.15.0</gridcapa.rao.runner.version>
         <gridcapa.starter.minio.version>1.0.0</gridcapa.starter.minio.version>
         <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jaxb-runtime.version>4.0.0</jaxb-runtime.version>
