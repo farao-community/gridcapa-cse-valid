@@ -84,7 +84,8 @@ class DichotomyRunnerTest {
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
         double minValue = 0.0;
-        double maxValue = timestampWrapper.getMniiIntValue() - (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue());
+        double italianImport = 2.0;
+        double maxValue = timestampWrapper.getMniiIntValue() - italianImport;
 
         Network network = mock(Network.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
@@ -95,7 +96,11 @@ class DichotomyRunnerTest {
         doReturn(networkValidator).when(dichotomyRunner).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);
         doReturn(engine).when(dichotomyRunner).getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
 
-        dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network, false);
+        try (MockedStatic<NetPositionHelper> netPositionHelperMockedStatic = Mockito.mockStatic(NetPositionHelper.class)) {
+            netPositionHelperMockedStatic.when(() -> NetPositionHelper.computeItalianImport(network))
+                    .thenReturn(italianImport);
+            dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network, false);
+        }
 
         verify(cseValidNetworkShifter, times(1)).getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType);
         verify(dichotomyRunner, times(1)).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);

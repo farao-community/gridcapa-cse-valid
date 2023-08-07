@@ -75,7 +75,8 @@ public class DichotomyRunner {
             networkShifter = cseValidNetworkShifter.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, cseValidRequest.getGlsk().getUrl(), cseValidRequest.getProcessType());
         } else {
             minValue = DEFAULT_MIN_INDEX;
-            maxValue = (double) timestampWrapper.getMniiIntValue() - (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue());
+            double italianImport = NetPositionHelper.computeItalianImport(network);
+            maxValue = timestampWrapper.getMniiIntValue() - italianImport;
             networkShifter = cseValidNetworkShifter.getNetworkShifterForFullImport(timestampWrapper, network, cseValidRequest.getGlsk().getUrl(), cseValidRequest.getProcessType());
         }
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, (int) minValue, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
