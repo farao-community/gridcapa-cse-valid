@@ -178,7 +178,7 @@ public final class TimestampTestData {
         timestamp.setMNII(mniiValue);
 
         QuantityType mibniiValue = new QuantityType();
-        mibniiValue.setV(BigDecimal.ONE);
+        mibniiValue.setV(BigDecimal.valueOf(7.0));
         timestamp.setMiBNII(mibniiValue);
 
         QuantityType antcfinalValue = new QuantityType();

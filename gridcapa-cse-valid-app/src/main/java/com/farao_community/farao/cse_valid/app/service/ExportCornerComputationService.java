@@ -8,13 +8,14 @@ package com.farao_community.farao.cse_valid.app.service;
 
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
-import com.farao_community.farao.cse_valid.app.CseValidNetworkShifter;
+import com.farao_community.farao.cse_valid.app.CseValidNetworkShifterProvider;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.TTimestampWrapper;
 import com.farao_community.farao.cse_valid.app.TcDocumentTypeWriter;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
+import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
 import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
@@ -23,6 +24,9 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
+import com.farao_community.farao.dichotomy.api.NetworkShifter;
+import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
+import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Network;
@@ -48,20 +52,20 @@ public class ExportCornerComputationService {
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final Logger businessLogger;
-    private final CseValidNetworkShifter cseValidNetworkShifter;
+    private final CseValidNetworkShifterProvider cseValidNetworkShifterProvider;
     private final CseValidRaoValidator cseValidRaoValidator;
 
     public ExportCornerComputationService(DichotomyRunner dichotomyRunner,
                                           FileImporter fileImporter,
                                           FileExporter fileExporter,
                                           Logger businessLogger,
-                                          CseValidNetworkShifter cseValidNetworkShifter,
+                                          CseValidNetworkShifterProvider cseValidNetworkShifterProvider,
                                           CseValidRaoValidator cseValidRaoValidator) {
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.businessLogger = businessLogger;
-        this.cseValidNetworkShifter = cseValidNetworkShifter;
+        this.cseValidNetworkShifterProvider = cseValidNetworkShifterProvider;
         this.cseValidRaoValidator = cseValidRaoValidator;
     }
 
@@ -89,11 +93,13 @@ public class ExportCornerComputationService {
                 CseValidRequestValidator.checkAllFilesExist(cseValidRequest, timestampWrapper.isFranceImportingFromItaly());
                 String cgmUrl = cseValidRequest.getCgm().getUrl();
                 Network network = fileImporter.importNetwork(cgmUrl);
-                double shiftValue = computeShiftValue(timestampWrapper);
                 String glskUrl = cseValidRequest.getGlsk().getUrl();
-                cseValidNetworkShifter.shiftNetwork(shiftValue, network, timestampWrapper, glskUrl, cseValidRequest.getProcessType());
-
                 ProcessType processType = cseValidRequest.getProcessType();
+                NetworkShifter networkShifter = cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType);
+                double shiftValue = computeShiftValue(timestampWrapper);
+
+                shiftNetwork(shiftValue, network, networkShifter);
+
                 OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
                 String raoParametersURL = fileExporter.saveRaoParameters(processTargetDateTime, processType);
 
@@ -150,6 +156,14 @@ public class ExportCornerComputationService {
 
     private static double computeShiftValue(TTimestampWrapper timestampWrapper) {
         return (double) timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
+    }
+
+    private static void shiftNetwork(double shiftValue, Network network, NetworkShifter networkShifter) {
+        try {
+            networkShifter.shiftNetwork(shiftValue, network);
+        } catch (GlskLimitationException | ShiftingException e) {
+            throw new CseValidShiftFailureException("Export corner initial shift failed to value " + shiftValue, e);
+        }
     }
 
     private void runDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL, Network network, CseCracCreationContext cracCreationContext) {
