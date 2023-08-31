@@ -17,7 +17,6 @@ import com.farao_community.farao.cse_valid.app.TcDocumentTypeWriter;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
-import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
 import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
@@ -31,13 +30,10 @@ import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
-import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
-import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.VariantManager;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -53,10 +49,8 @@ import java.time.OffsetDateTime;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_CALCULATION_DIRECTIONS;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_SHIFTING_FACTORS;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -69,6 +63,9 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class ExportCornerComputationServiceTest {
+
+    @MockBean
+    private ComputationService computationService;
 
     @MockBean
     private DichotomyRunner dichotomyRunner;
@@ -245,171 +242,7 @@ class ExportCornerComputationServiceTest {
     }
 
     @Test
-    void computeTimestampShouldThrowCseValidShiftFailureExceptionBecauseShiftingExceptionWasThrownWhenShifting() throws GlskLimitationException, ShiftingException {
-        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
-        String glskUrl = cseValidRequest.getGlsk().getUrl();
-        ProcessType processType = cseValidRequest.getProcessType();
-
-        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
-
-        double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
-
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        Network network = mock(Network.class);
-        NetworkShifter networkShifter = mock(NetworkShifter.class);
-
-        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        doThrow(ShiftingException.class).when(networkShifter).shiftNetwork(shiftValue, network);
-
-        assertThrows(CseValidShiftFailureException.class, () -> {
-            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-        }, "CseValidShiftFailureException error was expected");
-
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-    }
-
-    @Test
-    void computeTimestampShouldThrowCseValidShiftFailureExceptionBecauseGlskLimitationExceptionWasThrownWhenShifting() throws GlskLimitationException, ShiftingException {
-        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
-        String glskUrl = cseValidRequest.getGlsk().getUrl();
-        ProcessType processType = cseValidRequest.getProcessType();
-
-        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
-
-        double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
-
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        Network network = mock(Network.class);
-        NetworkShifter networkShifter = mock(NetworkShifter.class);
-
-        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        doThrow(GlskLimitationException.class).when(networkShifter).shiftNetwork(shiftValue, network);
-
-        assertThrows(CseValidShiftFailureException.class, () -> {
-            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-        }, "CseValidShiftFailureException error was expected");
-
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-    }
-
-    @Test
-    void computeTimestampWithFranceInAreaShouldNotRunDichotomyBecauseNetworkShiftedIsSecure() throws GlskLimitationException, ShiftingException {
-        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
-        String glskUrl = cseValidRequest.getGlsk().getUrl();
-        String cracUrl = cseValidRequest.getExportCrac().getUrl();
-        ProcessType processType = cseValidRequest.getProcessType();
-        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
-
-        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceInArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
-
-        String jsonCracUrl = "/CSE/VALID/crac.utc";
-        String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
-        String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
-        double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
-
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        Network network = mock(Network.class);
-        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
-        Crac crac = mock(Crac.class);
-        when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
-        RaoResponse raoResponse = mock(RaoResponse.class);
-        NetworkShifter networkShifter = mock(NetworkShifter.class);
-
-        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
-        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
-        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
-
-        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination)).thenReturn(raoResponse);
-        when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
-
-        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination);
-        verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
-    }
-
-    @Test
-    void computeTimestampWithFranceOutAreaShouldNotRunDichotomyBecauseNetworkShiftedIsSecure() throws GlskLimitationException, ShiftingException {
-        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
-        String glskUrl = cseValidRequest.getGlsk().getUrl();
-        String cracUrl = cseValidRequest.getImportCrac().getUrl();
-        ProcessType processType = cseValidRequest.getProcessType();
-        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
-
-        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceOutArea();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
-
-        String jsonCracUrl = "/CSE/VALID/crac.utc";
-        String raoParameterUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
-        String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
-        double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
-
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        Network network = mock(Network.class);
-        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
-        Crac crac = mock(Crac.class);
-        when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
-        RaoResponse raoResponse = mock(RaoResponse.class);
-        NetworkShifter networkShifter = mock(NetworkShifter.class);
-
-        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
-        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
-        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParameterUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
-
-        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination)).thenReturn(raoResponse);
-        when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
-
-        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParameterUrl, resultsDestination);
-        verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
-        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
-    }
-
-    @Test
-    void computeTimestampWithFranceInAreaRunDichotomyErrorBecauseDichotomyResultIsNull() throws GlskLimitationException, ShiftingException {
+    void computeTimestampWithFranceInAreaShouldNotRunDichotomyBecauseNetworkShiftedIsSecure() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -422,14 +255,6 @@ class ExportCornerComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
-        String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
-        String raoResultFileUrl = "CSE/VALID/raoResult.utc";
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -437,44 +262,29 @@ class ExportCornerComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
-        RaoResult raoResult = mock(RaoResult.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
         when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
-        when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
-        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
 
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
-        when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
-        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
-        when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
-
-        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true)).thenReturn(null);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
+        when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
         exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
-        verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
-        verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
     }
 
     @Test
-    void computeTimestampWithFranceOutAreaRunDichotomyErrorBecauseDichotomyResultIsNull() throws GlskLimitationException, ShiftingException {
+    void computeTimestampWithFranceOutAreaShouldNotRunDichotomyBecauseNetworkShiftedIsSecure() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -487,14 +297,6 @@ class ExportCornerComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
-        String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
-        String raoResultFileUrl = "CSE/VALID/raoResult.utc";
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
 
         TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
@@ -502,44 +304,28 @@ class ExportCornerComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
-        RaoResult raoResult = mock(RaoResult.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
         when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
-        when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
-        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
-
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
-        when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
-        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
-        when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
-
-        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true)).thenReturn(null);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
+        when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
         exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
-        verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
-        verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
     }
 
     @Test
-    void computeTimestampWithFranceInAreaRunDichotomyErrorBecauseHasValidStepIsFalse() throws GlskLimitationException, ShiftingException {
+    void computeTimestampWithFranceInAreaRunDichotomyErrorBecauseDichotomyResultIsNull() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -552,13 +338,7 @@ class ExportCornerComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         String raoResultFileUrl = "CSE/VALID/raoResult.utc";
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
 
@@ -567,7 +347,110 @@ class ExportCornerComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
+        RaoResponse raoResponse = mock(RaoResponse.class);
+        RaoResult raoResult = mock(RaoResult.class);
+        NetworkShifter networkShifter = mock(NetworkShifter.class);
+
+        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
+        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
+        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
+
+        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
+        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
+
+        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
+        when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
+        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
+        when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
+
+        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true)).thenReturn(null);
+
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
+        verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
+        verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
+        verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
+    }
+
+    @Test
+    void computeTimestampWithFranceOutAreaRunDichotomyErrorBecauseDichotomyResultIsNull() {
+        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
+        String cgmUrl = cseValidRequest.getCgm().getUrl();
+        String glskUrl = cseValidRequest.getGlsk().getUrl();
+        String cracUrl = cseValidRequest.getImportCrac().getUrl();
+        ProcessType processType = cseValidRequest.getProcessType();
+        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
+
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceOutArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        String jsonCracUrl = "/CSE/VALID/crac.utc";
+        String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
+        String networkFileUrl = "CSE/Valid/network.utc";
+        String raoResultFileUrl = "CSE/VALID/raoResult.utc";
+        double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
+
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        Network network = mock(Network.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
+        Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
+        RaoResponse raoResponse = mock(RaoResponse.class);
+        RaoResult raoResult = mock(RaoResult.class);
+        NetworkShifter networkShifter = mock(NetworkShifter.class);
+
+        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
+        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
+        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
+
+        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
+        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
+
+        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
+        when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
+        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
+        when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
+
+        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true)).thenReturn(null);
+
+        exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
+        verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
+        verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
+        verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
+    }
+
+    @Test
+    void computeTimestampWithFranceInAreaRunDichotomyErrorBecauseHasValidStepIsFalse() {
+        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
+        String cgmUrl = cseValidRequest.getCgm().getUrl();
+        String glskUrl = cseValidRequest.getGlsk().getUrl();
+        String cracUrl = cseValidRequest.getExportCrac().getUrl();
+        ProcessType processType = cseValidRequest.getProcessType();
+        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
+
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceInArea();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        String jsonCracUrl = "/CSE/VALID/crac.utc";
+        String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
+        String networkFileUrl = "CSE/Valid/network.utc";
+        String raoResultFileUrl = "CSE/VALID/raoResult.utc";
+        double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
+
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        Network network = mock(Network.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
+        Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
         RaoResponse raoResponse = mock(RaoResponse.class);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
         RaoResult raoResult = mock(RaoResult.class);
@@ -580,15 +463,9 @@ class ExportCornerComputationServiceTest {
 
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
@@ -598,15 +475,15 @@ class ExportCornerComputationServiceTest {
 
         exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
 
     @Test
-    void computeTimestampWithFranceOutAreaRunDichotomyErrorBecauseHasValidStepIsFalse() throws GlskLimitationException, ShiftingException {
+    void computeTimestampWithFranceOutAreaRunDichotomyErrorBecauseHasValidStepIsFalse() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -619,13 +496,7 @@ class ExportCornerComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         String raoResultFileUrl = "CSE/VALID/raoResult.utc";
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
 
@@ -634,7 +505,6 @@ class ExportCornerComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
         RaoResult raoResult = mock(RaoResult.class);
@@ -647,15 +517,9 @@ class ExportCornerComputationServiceTest {
 
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
@@ -665,15 +529,15 @@ class ExportCornerComputationServiceTest {
 
         exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
 
     @Test
-    void computeTimestampWithFranceInAreaShouldRunDichotomy() throws GlskLimitationException, ShiftingException {
+    void computeTimestampWithFranceInAreaShouldRunDichotomy() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -688,13 +552,7 @@ class ExportCornerComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         String raoResultFileUrl = "CSE/VALID/raoResult.utc";
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
         double exportCornerValue = 10.0;
@@ -704,7 +562,6 @@ class ExportCornerComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
         RaoResult raoResult = mock(RaoResult.class);
@@ -718,15 +575,9 @@ class ExportCornerComputationServiceTest {
 
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
@@ -746,15 +597,15 @@ class ExportCornerComputationServiceTest {
             exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, true);
     }
 
     @Test
-    void computeTimestampWithFranceOutAreaShouldRunDichotomy() throws GlskLimitationException, ShiftingException {
+    void computeTimestampWithFranceOutAreaShouldRunDichotomy() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -769,13 +620,7 @@ class ExportCornerComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         String raoResultFileUrl = "CSE/VALID/raoResult.utc";
         double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
         double exportCornerValue = 10.0;
@@ -785,7 +630,6 @@ class ExportCornerComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
         RaoResult raoResult = mock(RaoResult.class);
@@ -799,15 +643,9 @@ class ExportCornerComputationServiceTest {
 
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
@@ -827,8 +665,8 @@ class ExportCornerComputationServiceTest {
             exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, false);

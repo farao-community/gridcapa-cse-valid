@@ -16,7 +16,6 @@ import com.farao_community.farao.cse_valid.app.TcDocumentTypeWriter;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
-import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
 import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
@@ -30,13 +29,10 @@ import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
-import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
-import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.VariantManager;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -49,10 +45,8 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,6 +59,9 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class FullImportComputationServiceTest {
+
+    @MockBean
+    private ComputationService computationService;
 
     @MockBean
     private DichotomyRunner dichotomyRunner;
@@ -182,71 +179,7 @@ class FullImportComputationServiceTest {
     }
 
     @Test
-    void computeTimestampShouldThrowCseValidShiftFailureExceptionBecauseGlskLimitationExceptionWasThrownWhenShifting() throws GlskLimitationException, ShiftingException {
-        CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
-        String glskUrl = cseValidRequest.getGlsk().getUrl();
-        ProcessType processType = cseValidRequest.getProcessType();
-
-        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
-
-        double italianImport = 5.0;
-        double shiftValue = (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue()) - italianImport;
-
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        Network network = mock(Network.class);
-        NetworkShifter networkShifter = mock(NetworkShifter.class);
-
-        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        doThrow(GlskLimitationException.class).when(networkShifter).shiftNetwork(shiftValue, network);
-
-        assertThrows(CseValidShiftFailureException.class, () -> {
-            try (MockedStatic<NetPositionHelper> netPositionHelperMockedStatic = Mockito.mockStatic(NetPositionHelper.class)) {
-                netPositionHelperMockedStatic.when(() -> NetPositionHelper.computeItalianImport(network))
-                        .thenReturn(italianImport);
-                fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-            }
-        }, "CseValidShiftFailureException error was expected");
-
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-    }
-
-    @Test
-    void computeTimestampShouldThrowCseValidShiftFailureExceptionBecauseShiftingExceptionWasThrownWhenShifting() throws GlskLimitationException, ShiftingException {
-        CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        String cgmUrl = cseValidRequest.getCgm().getUrl();
-        String glskUrl = cseValidRequest.getGlsk().getUrl();
-        ProcessType processType = cseValidRequest.getProcessType();
-
-        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
-        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
-
-        double italianImport = 5.0;
-        double shiftValue = (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue()) - italianImport;
-
-        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
-        Network network = mock(Network.class);
-        NetworkShifter networkShifter = mock(NetworkShifter.class);
-
-        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        doThrow(ShiftingException.class).when(networkShifter).shiftNetwork(shiftValue, network);
-
-        assertThrows(CseValidShiftFailureException.class, () -> {
-            try (MockedStatic<NetPositionHelper> netPositionHelperMockedStatic = Mockito.mockStatic(NetPositionHelper.class)) {
-                netPositionHelperMockedStatic.when(() -> NetPositionHelper.computeItalianImport(network))
-                        .thenReturn(italianImport);
-                fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
-            }
-        }, "CseValidShiftFailureException error was expected");
-
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-    }
-
-    @Test
-    void computeTimestampShouldNotRunDichotomyBecauseNetworkShiftedIsUnsecure() throws GlskLimitationException, ShiftingException {
+    void computeTimestampShouldNotRunDichotomyBecauseNetworkShiftedIsUnsecure() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -259,13 +192,6 @@ class FullImportComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
-        String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         double italianImport = 5.0;
         double shiftValue = (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue()) - italianImport;
         BigDecimal mibnii = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
@@ -275,7 +201,6 @@ class FullImportComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
@@ -284,15 +209,9 @@ class FullImportComputationServiceTest {
 
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(false);
 
         try (MockedStatic<NetPositionHelper> netPositionHelperMockedStatic = Mockito.mockStatic(NetPositionHelper.class)) {
@@ -301,14 +220,14 @@ class FullImportComputationServiceTest {
             fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampFullImportSuccess(timestamp, mibnii);
     }
 
     @Test
-    void computeTimestampRunDichotomyError() throws GlskLimitationException, ShiftingException {
+    void computeTimestampRunDichotomyError() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -321,13 +240,6 @@ class FullImportComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
-        String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         double italianImport = 5.0;
         double shiftValue = (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue()) - italianImport;
 
@@ -336,23 +248,17 @@ class FullImportComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
         when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
         when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, false)).thenReturn(null);
@@ -363,14 +269,14 @@ class FullImportComputationServiceTest {
             fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
 
     @Test
-    void computeTimestampRunDichotomySuccessHighestValidStepNotNull() throws GlskLimitationException, ShiftingException {
+    void computeTimestampRunDichotomySuccessHighestValidStepNotNull() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
         String glskUrl = cseValidRequest.getGlsk().getUrl();
@@ -383,13 +289,7 @@ class FullImportComputationServiceTest {
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
-        String basePath = "IDCC/2023/01/09/12_30/ARTIFACTS/";
-        String variantName = "1234";
-        String networkNameOrId = "test";
-        String scaledNetworkDirPath = basePath + variantName;
-        String networkFilePath = scaledNetworkDirPath + networkNameOrId + ".xiidm";
         String networkFileUrl = "CSE/Valid/network.utc";
-        String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
         String raoResultFileUrl = "CSE/VALID/raoResult.utc";
         double italianImport = 5.0;
         double shiftValue = (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue()) - italianImport;
@@ -402,7 +302,6 @@ class FullImportComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        VariantManager variantManager = mock(VariantManager.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
         DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
@@ -416,19 +315,12 @@ class FullImportComputationServiceTest {
 
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
-        when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
-        when(fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType)).thenReturn(networkFileUrl);
-
-        when(network.getNameOrId()).thenReturn(networkNameOrId);
-        when(network.getVariantManager()).thenReturn(variantManager);
-        when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoValidator.runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination)).thenReturn(raoResponse);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
         when(cseValidRaoValidator.isSecure(raoResponse)).thenReturn(true);
 
         when(dichotomyResult.hasValidStep()).thenReturn(true);
@@ -451,8 +343,8 @@ class FullImportComputationServiceTest {
             fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
         }
 
-        verify(networkShifter, times(1)).shiftNetwork(shiftValue, network);
-        verify(cseValidRaoValidator, times(1)).runRao(cseValidRequest, networkFileUrl, jsonCracUrl, raoParametersUrl, resultsDestination);
+        verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
         verify(cseValidRaoValidator, times(1)).isSecure(raoResponse);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithFullImportDichotomyResponse(timestamp, mibnii, fullImportValue, limitingElement);
     }
