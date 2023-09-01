@@ -8,10 +8,7 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
-import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
-import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
-import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
 import com.farao_community.farao.dichotomy.shift.LinearScaler;
 import com.farao_community.farao.dichotomy.shift.SplittingFactors;
 import com.powsybl.iidm.network.Network;
@@ -26,14 +23,14 @@ import java.util.stream.Collectors;
  */
 
 @Component
-public class CseValidNetworkShifter {
+public class CseValidNetworkShifterProvider {
 
     private static final double SHIFT_TOLERANCE = 1;
 
     private final EicCodesConfiguration eicCodesConfiguration;
     private final ZonalScalableProvider zonalScalableProvider;
 
-    public CseValidNetworkShifter(EicCodesConfiguration eicCodesConfiguration, ZonalScalableProvider zonalScalableProvider) {
+    public CseValidNetworkShifterProvider(EicCodesConfiguration eicCodesConfiguration, ZonalScalableProvider zonalScalableProvider) {
         this.eicCodesConfiguration = eicCodesConfiguration;
         this.zonalScalableProvider = zonalScalableProvider;
     }
@@ -62,10 +59,10 @@ public class CseValidNetworkShifter {
         return getNetworkShifter(getSplittingFactorsForExportCornerWithItalyFrance(timestampWrapper), network, glskUrl, processType);
     }
 
-    NetworkShifter getNetworkShifterForExportCornerWithAllCountries(TTimestampWrapper timestampWrapper,
-                                                                    Network network,
-                                                                    String glskUrl,
-                                                                    ProcessType processType) {
+    public NetworkShifter getNetworkShifterForExportCornerWithAllCountries(TTimestampWrapper timestampWrapper,
+                                                                           Network network,
+                                                                           String glskUrl,
+                                                                           ProcessType processType) {
         return getNetworkShifter(getSplittingFactorsForExportCornerWithAllCountries(timestampWrapper), network, glskUrl, processType);
     }
 
@@ -84,7 +81,7 @@ public class CseValidNetworkShifter {
     }
 
     Map<String, Double> getSplittingFactorsForExportCornerWithAllCountries(TTimestampWrapper timestampWrapper) {
-        Map<String, Double> exportCornerSplittingFactors =  timestampWrapper.getExportCornerSplittingFactors().entrySet().stream()
+        Map<String, Double> exportCornerSplittingFactors = timestampWrapper.getExportCornerSplittingFactors().entrySet().stream()
             .filter(splittingFactor -> !splittingFactor.getKey().equals(eicCodesConfiguration.getItaly()))
             .collect(Collectors.toMap(
                 Map.Entry::getKey,
@@ -97,14 +94,5 @@ public class CseValidNetworkShifter {
 
     private double getFactorSignOfCountry(TTimestampWrapper timestampWrapper, String countryEic) {
         return timestampWrapper.isCountryImportingFromItaly(countryEic) ? -1 : 1;
-    }
-
-    public void shiftNetwork(double shiftValue, Network network, TTimestampWrapper timestampWrapper, String glskUrl, ProcessType processType) {
-        NetworkShifter networkShifter = getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType);
-        try {
-            networkShifter.shiftNetwork(shiftValue, network);
-        } catch (GlskLimitationException | ShiftingException e) {
-            throw new CseValidShiftFailureException("Export corner initial shift failed to value " + shiftValue, e);
-        }
     }
 }

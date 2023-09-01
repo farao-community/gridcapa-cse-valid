@@ -6,7 +6,6 @@
  */
 package com.farao_community.farao.cse_valid.app.rao;
 
-import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.data.crac_api.Crac;
 import com.farao_community.farao.data.rao_result_api.OptimizationState;
@@ -35,8 +34,7 @@ public class CseValidRaoValidator {
         this.raoRunnerClient = raoRunnerClient;
     }
 
-    public RaoResponse runRao(CseValidRequest cseValidRequest, String networkFiledUrl, String jsonCracUrl, String raoParametersURL, String resultsDestination) {
-        String requestId = cseValidRequest.getId();
+    public RaoResponse runRao(String requestId, String networkFiledUrl, String jsonCracUrl, String raoParametersURL, String resultsDestination) {
         RaoRequest raoRequest = new RaoRequest(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination);
 
         LOGGER.info("RAO request sent: {}", raoRequest);

@@ -8,7 +8,7 @@ package com.farao_community.farao.cse_valid.app.dichotomy;
 
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
-import com.farao_community.farao.cse_valid.app.CseValidNetworkShifter;
+import com.farao_community.farao.cse_valid.app.CseValidNetworkShifterProvider;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.TTimestampWrapper;
@@ -59,7 +59,7 @@ class DichotomyRunnerTest {
     private Logger businessLogger;
 
     @MockBean
-    private CseValidNetworkShifter cseValidNetworkShifter;
+    private CseValidNetworkShifterProvider cseValidNetworkShifterProvider;
 
     @Autowired
     private EicCodesConfiguration eicCodesConfiguration;
@@ -91,13 +91,13 @@ class DichotomyRunnerTest {
         NetworkValidator<RaoResponse> networkValidator = mock(NetworkValidator.class);
         DichotomyEngine<RaoResponse> engine = mock(DichotomyEngine.class);
 
-        when(cseValidNetworkShifter.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         doReturn(networkValidator).when(dichotomyRunner).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);
         doReturn(engine).when(dichotomyRunner).getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
 
         dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network, false);
 
-        verify(cseValidNetworkShifter, times(1)).getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType);
+        verify(cseValidNetworkShifterProvider, times(1)).getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType);
         verify(dichotomyRunner, times(1)).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);
         verify(dichotomyRunner, times(1)).getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
         verify(engine, times(1)).run(network);
@@ -127,7 +127,7 @@ class DichotomyRunnerTest {
         DichotomyEngine<RaoResponse> engine = mock(DichotomyEngine.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(initialNetwork);
-        when(cseValidNetworkShifter.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         doReturn(networkValidator).when(dichotomyRunner).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);
         doReturn(engine).when(dichotomyRunner).getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
         try (MockedStatic<NetPositionHelper> netPositionHelperMockedStatic = Mockito.mockStatic(NetPositionHelper.class)) {
@@ -138,7 +138,7 @@ class DichotomyRunnerTest {
             dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network, true);
         }
 
-        verify(cseValidNetworkShifter, times(1)).getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType);
+        verify(cseValidNetworkShifterProvider, times(1)).getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType);
         verify(dichotomyRunner, times(1)).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);
         verify(dichotomyRunner, times(1)).getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
         verify(engine, times(1)).run(network);
@@ -168,7 +168,7 @@ class DichotomyRunnerTest {
         DichotomyEngine<RaoResponse> engine = mock(DichotomyEngine.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(initialNetwork);
-        when(cseValidNetworkShifter.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         doReturn(networkValidator).when(dichotomyRunner).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);
         doReturn(engine).when(dichotomyRunner).getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
         try (MockedStatic<NetPositionHelper> netPositionHelperMockedStatic = Mockito.mockStatic(NetPositionHelper.class)) {
@@ -179,7 +179,7 @@ class DichotomyRunnerTest {
             dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParameterUrl, network, true);
         }
 
-        verify(cseValidNetworkShifter, times(1)).getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType);
+        verify(cseValidNetworkShifterProvider, times(1)).getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType);
         verify(dichotomyRunner, times(1)).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);
         verify(dichotomyRunner, times(1)).getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
         verify(engine, times(1)).run(network);

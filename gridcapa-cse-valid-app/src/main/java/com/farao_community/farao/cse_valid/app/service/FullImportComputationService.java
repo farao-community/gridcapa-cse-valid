@@ -8,6 +8,7 @@ package com.farao_community.farao.cse_valid.app.service;
 
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
+import com.farao_community.farao.cse_valid.app.CseValidNetworkShifterProvider;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.TTimestampWrapper;
@@ -16,10 +17,13 @@ import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
 import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
+import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
+import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
+import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Network;
@@ -39,48 +43,70 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSIN
 @Service
 public class FullImportComputationService {
 
+    private final ComputationService computationService;
     private final DichotomyRunner dichotomyRunner;
     private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final Logger businessLogger;
+    private final CseValidNetworkShifterProvider cseValidNetworkShifterProvider;
+    private final CseValidRaoValidator cseValidRaoValidator;
 
-    public FullImportComputationService(DichotomyRunner dichotomyRunner,
+    public FullImportComputationService(ComputationService computationService,
+                                        DichotomyRunner dichotomyRunner,
                                         FileImporter fileImporter,
                                         FileExporter fileExporter,
-                                        Logger businessLogger) {
+                                        Logger businessLogger,
+                                        CseValidNetworkShifterProvider cseValidNetworkShifterProvider,
+                                        CseValidRaoValidator cseValidRaoValidator) {
+        this.computationService = computationService;
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.businessLogger = businessLogger;
+        this.cseValidNetworkShifterProvider = cseValidNetworkShifterProvider;
+        this.cseValidRaoValidator = cseValidRaoValidator;
     }
 
     public void computeTimestamp(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+        TTimestamp timestamp = timestampWrapper.getTimestamp();
         if (irrelevantValuesInTimestamp(timestampWrapper)) {
-            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), timestampWrapper.getMniiValue());
+            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestamp, timestampWrapper.getMniiValue());
         } else if (missingDataInTimestamp(timestampWrapper)) {
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_DATA);
+            tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
         } else if (actualNtcAboveTarget(timestampWrapper)) {
             BigDecimal mniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
-            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), mniiValue);
+            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestamp, mniiValue);
         } else {
             try {
                 CseValidRequestValidator.checkAllFilesExist(cseValidRequest, false);
 
                 String cgmUrl = cseValidRequest.getCgm().getUrl();
                 Network network = fileImporter.importNetwork(cgmUrl);
+                String glskUrl = cseValidRequest.getGlsk().getUrl();
+                ProcessType processType = cseValidRequest.getProcessType();
+                NetworkShifter networkShifter = cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType);
+                double shiftValue = computeShiftValue(timestampWrapper, network);
+
+                computationService.shiftNetwork(shiftValue, network, networkShifter);
 
                 String cracUrl = cseValidRequest.getImportCrac().getUrl();
                 CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, cseValidRequest.getTimestamp(), network);
                 String jsonCracUrl = fileExporter.saveCracInJsonFormat(cracCreationContext.getCrac(), cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
 
-                ProcessType processType = cseValidRequest.getProcessType();
                 OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
                 String raoParametersURL = fileExporter.saveRaoParameters(processTargetDateTime, processType);
 
-                runDichotomy(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL, network, cracCreationContext);
+                RaoResponse raoResponse = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
+
+                if (cseValidRaoValidator.isSecure(raoResponse)) {
+                    runDichotomy(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL, network, cracCreationContext);
+                } else {
+                    BigDecimal italianImport = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
+                    tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestamp, italianImport);
+                }
             } catch (CseValidRequestValidatorException e) {
                 businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
-                tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
+                tcDocumentTypeWriter.fillTimestampError(timestamp, e.getMessage());
             }
         }
     }
@@ -108,6 +134,11 @@ public class FullImportComputationService {
         }
         businessLogger.info("Timestamp '{}' augmented NTC must be validated.", timestampWrapper.getTimestamp().getTime().getV());
         return false;
+    }
+
+    private static double computeShiftValue(TTimestampWrapper timestampWrapper, Network network) {
+        double italianImport = NetPositionHelper.computeItalianImport(network);
+        return (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue()) - italianImport;
     }
 
     private void runDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL, Network network, CseCracCreationContext cracCreationContext) {

@@ -7,7 +7,7 @@
 package com.farao_community.farao.cse_valid.app.dichotomy;
 
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
-import com.farao_community.farao.cse_valid.app.CseValidNetworkShifter;
+import com.farao_community.farao.cse_valid.app.CseValidNetworkShifterProvider;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.TTimestampWrapper;
@@ -41,18 +41,18 @@ public class DichotomyRunner {
     private final FileExporter fileExporter;
     private final RaoRunnerClient raoRunnerClient;
     private final Logger businessLogger;
-    private final CseValidNetworkShifter cseValidNetworkShifter;
+    private final CseValidNetworkShifterProvider cseValidNetworkShifterProvider;
 
     public DichotomyRunner(FileImporter fileImporter,
                            FileExporter fileExporter,
                            RaoRunnerClient raoRunnerClient,
                            Logger businessLogger,
-                           CseValidNetworkShifter cseValidNetworkShifter) {
+                           CseValidNetworkShifterProvider cseValidNetworkShifterProvider) {
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.raoRunnerClient = raoRunnerClient;
         this.businessLogger = businessLogger;
-        this.cseValidNetworkShifter = cseValidNetworkShifter;
+        this.cseValidNetworkShifterProvider = cseValidNetworkShifterProvider;
     }
 
     public DichotomyResult<RaoResponse> runDichotomy(TTimestampWrapper timestampWrapper,
@@ -72,11 +72,11 @@ public class DichotomyRunner {
                     ? franceImportBeforeShifting - franceImportAfterShifting
                     : franceImportAfterShifting - franceImportBeforeShifting;
             maxValue = DEFAULT_MAX_INDEX;
-            networkShifter = cseValidNetworkShifter.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, cseValidRequest.getGlsk().getUrl(), cseValidRequest.getProcessType());
+            networkShifter = cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, cseValidRequest.getGlsk().getUrl(), cseValidRequest.getProcessType());
         } else {
             minValue = DEFAULT_MIN_INDEX;
             maxValue = (double) timestampWrapper.getMniiIntValue() - (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue());
-            networkShifter = cseValidNetworkShifter.getNetworkShifterForFullImport(timestampWrapper, network, cseValidRequest.getGlsk().getUrl(), cseValidRequest.getProcessType());
+            networkShifter = cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, cseValidRequest.getGlsk().getUrl(), cseValidRequest.getProcessType());
         }
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, (int) minValue, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
         NetworkValidator<RaoResponse> networkValidator = getNetworkValidator(cseValidRequest, jsonCracUrl, raoParametersURL);
