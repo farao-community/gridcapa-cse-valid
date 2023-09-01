@@ -68,13 +68,14 @@ public class FullImportComputationService {
     }
 
     public void computeTimestamp(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
+        TTimestamp timestamp = timestampWrapper.getTimestamp();
         if (irrelevantValuesInTimestamp(timestampWrapper)) {
-            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), timestampWrapper.getMniiValue());
+            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestamp, timestampWrapper.getMniiValue());
         } else if (missingDataInTimestamp(timestampWrapper)) {
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_DATA);
+            tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
         } else if (actualNtcAboveTarget(timestampWrapper)) {
             BigDecimal mniiValue = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
-            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestampWrapper.getTimestamp(), mniiValue);
+            tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestamp, mniiValue);
         } else {
             try {
                 CseValidRequestValidator.checkAllFilesExist(cseValidRequest, false);
@@ -100,13 +101,12 @@ public class FullImportComputationService {
                 if (cseValidRaoValidator.isSecure(raoResponse)) {
                     runDichotomy(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL, network, cracCreationContext);
                 } else {
-                    TTimestamp timestamp = timestampWrapper.getTimestamp();
                     BigDecimal italianImport = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
                     tcDocumentTypeWriter.fillTimestampFullImportSuccess(timestamp, italianImport);
                 }
             } catch (CseValidRequestValidatorException e) {
                 businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
-                tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
+                tcDocumentTypeWriter.fillTimestampError(timestamp, e.getMessage());
             }
         }
     }

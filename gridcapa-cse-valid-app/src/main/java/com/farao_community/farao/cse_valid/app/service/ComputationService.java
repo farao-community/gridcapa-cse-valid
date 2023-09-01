@@ -9,7 +9,6 @@ package com.farao_community.farao.cse_valid.app.service;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.FileExporter;
-import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
@@ -28,17 +27,15 @@ import java.time.OffsetDateTime;
 @Service
 public class ComputationService {
 
-    private final FileImporter fileImporter;
     private final FileExporter fileExporter;
     private final CseValidRaoValidator cseValidRaoValidator;
 
-    public ComputationService(FileImporter fileImporter, FileExporter fileExporter, CseValidRaoValidator cseValidRaoValidator) {
-        this.fileImporter = fileImporter;
+    public ComputationService(FileExporter fileExporter, CseValidRaoValidator cseValidRaoValidator) {
         this.fileExporter = fileExporter;
         this.cseValidRaoValidator = cseValidRaoValidator;
     }
 
-    void shiftNetwork(double shiftValue, Network network, NetworkShifter networkShifter) {
+    protected void shiftNetwork(double shiftValue, Network network, NetworkShifter networkShifter) {
         try {
             networkShifter.shiftNetwork(shiftValue, network);
         } catch (GlskLimitationException | ShiftingException e) {
@@ -46,7 +43,7 @@ public class ComputationService {
         }
     }
 
-    RaoResponse runRao(CseValidRequest cseValidRequest, Network network, String jsonCracUrl, String raoParametersURL) {
+    protected RaoResponse runRao(CseValidRequest cseValidRequest, Network network, String jsonCracUrl, String raoParametersURL) {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
         String requestId = cseValidRequest.getId();

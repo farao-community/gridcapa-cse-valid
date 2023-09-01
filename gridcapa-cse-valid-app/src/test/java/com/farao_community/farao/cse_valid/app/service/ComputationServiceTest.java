@@ -9,7 +9,6 @@ package com.farao_community.farao.cse_valid.app.service;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.FileExporter;
-import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
 import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
 import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
@@ -40,9 +39,6 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class ComputationServiceTest {
-
-    @MockBean
-    private FileImporter fileImporter;
 
     @MockBean
     private FileExporter fileExporter;

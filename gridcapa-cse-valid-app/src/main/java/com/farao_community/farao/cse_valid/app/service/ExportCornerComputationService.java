@@ -74,14 +74,14 @@ public class ExportCornerComputationService {
         if (irrelevantValuesInTimestamp(timestampWrapper)) {
             tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
         } else if (missingDataInTimestamp(timestampWrapper)) {
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_DATA);
+            tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_DATA);
         } else if (!timestampWrapper.hasShiftingFactors()) {
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_SHIFTING_FACTORS);
+            tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_SHIFTING_FACTORS);
         } else if (!timestampWrapper.hasCalculationDirections()) {
-            tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), ERROR_MSG_MISSING_CALCULATION_DIRECTIONS);
+            tcDocumentTypeWriter.fillTimestampError(timestamp, ERROR_MSG_MISSING_CALCULATION_DIRECTIONS);
         } else if (actualNtcAboveTarget(timestampWrapper)) {
             BigDecimal miecValue = timestampWrapper.getMibiecValue().subtract(timestampWrapper.getAntcfinalValue());
-            tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestampWrapper.getTimestamp(), miecValue);
+            tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, miecValue);
         } else {
             try {
                 CseValidRequestValidator.checkAllFilesExist(cseValidRequest, timestampWrapper.isFranceImportingFromItaly());
@@ -113,7 +113,7 @@ public class ExportCornerComputationService {
                 }
             } catch (CseValidRequestValidatorException e) {
                 businessLogger.error("Missing some input files for timestamp '{}'", timestampWrapper.getTimeValue());
-                tcDocumentTypeWriter.fillTimestampError(timestampWrapper.getTimestamp(), e.getMessage());
+                tcDocumentTypeWriter.fillTimestampError(timestamp, e.getMessage());
             }
         }
     }
