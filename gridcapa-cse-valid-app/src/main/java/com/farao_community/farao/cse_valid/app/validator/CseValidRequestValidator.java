@@ -30,17 +30,16 @@ public final class CseValidRequestValidator {
 
         final boolean cgmFileExists = fileExists(cseValidRequest.getCgm());
         final boolean glskFileExists = fileExists(cseValidRequest.getGlsk());
-        final boolean importCracFileExists = fileExists(cseValidRequest.getImportCrac());
 
         if (isFranceImportingFromItaly) {
             final boolean exportCracFileExist = fileExists(cseValidRequest.getExportCrac());
-            final boolean atLeastOneCracFileExists = importCracFileExists || exportCracFileExist;
-            final boolean allFilesExist = cgmFileExists && glskFileExists && atLeastOneCracFileExists;
+            final boolean allFilesExist = cgmFileExists && glskFileExists && exportCracFileExist;
             if (!allFilesExist) {
-                final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, atLeastOneCracFileExists);
+                final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, exportCracFileExist);
                 throw new CseValidRequestValidatorException(message);
             }
         } else {
+            final boolean importCracFileExists = fileExists(cseValidRequest.getImportCrac());
             final boolean allFilesExist = cgmFileExists && glskFileExists && importCracFileExists;
             if (!allFilesExist) {
                 final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists);
@@ -53,7 +52,7 @@ public final class CseValidRequestValidator {
         return cseValidFileResource != null && cseValidFileResource.getFilename() != null && cseValidFileResource.getUrl() != null;
     }
 
-    private static String buildMessageForMissingFiles(boolean cgmFileExists, boolean glskFileExists, boolean atLeastOneCracFileExists) {
+    private static String buildMessageForMissingFiles(boolean cgmFileExists, boolean glskFileExists, boolean cracFileExists) {
         StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
 
         if (!cgmFileExists) {
@@ -64,7 +63,7 @@ public final class CseValidRequestValidator {
             stringJoiner.add("GLSK file");
         }
 
-        if (!atLeastOneCracFileExists) {
+        if (!cracFileExists) {
             stringJoiner.add("CRAC file");
         }
 
