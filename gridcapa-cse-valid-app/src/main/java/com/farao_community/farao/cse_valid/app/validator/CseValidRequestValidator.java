@@ -14,6 +14,7 @@ import java.util.StringJoiner;
 
 /**
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
 
 public final class CseValidRequestValidator {
@@ -33,15 +34,16 @@ public final class CseValidRequestValidator {
 
         if (isFranceImportingFromItaly) {
             final boolean exportCracFileExist = fileExists(cseValidRequest.getExportCrac());
-            final boolean allFilesExist = cgmFileExists && glskFileExists && importCracFileExists && exportCracFileExist;
+            final boolean atLeastOneCracFileExists = importCracFileExists || exportCracFileExist;
+            final boolean allFilesExist = cgmFileExists && glskFileExists && atLeastOneCracFileExists;
             if (!allFilesExist) {
-                final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists, exportCracFileExist);
+                final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, atLeastOneCracFileExists);
                 throw new CseValidRequestValidatorException(message);
             }
         } else {
             final boolean allFilesExist = cgmFileExists && glskFileExists && importCracFileExists;
             if (!allFilesExist) {
-                final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists, null);
+                final String message = buildMessageForMissingFiles(cgmFileExists, glskFileExists, importCracFileExists);
                 throw new CseValidRequestValidatorException(message);
             }
         }
@@ -51,7 +53,7 @@ public final class CseValidRequestValidator {
         return cseValidFileResource != null && cseValidFileResource.getFilename() != null && cseValidFileResource.getUrl() != null;
     }
 
-    private static String buildMessageForMissingFiles(boolean cgmFileExists, boolean glskFileExists, boolean importCracFileExists, Boolean exportCracFileExists) {
+    private static String buildMessageForMissingFiles(boolean cgmFileExists, boolean glskFileExists, boolean atLeastOneCracFileExists) {
         StringJoiner stringJoiner = new StringJoiner(", ", "Process fail during TSO validation phase: Missing ", ".");
 
         if (!cgmFileExists) {
@@ -62,12 +64,8 @@ public final class CseValidRequestValidator {
             stringJoiner.add("GLSK file");
         }
 
-        if (!importCracFileExists) {
+        if (!atLeastOneCracFileExists) {
             stringJoiner.add("CRAC file");
-        }
-
-        if (Boolean.FALSE.equals(exportCracFileExists)) {
-            stringJoiner.add("CRAC Transit file");
         }
 
         return stringJoiner.toString();

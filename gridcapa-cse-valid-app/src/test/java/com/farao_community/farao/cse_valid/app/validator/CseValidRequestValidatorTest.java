@@ -51,7 +51,7 @@ class CseValidRequestValidatorTest {
     @Test
     void checkAllFilesExistShouldThrowAnExceptionWhenMissingAllFilesAndFranceImporting() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getCseValidRequestMissingAllFiles(ProcessType.IDCC);
-        String errorMessage = "Process fail during TSO validation phase: Missing CGM file, GLSK file, CRAC file, CRAC Transit file.";
+        String errorMessage = "Process fail during TSO validation phase: Missing CGM file, GLSK file, CRAC file.";
 
         CseValidRequestValidatorException thrown = assertThrows(CseValidRequestValidatorException.class, () -> {
             CseValidRequestValidator.checkAllFilesExist(cseValidRequest, true);
