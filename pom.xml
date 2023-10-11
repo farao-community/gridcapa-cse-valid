@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.farao-community.farao</groupId>
         <artifactId>farao-parent-ws</artifactId>
-        <version>1.4.0</version>
+        <version>1.5.0</version>
     </parent>
 
     <artifactId>gridcapa-cse-valid</artifactId>
@@ -33,8 +33,14 @@
 
     <developers>
         <developer>
-            <name>Theo PASCOLI</name>
-            <email>theo.pascoli@rte-france.com</email>
+            <name>Oualid ALOUI</name>
+            <email>oualid.aloui@rte-france.com</email>
+            <organization>RTE</organization>
+            <organizationUrl>http://www.rte-france.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Vincent BOCHET</name>
+            <email>vincent.bochet@rte-france.com</email>
             <organization>RTE</organization>
             <organizationUrl>http://www.rte-france.com</organizationUrl>
         </developer>
@@ -49,17 +55,17 @@
     <properties>
         <commons.lang.version>3.12.0</commons.lang.version>
         <commons.io.version>2.11.0</commons.io.version>
-        <farao.dependencies.version>1.19.0</farao.dependencies.version>
-        <farao.dichotomy.version>4.12.0</farao.dichotomy.version>
-        <gridcapa.rao.runner.version>1.16.1</gridcapa.rao.runner.version>
-        <gridcapa.starter.minio.version>1.0.0</gridcapa.starter.minio.version>
+        <farao.dependencies.version>1.20.0</farao.dependencies.version>
+        <farao.dichotomy.version>4.13.0</farao.dichotomy.version>
+        <gridcapa.rao.runner.version>1.17.1</gridcapa.rao.runner.version>
+        <gridcapa.starter.minio.version>1.1.1</gridcapa.starter.minio.version>
         <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jaxb-runtime.version>4.0.0</jaxb-runtime.version>
         <jaxb.impl.version>4.0.0</jaxb.impl.version>
         <jsonapi.converter.version>0.11</jsonapi.converter.version>
         <logstash.version>7.0.1</logstash.version>
         <maven.jaxb2.version>3.1.0</maven.jaxb2.version>
-        <task-manager.version>1.19.0</task-manager.version>
+        <task-manager.version>1.21.0</task-manager.version>
         <jakarta.activation-api.version>2.1.0</jakarta.activation-api.version>
     </properties>
 
