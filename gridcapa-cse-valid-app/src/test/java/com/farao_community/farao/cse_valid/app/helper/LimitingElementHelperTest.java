@@ -17,7 +17,6 @@ import com.farao_community.farao.data.crac_api.State;
 import com.farao_community.farao.data.crac_api.cnec.FlowCnec;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
 import com.farao_community.farao.data.crac_creation.creator.cse.outage.CseOutageCreationContext;
-import com.farao_community.farao.data.rao_result_api.OptimizationState;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Branch;
@@ -29,8 +28,6 @@ import com.powsybl.iidm.network.VoltageLevel;
 import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +40,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author Vincent BOCHET {@literal <vincent.bochet at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 
 class LimitingElementHelperTest {
@@ -61,29 +59,22 @@ class LimitingElementHelperTest {
         RaoResult raoResult = getRaoResult(worstCnec);
         when(cracCreationContext.getCrac()).thenReturn(crac);
 
-        OptimizationState optimizationState = mock(OptimizationState.class);
         when(state.isPreventive()).thenReturn(true); // outage = null
 
         initMocksForMonitoredElement(network, networkElement);
 
-        try (MockedStatic<OptimizationState> optimizationStateMockedStatic = Mockito.mockStatic(OptimizationState.class)) {
-            optimizationStateMockedStatic
-                    .when(() -> OptimizationState.afterOptimizing(state))
-                    .thenReturn(optimizationState);
+        // when
+        TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
 
-            // when
-            TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
+        // then
+        Assertions.assertThat(limitingElement).isNotNull();
+        Assertions.assertThat(limitingElement.getCriticalBranch())
+                .isNotNull()
+                .hasSize(1);
 
-            // then
-            Assertions.assertThat(limitingElement).isNotNull();
-            Assertions.assertThat(limitingElement.getCriticalBranch())
-                    .isNotNull()
-                    .hasSize(1);
-
-            TCriticalBranch criticalBranch = limitingElement.getCriticalBranch().get(0);
-            Assertions.assertThat(criticalBranch.getOutage()).isNull();
-            assertMonitoredElementIsCorrect(criticalBranch);
-        }
+        TCriticalBranch criticalBranch = limitingElement.getCriticalBranch().get(0);
+        Assertions.assertThat(criticalBranch.getOutage()).isNull();
+        assertMonitoredElementIsCorrect(criticalBranch);
     }
 
     @Test
@@ -100,29 +91,22 @@ class LimitingElementHelperTest {
         RaoResult raoResult = getRaoResult(worstCnec);
         when(cracCreationContext.getCrac()).thenReturn(crac);
 
-        OptimizationState optimizationState = mock(OptimizationState.class);
         initMocksForOutage(network, cracCreationContext, state);
 
         initMocksForMonitoredElement(network, cnecNetworkElement);
 
-        try (MockedStatic<OptimizationState> optimizationStateMockedStatic = Mockito.mockStatic(OptimizationState.class)) {
-            optimizationStateMockedStatic
-                    .when(() -> OptimizationState.afterOptimizing(state))
-                    .thenReturn(optimizationState);
+        // when
+        TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
 
-            // when
-            TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
+        // then
+        Assertions.assertThat(limitingElement).isNotNull();
+        Assertions.assertThat(limitingElement.getCriticalBranch())
+                .isNotNull()
+                .hasSize(1);
 
-            // then
-            Assertions.assertThat(limitingElement).isNotNull();
-            Assertions.assertThat(limitingElement.getCriticalBranch())
-                    .isNotNull()
-                    .hasSize(1);
-
-            TCriticalBranch criticalBranch = limitingElement.getCriticalBranch().get(0);
-            assertOutageIsCorrect(criticalBranch);
-            assertMonitoredElementIsCorrect(criticalBranch);
-        }
+        TCriticalBranch criticalBranch = limitingElement.getCriticalBranch().get(0);
+        assertOutageIsCorrect(criticalBranch);
+        assertMonitoredElementIsCorrect(criticalBranch);
     }
 
     @NotNull
