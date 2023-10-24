@@ -15,7 +15,7 @@ import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
 import com.farao_community.farao.data.crac_api.Crac;
-import com.farao_community.farao.data.rao_result_api.OptimizationState;
+import com.farao_community.farao.data.crac_api.Instant;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
@@ -79,7 +79,7 @@ class CseValidRaoValidatorTest {
 
         when(raoResponse.getRaoResultFileUrl()).thenReturn(RAO_RESULT_FILE_URL);
         when(raoResponse.getCracFileUrl()).thenReturn(JSON_CRAC_URL);
-        when(raoResult.getFunctionalCost(OptimizationState.AFTER_CRA)).thenReturn(-1.);
+        when(raoResult.getFunctionalCost(Instant.CURATIVE)).thenReturn(-1.);
 
         boolean isSecure = cseValidRaoValidator.isSecure(raoResponse);
 
@@ -97,7 +97,7 @@ class CseValidRaoValidatorTest {
 
         when(raoResponse.getRaoResultFileUrl()).thenReturn(RAO_RESULT_FILE_URL);
         when(raoResponse.getCracFileUrl()).thenReturn(JSON_CRAC_URL);
-        when(raoResult.getFunctionalCost(OptimizationState.AFTER_CRA)).thenReturn(1.);
+        when(raoResult.getFunctionalCost(Instant.CURATIVE)).thenReturn(1.);
 
         boolean isSecure = cseValidRaoValidator.isSecure(raoResponse);
 

@@ -23,6 +23,7 @@ import java.util.List;
 
 /**
  * @author Vincent BOCHET {@literal <vincent.bochet at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 @Service
 public class ZonalScalableProvider {
@@ -73,13 +74,13 @@ public class ZonalScalableProvider {
     }
 
     private Scalable getStackedScalable(String eiCode, Scalable scalable, Network network, double sum) {
-        List<Float> percentageList = new ArrayList<>();
+        List<Double> percentageList = new ArrayList<>();
         List<Scalable> scalableList = new ArrayList<>();
 
         network.getLoadStream()
             .filter(load -> isLoadCorrespondingToTheCountry(load, eiCode))
             .forEach(load -> {
-                percentageList.add((float) (load.getP0() / sum) * 100);
+                percentageList.add((load.getP0() / sum) * 100);
                 scalableList.add(Scalable.onLoad(load.getId()));
             });
 

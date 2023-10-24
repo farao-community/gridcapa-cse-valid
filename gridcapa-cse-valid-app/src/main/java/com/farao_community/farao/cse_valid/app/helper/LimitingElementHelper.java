@@ -16,11 +16,11 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TMonitoredElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TOutage;
 import com.farao_community.farao.data.crac_api.Contingency;
 import com.farao_community.farao.data.crac_api.Crac;
+import com.farao_community.farao.data.crac_api.Instant;
 import com.farao_community.farao.data.crac_api.NetworkElement;
 import com.farao_community.farao.data.crac_api.cnec.FlowCnec;
 import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
 import com.farao_community.farao.data.crac_creation.creator.cse.outage.CseOutageCreationContext;
-import com.farao_community.farao.data.rao_result_api.OptimizationState;
 import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 public final class LimitingElementHelper {
 
@@ -60,8 +61,8 @@ public final class LimitingElementHelper {
         double margin;
         for (FlowCnec flowCnec : crac.getFlowCnecs()) {
             if (flowCnec.isOptimized()) {
-                OptimizationState optimizationState = OptimizationState.afterOptimizing(flowCnec.getState());
-                margin = raoResult.getMargin(optimizationState, flowCnec, Unit.MEGAWATT);
+                Instant optimizedInstant = flowCnec.getState().getInstant();
+                margin = raoResult.getMargin(optimizedInstant, flowCnec, Unit.MEGAWATT);
 
                 if (margin < worstMargin) {
                     worstMargin = margin;
