@@ -63,7 +63,7 @@ public class RaoValidator implements NetworkValidator<RaoResponse> {
             RaoResult raoResult = fileImporter.importRaoResult(raoResponse.getRaoResultFileUrl(), fileImporter.importCracFromJson(raoResponse.getCracFileUrl()));
             return DichotomyStepResult.fromNetworkValidationResult(raoResult, raoResponse);
         } catch (RuntimeException e) {
-            throw new ValidationException("RAO run failed: " + e.getMessage());
+            throw new ValidationException("RAO run failed", e);
         }
     }
 
