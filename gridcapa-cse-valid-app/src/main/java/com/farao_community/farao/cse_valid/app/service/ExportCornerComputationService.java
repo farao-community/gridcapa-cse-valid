@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -17,16 +17,16 @@ import com.farao_community.farao.cse_valid.app.dichotomy.DichotomyRunner;
 import com.farao_community.farao.cse_valid.app.exception.CseValidRequestValidatorException;
 import com.farao_community.farao.cse_valid.app.helper.LimitingElementHelper;
 import com.farao_community.farao.cse_valid.app.helper.NetPositionHelper;
-import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
+import com.farao_community.farao.cse_valid.app.rao.CseValidRaoRunner;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
-import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.powsybl.iidm.network.Network;
+import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
+import com.powsybl.openrao.data.raoresultapi.RaoResult;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
@@ -51,7 +51,7 @@ public class ExportCornerComputationService {
     private final FileExporter fileExporter;
     private final Logger businessLogger;
     private final CseValidNetworkShifterProvider cseValidNetworkShifterProvider;
-    private final CseValidRaoValidator cseValidRaoValidator;
+    private final CseValidRaoRunner cseValidRaoRunner;
 
     public ExportCornerComputationService(ComputationService computationService,
                                           DichotomyRunner dichotomyRunner,
@@ -59,14 +59,14 @@ public class ExportCornerComputationService {
                                           FileExporter fileExporter,
                                           Logger businessLogger,
                                           CseValidNetworkShifterProvider cseValidNetworkShifterProvider,
-                                          CseValidRaoValidator cseValidRaoValidator) {
+                                          CseValidRaoRunner cseValidRaoRunner) {
         this.computationService = computationService;
         this.dichotomyRunner = dichotomyRunner;
         this.fileImporter = fileImporter;
         this.fileExporter = fileExporter;
         this.businessLogger = businessLogger;
         this.cseValidNetworkShifterProvider = cseValidNetworkShifterProvider;
-        this.cseValidRaoValidator = cseValidRaoValidator;
+        this.cseValidRaoRunner = cseValidRaoRunner;
     }
 
     public void computeTimestamp(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter) {
@@ -106,7 +106,7 @@ public class ExportCornerComputationService {
 
                 RaoResponse raoResponse = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
 
-                if (cseValidRaoValidator.isSecure(raoResponse)) {
+                if (cseValidRaoRunner.isSecure(raoResponse)) {
                     tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
                 } else {
                     runDichotomy(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL, network, cracCreationContext);
@@ -124,7 +124,7 @@ public class ExportCornerComputationService {
         final boolean mibiecIsZero = timestampWrapper.hasMibiec() && timestampWrapper.getMibiecIntValue() == 0;
         final boolean antcfinalIsZero = timestampWrapper.hasAntcfinal() && timestampWrapper.getAntcfinalIntValue() == 0;
 
-        return mibiecAndAntcfinalAbsent || (mibiecIsZero && antcfinalIsZero);
+        return mibiecAndAntcfinalAbsent || mibiecIsZero && antcfinalIsZero;
     }
 
     private static boolean missingDataInTimestamp(TTimestampWrapper timestampWrapper) {
