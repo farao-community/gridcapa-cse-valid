@@ -86,9 +86,9 @@ public class TTimestampWrapper {
 
     public boolean hasMultipleMniiMnieMiec() {
         // simultaneous presence of at least two values among MNII (full import), MIEC (export-corner) and MNIE (full export)
-        return (hasMnii() && hasMnie())
-                || (hasMnii() && hasMiec())
-                || (hasMnie() && hasMiec());
+        return hasMnii() && hasMnie()
+                || hasMnii() && hasMiec()
+                || hasMnie() && hasMiec();
     }
 
     // Getters for "natural" values

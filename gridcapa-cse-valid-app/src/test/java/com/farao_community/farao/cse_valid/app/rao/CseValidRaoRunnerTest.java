@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -14,11 +14,10 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
-import com.farao_community.farao.data.crac_api.Crac;
-import com.farao_community.farao.data.crac_api.Instant;
-import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
+import com.powsybl.openrao.data.cracapi.Crac;
+import com.powsybl.openrao.data.raoresultapi.RaoResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,7 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
-class CseValidRaoValidatorTest {
+class CseValidRaoRunnerTest {
 
     @MockBean
     private FileImporter fileImporter;
@@ -41,7 +40,7 @@ class CseValidRaoValidatorTest {
     private RaoRunnerClient raoRunnerClient;
 
     @Autowired
-    private CseValidRaoValidator cseValidRaoValidator;
+    private CseValidRaoRunner cseValidRaoRunner;
 
     private static final String NETWORK_FILE_URL = "CSE/Valid/network.utc";
     private static final String JSON_CRAC_URL = "/CSE/VALID/crac.utc";
@@ -60,7 +59,7 @@ class CseValidRaoValidatorTest {
 
         when(raoRunnerClient.runRao(any())).thenReturn(raoResponse);
 
-        RaoResponse result = cseValidRaoValidator.runRao(requestId, NETWORK_FILE_URL, JSON_CRAC_URL, RAO_PARAMETER_URL, RESULTS_DESTINATION);
+        RaoResponse result = cseValidRaoRunner.runRao(requestId, NETWORK_FILE_URL, JSON_CRAC_URL, RAO_PARAMETER_URL, RESULTS_DESTINATION);
 
         assertEquals(raoResponse, result);
 
@@ -79,9 +78,9 @@ class CseValidRaoValidatorTest {
 
         when(raoResponse.getRaoResultFileUrl()).thenReturn(RAO_RESULT_FILE_URL);
         when(raoResponse.getCracFileUrl()).thenReturn(JSON_CRAC_URL);
-        when(raoResult.getFunctionalCost(Instant.CURATIVE)).thenReturn(-1.);
+        when(raoResult.isSecure()).thenReturn(true);
 
-        boolean isSecure = cseValidRaoValidator.isSecure(raoResponse);
+        boolean isSecure = cseValidRaoRunner.isSecure(raoResponse);
 
         assertTrue(isSecure);
     }
@@ -97,9 +96,9 @@ class CseValidRaoValidatorTest {
 
         when(raoResponse.getRaoResultFileUrl()).thenReturn(RAO_RESULT_FILE_URL);
         when(raoResponse.getCracFileUrl()).thenReturn(JSON_CRAC_URL);
-        when(raoResult.getFunctionalCost(Instant.CURATIVE)).thenReturn(1.);
+        when(raoResult.isSecure()).thenReturn(false);
 
-        boolean isSecure = cseValidRaoValidator.isSecure(raoResponse);
+        boolean isSecure = cseValidRaoRunner.isSecure(raoResponse);
 
         assertFalse(isSecure);
     }

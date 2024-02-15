@@ -73,6 +73,7 @@
     </build>
 
     <dependencies>
+        <!-- COMPILE DEPENDENCIES -->
         <dependency>
             <groupId>com.farao-community.farao</groupId>
             <artifactId>farao-dichotomy-api</artifactId>
@@ -99,40 +100,8 @@
             <artifactId>gridcapa-starter-minio-adapter</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-rao-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-crac-creator-cse</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-crac-creator-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-crac-creation-util</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-crac-io-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-rao-result-json</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-search-tree-rao</artifactId>
-        </dependency>
-        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -169,11 +138,6 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
             <groupId>jakarta.activation</groupId>
             <artifactId>jakarta.activation-api</artifactId>
         </dependency>
@@ -184,7 +148,7 @@
         </dependency>
         <dependency>
             <groupId>com.powsybl</groupId>
-            <artifactId>powsybl-iidm-xml-converter</artifactId>
+            <artifactId>powsybl-iidm-serde</artifactId>
         </dependency>
         <dependency>
             <groupId>com.powsybl</groupId>
@@ -194,16 +158,48 @@
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-balances-adjustment</artifactId>
         </dependency>
-
-        <!-- Runtime dependencies -->
         <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-crac-io-json</artifactId>
+            <groupId>com.powsybl</groupId>
+            <artifactId>powsybl-glsk-document-cse</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-rao-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-crac-creator-cse</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-crac-creator-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-crac-creation-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-crac-io-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-rao-result-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-virtual-hubs-network-assigner</artifactId>
+        </dependency>
+
+        <!-- RUNTIME DEPENDENCIES -->
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-crac-io-json</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.farao-community.farao</groupId>
-            <artifactId>farao-crac-impl</artifactId>
+            <groupId>com.powsybl</groupId>
+            <artifactId>open-rao-crac-impl</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -227,13 +223,13 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.rte-france.powsybl</groupId>
-            <artifactId>powsybl-hades2-integration</artifactId>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>net.logstash.logback</groupId>
-            <artifactId>logstash-logback-encoder</artifactId>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
             <scope>runtime</scope>
         </dependency>
 
@@ -242,10 +238,6 @@
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-config-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.powsybl</groupId>
-            <artifactId>powsybl-glsk-document-cse</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
