@@ -21,16 +21,16 @@ class NetPositionHelperTest {
 
     @Test
     void computeItalianImport() {
-        Network network = Network.read("networkWithPRA.xiidm", getClass().getResourceAsStream("/20230707_0730_D2CC/networkWithPRA.xiidm"));
-        double mniiExpected = 5030;
+        Network network = Network.read("20211125_1930_2D4_CO_Final_CSE1.uct", getClass().getResourceAsStream("/20211125_1930_2D4_CO_Final_CSE1.uct"));
+        double mniiExpected = 7633.0;
         double mniiActual = Math.round(NetPositionHelper.computeItalianImport(network));
         assertEquals(mniiExpected, mniiActual);
     }
 
     @Test
     void computeFranceImportFromItaly() {
-        Network network = Network.read("networkWithPRA.xiidm", getClass().getResourceAsStream("/20230707_0730_D2CC/networkWithPRA.xiidm"));
-        double mniiExpected = -1661;
+        Network network = Network.read("20211125_1930_2D4_CO_Final_CSE1.uct", getClass().getResourceAsStream("/20211125_1930_2D4_CO_Final_CSE1.uct"));
+        double mniiExpected = -2365.0;
         double mniiActual = Math.round(NetPositionHelper.computeFranceImportFromItaly(network));
         assertEquals(mniiExpected, mniiActual);
     }

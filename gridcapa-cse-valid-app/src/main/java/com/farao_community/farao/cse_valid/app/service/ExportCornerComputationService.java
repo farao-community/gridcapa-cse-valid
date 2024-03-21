@@ -106,7 +106,7 @@ public class ExportCornerComputationService {
 
                 RaoResponse raoResponse = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
 
-                if (cseValidRaoRunner.isSecure(raoResponse)) {
+                if (cseValidRaoRunner.isSecure(raoResponse, network)) {
                     tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
                 } else {
                     runDichotomy(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL, network, cracCreationContext);

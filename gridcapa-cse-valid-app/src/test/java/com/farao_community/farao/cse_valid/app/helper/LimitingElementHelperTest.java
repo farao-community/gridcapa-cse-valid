@@ -10,6 +10,8 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCriticalBranch;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Network;
@@ -17,7 +19,6 @@ import com.powsybl.iidm.network.Substation;
 import com.powsybl.iidm.network.Terminal;
 import com.powsybl.iidm.network.VoltageLevel;
 import com.powsybl.openrao.commons.Unit;
-import com.powsybl.openrao.data.cracapi.Contingency;
 import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.cracapi.NetworkElement;
 import com.powsybl.openrao.data.cracapi.State;
@@ -142,9 +143,9 @@ class LimitingElementHelperTest {
 
     private static void initMocksForOutage(Network network, CseCracCreationContext cracCreationContext, State state) {
         when(state.isPreventive()).thenReturn(false);
-        NetworkElement contingencyNetworkElement = mock(NetworkElement.class);
-        when(contingencyNetworkElement.getId()).thenReturn("id2");
-        Contingency contingency = getContingency(contingencyNetworkElement);
+        ContingencyElement contingencyElement = mock(ContingencyElement.class);
+        when(contingencyElement.getId()).thenReturn("id2");
+        Contingency contingency = getContingency(contingencyElement);
         when(state.getContingency()).thenReturn(Optional.of(contingency));
 
         CseOutageCreationContext cseOutageCreationContext = getCseOutageCreationContext();
@@ -155,10 +156,10 @@ class LimitingElementHelperTest {
     }
 
     @NotNull
-    private static Contingency getContingency(NetworkElement contingencyNetworkElement) {
+    private static Contingency getContingency(ContingencyElement contingencyElement) {
         Contingency contingency = mock(Contingency.class);
         when(contingency.getId()).thenReturn("contingencyId");
-        when(contingency.getNetworkElements()).thenReturn(Set.of(contingencyNetworkElement));
+        when(contingency.getElements()).thenReturn(List.of(contingencyElement));
         return contingency;
     }
 

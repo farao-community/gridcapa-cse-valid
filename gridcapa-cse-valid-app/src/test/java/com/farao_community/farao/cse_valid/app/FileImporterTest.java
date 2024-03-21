@@ -8,6 +8,8 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.powsybl.glsk.api.GlskDocument;
+import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.Line;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
@@ -24,6 +26,8 @@ import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -34,6 +38,16 @@ class FileImporterTest {
 
     @Autowired
     private FileImporter fileImporter;
+
+    private static Network mockNetworkWithLines(String... lineIds) {
+        Network network = mock(Network.class);
+        for (String lineId : lineIds) {
+            Branch l = mock(Line.class);
+            when(l.getId()).thenReturn(lineId);
+            when(network.getIdentifiable(lineId)).thenReturn(l);
+        }
+        return network;
+    }
 
     @Test
     void testImportTtcAdjustmentFile() {
@@ -65,14 +79,14 @@ class FileImporterTest {
     void testImportRaoResult() {
         InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.1.json");
         assertNotNull(cracInputStream);
-        Crac crac = CracImporters.importCrac("crac.json", cracInputStream);
+        Crac crac = CracImporters.importCrac("crac.json", cracInputStream, mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id"));
         RaoResult raoResult = fileImporter.importRaoResult(Objects.requireNonNull(getClass().getResource("/rao-result-v1.1.json")).toString(), crac);
         assertNotNull(raoResult);
     }
 
     @Test
     void testImportCracFromJson() {
-        Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.1.json")).toString());
+        Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.1.json")).toString(), mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id"));
         assertNotNull(crac);
     }
 

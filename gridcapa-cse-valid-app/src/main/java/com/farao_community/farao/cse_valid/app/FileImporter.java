@@ -106,9 +106,9 @@ public class FileImporter {
         }
     }
 
-    public Crac importCracFromJson(String cracUrl) {
+    public Crac importCracFromJson(String cracUrl, Network network) {
         try (InputStream is = openUrlStream(cracUrl)) {
-            return CracImporters.importCrac(getFilenameFromUrl(cracUrl), is);
+            return CracImporters.importCrac(getFilenameFromUrl(cracUrl), is, network);
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Error importing CRAC from JSON at %s", cracUrl), e);
         }

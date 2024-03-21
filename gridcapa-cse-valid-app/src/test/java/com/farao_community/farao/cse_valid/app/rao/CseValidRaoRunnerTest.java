@@ -16,6 +16,7 @@ import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
+import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.raoresultapi.RaoResult;
 import org.junit.jupiter.api.Test;
@@ -72,15 +73,16 @@ class CseValidRaoRunnerTest {
         Crac crac = mock(Crac.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         RaoResult raoResult = mock(RaoResult.class);
+        Network network = mock(Network.class);
 
-        when(fileImporter.importCracFromJson(JSON_CRAC_URL)).thenReturn(crac);
+        when(fileImporter.importCracFromJson(JSON_CRAC_URL, network)).thenReturn(crac);
         when(fileImporter.importRaoResult(RAO_RESULT_FILE_URL, crac)).thenReturn(raoResult);
 
         when(raoResponse.getRaoResultFileUrl()).thenReturn(RAO_RESULT_FILE_URL);
         when(raoResponse.getCracFileUrl()).thenReturn(JSON_CRAC_URL);
         when(raoResult.isSecure()).thenReturn(true);
 
-        boolean isSecure = cseValidRaoRunner.isSecure(raoResponse);
+        boolean isSecure = cseValidRaoRunner.isSecure(raoResponse, network);
 
         assertTrue(isSecure);
     }
@@ -90,15 +92,16 @@ class CseValidRaoRunnerTest {
         Crac crac = mock(Crac.class);
         RaoResponse raoResponse = mock(RaoResponse.class);
         RaoResult raoResult = mock(RaoResult.class);
+        Network network = mock(Network.class);
 
-        when(fileImporter.importCracFromJson(JSON_CRAC_URL)).thenReturn(crac);
+        when(fileImporter.importCracFromJson(JSON_CRAC_URL, network)).thenReturn(crac);
         when(fileImporter.importRaoResult(RAO_RESULT_FILE_URL, crac)).thenReturn(raoResult);
 
         when(raoResponse.getRaoResultFileUrl()).thenReturn(RAO_RESULT_FILE_URL);
         when(raoResponse.getCracFileUrl()).thenReturn(JSON_CRAC_URL);
         when(raoResult.isSecure()).thenReturn(false);
 
-        boolean isSecure = cseValidRaoRunner.isSecure(raoResponse);
+        boolean isSecure = cseValidRaoRunner.isSecure(raoResponse, network);
 
         assertFalse(isSecure);
     }

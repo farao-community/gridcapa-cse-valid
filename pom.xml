@@ -64,10 +64,10 @@
         <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
 
         <!-- BUSINESS DEPENDENCIES -->
-        <farao.dependencies.version>1.25.0</farao.dependencies.version>
-        <farao.dichotomy.version>4.14.1</farao.dichotomy.version>
-        <gridcapa.rao.runner.version>1.20.0</gridcapa.rao.runner.version>
-        <task-manager.version>1.24.1</task-manager.version>
+        <farao.dependencies.version>1.29.0</farao.dependencies.version>
+        <farao.dichotomy.version>4.17.0</farao.dichotomy.version>
+        <gridcapa.rao.runner.version>1.23.0</gridcapa.rao.runner.version>
+        <task-manager.version>1.26.1</task-manager.version>
         <gridcapa.starter.minio.version>1.1.2</gridcapa.starter.minio.version>
 
     </properties>
@@ -148,6 +148,7 @@
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
             </dependency>
+
             <!-- RUNTIME DEPENDENCIES -->
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
