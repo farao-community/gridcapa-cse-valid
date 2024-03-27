@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.farao-community.farao</groupId>
         <artifactId>farao-parent-ws</artifactId>
-        <version>1.5.0</version>
+        <version>1.8.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>gridcapa-cse-valid</artifactId>
@@ -58,7 +58,7 @@
         <farao.dependencies.version>1.21.1</farao.dependencies.version>
         <farao.dichotomy.version>4.13.4</farao.dichotomy.version>
         <gridcapa.rao.runner.version>1.17.2</gridcapa.rao.runner.version>
-        <gridcapa.starter.minio.version>1.1.1</gridcapa.starter.minio.version>
+        <gridcapa.starter.minio.version>1.1.2-SNAPSHOT</gridcapa.starter.minio.version>
         <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jaxb-runtime.version>4.0.0</jaxb-runtime.version>
         <jaxb.impl.version>4.0.0</jaxb.impl.version>
@@ -82,6 +82,13 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <configuration>
                         <excludePackageNames>com.farao_community.farao.cse_valid.app.ttc_adjustment.*:xsd.*</excludePackageNames>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <parameters>true</parameters>
                     </configuration>
                 </plugin>
             </plugins>
@@ -144,6 +151,16 @@
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
                 <version>${jaxb.impl.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+            </dependency>
+            <!-- Runtime dependencies -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
                 <scope>runtime</scope>
             </dependency>
             <dependency>

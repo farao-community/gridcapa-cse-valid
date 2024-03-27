@@ -124,7 +124,7 @@ public class ExportCornerComputationService {
         final boolean mibiecIsZero = timestampWrapper.hasMibiec() && timestampWrapper.getMibiecIntValue() == 0;
         final boolean antcfinalIsZero = timestampWrapper.hasAntcfinal() && timestampWrapper.getAntcfinalIntValue() == 0;
 
-        return mibiecAndAntcfinalAbsent || (mibiecIsZero && antcfinalIsZero);
+        return mibiecAndAntcfinalAbsent || mibiecIsZero && antcfinalIsZero;
     }
 
     private static boolean missingDataInTimestamp(TTimestampWrapper timestampWrapper) {

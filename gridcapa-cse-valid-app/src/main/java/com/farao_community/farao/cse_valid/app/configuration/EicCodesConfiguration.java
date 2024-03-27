@@ -7,12 +7,10 @@
 package com.farao_community.farao.cse_valid.app.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import java.util.Set;
 
-@ConstructorBinding
 @EnableConfigurationProperties
 @ConfigurationProperties("cse-valid-runner.eic-codes")
 public class EicCodesConfiguration {

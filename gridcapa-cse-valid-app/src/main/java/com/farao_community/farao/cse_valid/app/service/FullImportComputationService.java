@@ -117,7 +117,7 @@ public class FullImportComputationService {
         final boolean mibniiIsZero = timestampWrapper.hasMibnii() && timestampWrapper.getMibniiIntValue() == 0;
         final boolean antcfinalIsZero = timestampWrapper.hasAntcfinal() && timestampWrapper.getAntcfinalIntValue() == 0;
 
-        return mibniiAndAntcfinalAbsent || (mibniiIsZero && antcfinalIsZero);
+        return mibniiAndAntcfinalAbsent || mibniiIsZero && antcfinalIsZero;
     }
 
     private static boolean missingDataInTimestamp(TTimestampWrapper timestampWrapper) {
