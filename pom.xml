@@ -61,6 +61,7 @@
         <logstash.version>7.0.1</logstash.version>
         <maven.jaxb2.version>3.1.0</maven.jaxb2.version>
         <jakarta.activation-api.version>2.1.0</jakarta.activation-api.version>
+        <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
 
         <!-- BUSINESS DEPENDENCIES -->
         <farao.dependencies.version>1.25.0</farao.dependencies.version>
@@ -143,7 +144,10 @@
                 <artifactId>jakarta.activation-api</artifactId>
                 <version>${jakarta.activation-api.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+            </dependency>
             <!-- RUNTIME DEPENDENCIES -->
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
@@ -152,13 +156,9 @@
                 <scope>runtime</scope>
             </dependency>
             <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-            </dependency>
-            <!-- Runtime dependencies -->
-            <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
+                <version>${jaxb-runtime.version}</version>
                 <scope>runtime</scope>
             </dependency>
 
