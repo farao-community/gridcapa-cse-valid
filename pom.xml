@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.farao-community.farao</groupId>
         <artifactId>farao-parent-ws</artifactId>
-        <version>1.8.0-SNAPSHOT</version>
+        <version>1.8.0</version>
     </parent>
 
     <artifactId>gridcapa-cse-valid</artifactId>
@@ -58,7 +58,7 @@
         <farao.dependencies.version>1.21.1</farao.dependencies.version>
         <farao.dichotomy.version>4.13.4</farao.dichotomy.version>
         <gridcapa.rao.runner.version>1.17.2</gridcapa.rao.runner.version>
-        <gridcapa.starter.minio.version>1.1.2-SNAPSHOT</gridcapa.starter.minio.version>
+        <gridcapa.starter.minio.version>1.1.2</gridcapa.starter.minio.version>
         <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jaxb-runtime.version>4.0.0</jaxb-runtime.version>
         <jaxb.impl.version>4.0.0</jaxb.impl.version>
