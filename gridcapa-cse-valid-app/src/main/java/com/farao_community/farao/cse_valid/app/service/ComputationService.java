@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -10,7 +10,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
-import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
+import com.farao_community.farao.cse_valid.app.rao.CseValidRaoRunner;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
 import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
@@ -28,11 +28,11 @@ import java.time.OffsetDateTime;
 public class ComputationService {
 
     private final FileExporter fileExporter;
-    private final CseValidRaoValidator cseValidRaoValidator;
+    private final CseValidRaoRunner cseValidRaoRunner;
 
-    public ComputationService(FileExporter fileExporter, CseValidRaoValidator cseValidRaoValidator) {
+    public ComputationService(FileExporter fileExporter, CseValidRaoRunner cseValidRaoRunner) {
         this.fileExporter = fileExporter;
-        this.cseValidRaoValidator = cseValidRaoValidator;
+        this.cseValidRaoRunner = cseValidRaoRunner;
     }
 
     protected void shiftNetwork(double shiftValue, Network network, NetworkShifter networkShifter) {
@@ -54,7 +54,7 @@ public class ComputationService {
         String networkFiledUrl = fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType);
         String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
 
-        return cseValidRaoValidator.runRao(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination);
+        return cseValidRaoRunner.runRao(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination);
     }
 
     private String generateScaledNetworkDirPath(Network network, OffsetDateTime processTargetDateTime, ProcessType processType) {

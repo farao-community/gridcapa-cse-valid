@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>gridcapa-cse-valid</artifactId>
-    <version>1.13.0-SNAPSHOT</version>
+    <version>1.14.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>GridCapa CSE VALID</name>
@@ -53,20 +53,22 @@
     </modules>
 
     <properties>
-        <commons.lang.version>3.12.0</commons.lang.version>
+        <!-- TECHNICAL DEPENDENCIES -->
         <commons.io.version>2.11.0</commons.io.version>
-        <farao.dependencies.version>1.21.1</farao.dependencies.version>
-        <farao.dichotomy.version>4.13.4</farao.dichotomy.version>
-        <gridcapa.rao.runner.version>1.17.2</gridcapa.rao.runner.version>
-        <gridcapa.starter.minio.version>1.1.2</gridcapa.starter.minio.version>
         <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
-        <jaxb-runtime.version>4.0.0</jaxb-runtime.version>
         <jaxb.impl.version>4.0.0</jaxb.impl.version>
         <jsonapi.converter.version>0.11</jsonapi.converter.version>
         <logstash.version>7.0.1</logstash.version>
         <maven.jaxb2.version>3.1.0</maven.jaxb2.version>
-        <task-manager.version>1.21.1</task-manager.version>
         <jakarta.activation-api.version>2.1.0</jakarta.activation-api.version>
+
+        <!-- BUSINESS DEPENDENCIES -->
+        <farao.dependencies.version>1.28.0</farao.dependencies.version>
+        <farao.dichotomy.version>4.14.1</farao.dichotomy.version>
+        <gridcapa.rao.runner.version>1.20.0</gridcapa.rao.runner.version>
+        <task-manager.version>1.24.1</task-manager.version>
+        <gridcapa.starter.minio.version>1.1.2</gridcapa.starter.minio.version>
+
     </properties>
 
     <build>
@@ -84,13 +86,13 @@
                         <excludePackageNames>com.farao_community.farao.cse_valid.app.ttc_adjustment.*:xsd.*</excludePackageNames>
                     </configuration>
                 </plugin>
-
             </plugins>
         </pluginManagement>
     </build>
 
     <dependencyManagement>
         <dependencies>
+            <!-- COMPILE DEPENDENCIES -->
             <dependency>
                 <groupId>com.farao-community.farao</groupId>
                 <artifactId>gridcapa-starter-minio-adapter</artifactId>
@@ -132,15 +134,17 @@
                 <version>${logstash.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>${commons.lang.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${jakarta.xml.bind.version}</version>
             </dependency>
+            <dependency>
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>${jakarta.activation-api.version}</version>
+            </dependency>
+
+            <!-- RUNTIME DEPENDENCIES -->
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
@@ -156,11 +160,6 @@
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
                 <scope>runtime</scope>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.activation</groupId>
-                <artifactId>jakarta.activation-api</artifactId>
-                <version>${jakarta.activation-api.version}</version>
             </dependency>
 
             <!-- IMPORTED DEPENDENCIES -->

@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package com.farao_community.farao.cse_valid.app.helper;
 
-import com.farao_community.farao.commons.Unit;
 import com.farao_community.farao.cse_valid.app.exception.LimitingElementBuildException;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TArea;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCriticalBranch;
@@ -14,18 +13,19 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TMonitoredElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TOutage;
-import com.farao_community.farao.data.crac_api.Contingency;
-import com.farao_community.farao.data.crac_api.Crac;
-import com.farao_community.farao.data.crac_api.Instant;
-import com.farao_community.farao.data.crac_api.NetworkElement;
-import com.farao_community.farao.data.crac_api.cnec.FlowCnec;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
-import com.farao_community.farao.data.crac_creation.creator.cse.outage.CseOutageCreationContext;
-import com.farao_community.farao.data.rao_result_api.RaoResult;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.Substation;
 import com.powsybl.iidm.network.Terminal;
+import com.powsybl.openrao.commons.Unit;
+import com.powsybl.openrao.data.cracapi.Contingency;
+import com.powsybl.openrao.data.cracapi.Crac;
+import com.powsybl.openrao.data.cracapi.Instant;
+import com.powsybl.openrao.data.cracapi.NetworkElement;
+import com.powsybl.openrao.data.cracapi.cnec.FlowCnec;
+import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
+import com.powsybl.openrao.data.craccreation.creator.cse.outage.CseOutageCreationContext;
+import com.powsybl.openrao.data.raoresultapi.RaoResult;
 import xsd.etso_core_cmpts.TextType;
 
 import java.util.Optional;

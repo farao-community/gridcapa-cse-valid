@@ -10,7 +10,7 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.exception.CseValidShiftFailureException;
-import com.farao_community.farao.cse_valid.app.rao.CseValidRaoValidator;
+import com.farao_community.farao.cse_valid.app.rao.CseValidRaoRunner;
 import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
@@ -44,7 +44,7 @@ class ComputationServiceTest {
     private FileExporter fileExporter;
 
     @MockBean
-    private CseValidRaoValidator cseValidRaoValidator;
+    private CseValidRaoRunner cseValidRaoRunner;
 
     @Autowired
     private ComputationService computationService;
@@ -119,7 +119,7 @@ class ComputationServiceTest {
         when(network.getVariantManager()).thenReturn(variantManager);
         when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
-        when(cseValidRaoValidator.runRao(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination)).thenReturn(raoResponse);
+        when(cseValidRaoRunner.runRao(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination)).thenReturn(raoResponse);
 
         RaoResponse response = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
 

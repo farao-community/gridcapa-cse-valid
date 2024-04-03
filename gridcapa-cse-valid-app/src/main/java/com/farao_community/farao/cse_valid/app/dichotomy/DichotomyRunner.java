@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -25,8 +25,6 @@ import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
 /**
- * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
- * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
 @Service
@@ -93,7 +91,7 @@ public class DichotomyRunner {
     }
 
     NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
-        return new RaoValidator(
+        return new DichotomyNetworkValidator(
                 cseValidRequest.getProcessType(),
                 cseValidRequest.getId(),
                 cseValidRequest.getTimestamp(),

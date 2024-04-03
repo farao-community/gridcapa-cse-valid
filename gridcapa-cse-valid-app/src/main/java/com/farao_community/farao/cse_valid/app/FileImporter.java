@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -10,17 +10,17 @@ import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataExce
 import com.farao_community.farao.cse_valid.app.configuration.UrlWhitelistConfiguration;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.ObjectFactory;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
-import com.farao_community.farao.data.crac_api.Crac;
-import com.farao_community.farao.data.crac_creation.creator.api.CracCreators;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCrac;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCracCreationContext;
-import com.farao_community.farao.data.crac_creation.creator.cse.CseCracImporter;
-import com.farao_community.farao.data.crac_io_api.CracImporters;
-import com.farao_community.farao.data.rao_result_api.RaoResult;
-import com.farao_community.farao.data.rao_result_json.RaoResultImporter;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.glsk.api.io.GlskDocumentImporters;
 import com.powsybl.iidm.network.Network;
+import com.powsybl.openrao.data.cracapi.Crac;
+import com.powsybl.openrao.data.craccreation.creator.api.CracCreators;
+import com.powsybl.openrao.data.craccreation.creator.cse.CseCrac;
+import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
+import com.powsybl.openrao.data.craccreation.creator.cse.CseCracImporter;
+import com.powsybl.openrao.data.cracioapi.CracImporters;
+import com.powsybl.openrao.data.raoresultapi.RaoResult;
+import com.powsybl.openrao.data.raoresultjson.RaoResultImporter;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBIntrospector;
 import jakarta.xml.bind.Unmarshaller;
@@ -37,6 +37,8 @@ import java.time.OffsetDateTime;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
+ * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
+ * @author Vincent Bochet {@literal <vincent.bochet at rte-france.com>}
  */
 @Service
 public class FileImporter {
