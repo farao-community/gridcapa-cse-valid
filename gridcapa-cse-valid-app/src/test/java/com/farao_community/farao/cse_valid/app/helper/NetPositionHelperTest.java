@@ -22,7 +22,7 @@ class NetPositionHelperTest {
     @Test
     void computeItalianImport() {
         Network network = Network.read("networkWithPRA.xiidm", getClass().getResourceAsStream("/20230707_0730_D2CC/networkWithPRA.xiidm"));
-        double mniiExpected = 4568.0;
+        double mniiExpected = 5030;
         double mniiActual = Math.round(NetPositionHelper.computeItalianImport(network));
         assertEquals(mniiExpected, mniiActual);
     }

@@ -17,7 +17,7 @@ import com.powsybl.loadflow.LoadFlowResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
@@ -33,8 +33,7 @@ public final class NetPositionHelper {
     public static double computeItalianImport(Network network) {
         runLoadFlow(network);
         CountryArea itArea = new CountryAreaFactory(Country.IT).create(network);
-        return Arrays.stream(Country.values())
-                .filter(country -> country != Country.IT)
+        return Stream.of(Country.FR, Country.AT, Country.CH, Country.SI)
                 .map(country -> new CountryAreaFactory(country).create(network).getLeavingFlowToCountry(itArea))
                 .reduce(0., Double::sum);
     }
