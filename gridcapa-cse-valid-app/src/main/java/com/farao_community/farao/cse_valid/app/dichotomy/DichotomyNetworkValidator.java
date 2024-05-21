@@ -68,7 +68,7 @@ public class DichotomyNetworkValidator implements NetworkValidator<RaoResponse> 
             LOGGER.info("RAO request sent: {}", raoRequest);
             RaoResponse raoResponse = raoRunnerClient.runRao(raoRequest);
             LOGGER.info("RAO response received: {}", raoResponse);
-            RaoResult raoResult = fileImporter.importRaoResult(raoResponse.getRaoResultFileUrl(), fileImporter.importCracFromJson(raoResponse.getCracFileUrl()));
+            RaoResult raoResult = fileImporter.importRaoResult(raoResponse.getRaoResultFileUrl(), fileImporter.importCracFromJson(raoResponse.getCracFileUrl(), network));
             return DichotomyStepResult.fromNetworkValidationResult(raoResult, raoResponse);
         } catch (RuntimeException e) {
             throw new ValidationException("RAO run failed", e);

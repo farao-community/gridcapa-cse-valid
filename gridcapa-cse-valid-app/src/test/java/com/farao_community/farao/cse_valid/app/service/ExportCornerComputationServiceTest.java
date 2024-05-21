@@ -273,13 +273,13 @@ class ExportCornerComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(true);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(true);
 
         exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
     }
 
@@ -314,13 +314,13 @@ class ExportCornerComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(true);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(true);
 
         exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampExportCornerSuccess(timestamp, timestamp.getMIEC().getV());
     }
 
@@ -361,7 +361,7 @@ class ExportCornerComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(false);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
 
@@ -371,7 +371,7 @@ class ExportCornerComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
@@ -413,7 +413,7 @@ class ExportCornerComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(false);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
 
@@ -423,7 +423,7 @@ class ExportCornerComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
@@ -466,7 +466,7 @@ class ExportCornerComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(false);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
 
@@ -477,7 +477,7 @@ class ExportCornerComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
@@ -520,7 +520,7 @@ class ExportCornerComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(false);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
 
@@ -531,7 +531,7 @@ class ExportCornerComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
@@ -578,7 +578,7 @@ class ExportCornerComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(false);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
 
@@ -599,7 +599,7 @@ class ExportCornerComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, true);
     }
@@ -646,7 +646,7 @@ class ExportCornerComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(false);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
         when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
         when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
 
@@ -667,7 +667,7 @@ class ExportCornerComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, false);
     }

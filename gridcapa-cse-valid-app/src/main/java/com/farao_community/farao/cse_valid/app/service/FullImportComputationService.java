@@ -98,7 +98,7 @@ public class FullImportComputationService {
 
                 RaoResponse raoResponse = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
 
-                if (cseValidRaoRunner.isSecure(raoResponse)) {
+                if (cseValidRaoRunner.isSecure(raoResponse, network)) {
                     runDichotomy(timestampWrapper, cseValidRequest, tcDocumentTypeWriter, jsonCracUrl, raoParametersURL, network, cracCreationContext);
                 } else {
                     BigDecimal italianImport = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());

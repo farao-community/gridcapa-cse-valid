@@ -13,12 +13,13 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TMonitoredElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TOutage;
+import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.Substation;
 import com.powsybl.iidm.network.Terminal;
 import com.powsybl.openrao.commons.Unit;
-import com.powsybl.openrao.data.cracapi.Contingency;
 import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.cracapi.Instant;
 import com.powsybl.openrao.data.cracapi.NetworkElement;
@@ -92,12 +93,22 @@ public final class LimitingElementHelper {
         TOutage outage = new TOutage();
         outage.setName(getTextType(outageMatchingContingencyId.getNativeId()));
 
-        contingency.getNetworkElements().forEach(contingencyNetworkElement -> {
-            TElement outageElement = getElement(network, contingencyNetworkElement);
+        contingency.getElements().forEach(contingencyElement -> {
+            TElement outageElement = getElement(network, contingencyElement);
             outage.getElement().add(outageElement);
         });
 
         return outage;
+    }
+
+    private static TElement getElement(Network network, ContingencyElement contingencyElement) {
+        Branch<?> branch = network.getBranch(contingencyElement.getId());
+
+        TElement element = new TElement();
+        element.setCode(getTextType(contingencyElement.getId()));
+        element.setAreafrom(getAreaFrom(branch));
+        element.setAreato(getAreaTo(branch));
+        return element;
     }
 
     private static TElement getElement(Network network, NetworkElement networkElement) {

@@ -10,6 +10,7 @@ import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.rao_runner.api.resource.RaoRequest;
 import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
+import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.raoresultapi.RaoResult;
 import org.slf4j.Logger;
@@ -49,9 +50,9 @@ public class CseValidRaoRunner {
         return raoResponse;
     }
 
-    public boolean isSecure(RaoResponse raoResponse) {
+    public boolean isSecure(RaoResponse raoResponse, Network network) {
         String raoResultUrl = raoResponse.getRaoResultFileUrl();
-        Crac crac = fileImporter.importCracFromJson(raoResponse.getCracFileUrl());
+        Crac crac = fileImporter.importCracFromJson(raoResponse.getCracFileUrl(), network);
         RaoResult raoResult = fileImporter.importRaoResult(raoResultUrl, crac);
 
         return raoResult.isSecure();

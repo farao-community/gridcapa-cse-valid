@@ -212,7 +212,7 @@ class FullImportComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(false);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
 
         try (MockedStatic<NetPositionHelper> netPositionHelperMockedStatic = Mockito.mockStatic(NetPositionHelper.class)) {
             netPositionHelperMockedStatic.when(() -> NetPositionHelper.computeItalianImport(network))
@@ -222,7 +222,7 @@ class FullImportComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampFullImportSuccess(timestamp, mibnii);
     }
 
@@ -259,7 +259,7 @@ class FullImportComputationServiceTest {
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(true);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(true);
 
         when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, false)).thenReturn(null);
 
@@ -271,7 +271,7 @@ class FullImportComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(tcDocumentTypeWriter, times(1)).fillDichotomyError(timestamp);
     }
 
@@ -317,11 +317,11 @@ class FullImportComputationServiceTest {
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(true);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(true);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
-        when(cseValidRaoRunner.isSecure(raoResponse)).thenReturn(true);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(true);
 
         when(dichotomyResult.hasValidStep()).thenReturn(true);
         when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
@@ -345,7 +345,7 @@ class FullImportComputationServiceTest {
 
         verify(computationService, times(1)).shiftNetwork(shiftValue, network, networkShifter);
         verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
-        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithFullImportDichotomyResponse(timestamp, mibnii, fullImportValue, limitingElement);
     }
 }
