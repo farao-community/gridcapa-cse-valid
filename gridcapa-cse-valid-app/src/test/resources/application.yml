@@ -1,24 +1,3 @@
-logback:
-  amqp:
-    exchange: cse-valid-idcc-task-manager-logs-exchange
-    routing-key: "#"
-spring:
-  banner:
-    location: classpath:banner.txt
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:gridcapa}
-    password: ${RABBITMQ_PASSWORD:gridcapa}
-    template:
-      reply-timeout: 6000000
-  cloud:
-    stream:
-      bindings:
-        task-status-update:
-          binder: rabbit
-          destination: task-status-updated
-
 cse-valid-runner:
   async-time-out: 600000 # 10min (10*60*1000)
   bindings:
@@ -40,8 +19,8 @@ cse-valid-runner:
     - file:/
 
 minio-adapter:
-  bucket: gridcapa
-  base-path: CSE/VALID
+  bucket: bucket-for-tests
+  base-path: base/path/for/tests
   access-key: gridcapa
-  secret-key: gridcapa
-  url: http://localhost:9000/
+  secret-key: gridcapa-secret
+  url: https://minio.test/
