@@ -8,7 +8,6 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
-import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
@@ -19,6 +18,7 @@ import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
 import com.farao_community.farao.cse_valid.app.utils.TimestampTestData;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,7 +31,6 @@ import java.util.Objects;
 
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_CONTRADICTORY_DATA;
 import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSING_DATA;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -102,15 +101,11 @@ class CseValidHandlerTest {
     @Test
     void nonExistingTtcAdjustmentFile() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
-        String resultFileUrl = "/output.xml";
 
         when(fileImporter.importTtcAdjustment(cseValidRequest.getTtcAdjustment().getUrl())).thenReturn(null);
-        when(fileExporter.saveTtcValidation(any(), eq(cseValidRequest.getTimestamp()), eq(cseValidRequest.getProcessType()))).thenReturn(resultFileUrl);
 
-        CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
-
-        assertEquals(cseValidRequest.getId(), cseValidResponse.getId());
-        assertEquals(resultFileUrl, cseValidResponse.getResultFileUrl());
+        cseValidHandler.handleCseValidRequest(cseValidRequest);
+        Mockito.verify(fileExporter, Mockito.times(1)).saveTtcValidation(any(), eq(cseValidRequest.getTimestamp()), eq(cseValidRequest.getProcessType()));
     }
 
     private void launchRequest(String ttcAdjustmentFilename) {
@@ -124,8 +119,7 @@ class CseValidHandlerTest {
                 new CseValidFileResource("glsk.xml", "file://glsk.xml"),
                 OffsetDateTime.of(2020, 8, 12, 22, 30, 0, 0, ZoneOffset.UTC));
         when(minioAdapter.fileExists(any())).thenReturn(true);
-        CseValidResponse cseValidResponse = cseValidHandler.handleCseValidRequest(cseValidRequest);
-        assertEquals("id", cseValidResponse.getId());
+        cseValidHandler.handleCseValidRequest(cseValidRequest);
     }
 
     private CseValidFileResource createFileResource(String filename) {
