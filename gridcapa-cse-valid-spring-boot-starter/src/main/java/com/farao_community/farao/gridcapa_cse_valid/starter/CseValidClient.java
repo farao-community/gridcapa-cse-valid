@@ -7,9 +7,7 @@
 package com.farao_community.farao.gridcapa_cse_valid.starter;
 
 import com.farao_community.farao.cse_valid.api.JsonApiConverter;
-import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
-import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -38,18 +36,13 @@ public class CseValidClient {
         this.jsonConverter = new JsonApiConverter();
     }
 
-    public CseValidResponse run(CseValidRequest cseValidRequest, int priority) {
+    public void run(CseValidRequest cseValidRequest, int priority) {
         LOGGER.info("Cse valid request sent: {}", cseValidRequest);
-        Message responseMessage = amqpTemplate.sendAndReceive(cseValidClientProperties.getAmqp().getQueueName(), buildMessage(cseValidRequest, priority));
-        if (responseMessage != null) {
-            return CseValidResponseConversionHelper.convertCseValidResponse(responseMessage, jsonConverter);
-        } else {
-            throw new CseValidInternalException("Cse valid Runner server did not respond");
-        }
+        amqpTemplate.send(cseValidClientProperties.getAmqp().getQueueName(), buildMessage(cseValidRequest, priority));
     }
 
-    public CseValidResponse run(CseValidRequest cseValidRequest) {
-        return run(cseValidRequest, DEFAULT_PRIORITY);
+    public void run(CseValidRequest cseValidRequest) {
+        run(cseValidRequest, DEFAULT_PRIORITY);
     }
 
     public Message buildMessage(CseValidRequest cseValidRequest, int priority) {
