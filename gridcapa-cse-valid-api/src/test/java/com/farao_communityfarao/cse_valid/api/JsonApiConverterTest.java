@@ -10,6 +10,7 @@ import com.farao_community.farao.cse_valid.api.JsonApiConverter;
 import com.farao_community.farao.cse_valid.api.exception.AbstractCseValidException;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -50,4 +51,11 @@ class JsonApiConverterTest {
         assertEquals(expectedMessage, new String(jsonApiConverter.toJsonMessage(exception)));
     }
 
+    @Test
+    void checkCseValidResponseJsonConversion() throws IOException {
+        JsonApiConverter jsonApiConverter = new JsonApiConverter();
+        byte[] responseBytes = getClass().getResourceAsStream("/cseValidResponse.json").readAllBytes();
+        CseValidResponse response = jsonApiConverter.fromJsonMessage(responseBytes, CseValidResponse.class);
+        assertEquals("test", response.getId());
+    }
 }

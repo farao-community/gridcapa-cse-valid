@@ -9,6 +9,7 @@ package com.farao_community.farao.cse_valid.api;
 import com.farao_community.farao.cse_valid.api.exception.AbstractCseValidException;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -56,7 +57,7 @@ public class JsonApiConverter {
     }
 
     private ResourceConverter createConverter() {
-        ResourceConverter converter = new ResourceConverter(objectMapper, CseValidRequest.class);
+        ResourceConverter converter = new ResourceConverter(objectMapper, CseValidRequest.class, CseValidResponse.class);
         converter.disableSerializationOption(SerializationFeature.INCLUDE_META);
         return converter;
     }

@@ -9,6 +9,7 @@ package com.farao_community.farao.cse_valid.app;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInvalidDataException;
 import com.farao_community.farao.cse_valid.api.resource.CseValidFileResource;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import com.farao_community.farao.cse_valid.app.configuration.EicCodesConfiguration;
 import com.farao_community.farao.cse_valid.app.mapper.EicCodesMapper;
 import com.farao_community.farao.cse_valid.app.service.ExportCornerComputationService;
@@ -18,6 +19,7 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -55,7 +57,8 @@ public class CseValidHandler {
         this.exportCornerComputationService = exportCornerComputationService;
     }
 
-    public void handleCseValidRequest(CseValidRequest cseValidRequest) {
+    public CseValidResponse handleCseValidRequest(CseValidRequest cseValidRequest) {
+        Instant computationStartInstant = Instant.now();
         TcDocumentType tcDocumentType = importTtcAdjustmentFile(cseValidRequest.getTtcAdjustment());
         TcDocumentTypeWriter tcDocumentTypeWriter = new TcDocumentTypeWriter(cseValidRequest);
         if (tcDocumentType != null) {
@@ -72,7 +75,9 @@ public class CseValidHandler {
         } else {
             tcDocumentTypeWriter.fillNoTtcAdjustmentError(cseValidRequest);
         }
-        fileExporter.saveTtcValidation(tcDocumentTypeWriter, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+        String ttcValidationUrl = fileExporter.saveTtcValidation(tcDocumentTypeWriter, cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
+        Instant computationEndInstant = Instant.now();
+        return new CseValidResponse(cseValidRequest.getId(), ttcValidationUrl, computationStartInstant, computationEndInstant);
     }
 
     private TcDocumentType importTtcAdjustmentFile(CseValidFileResource ttcAdjustmentFile) {

@@ -4,6 +4,9 @@ cse-valid-runner:
     request:
       destination: cse-valid-requests
       routing-key: "#"
+    response:
+      destination: cse-valid-response
+      expiration: 600000
   eic-codes:
     austria: 10YAT-APG------L
     france: 10YFR-RTE------C
