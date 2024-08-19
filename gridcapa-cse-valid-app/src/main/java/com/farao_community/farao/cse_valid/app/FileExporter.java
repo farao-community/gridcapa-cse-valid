@@ -89,11 +89,12 @@ public class FileExporter {
         return minioAdapter.generatePreSignedUrl(raoParametersDestinationPath);
     }
 
-    public void saveTtcValidation(TcDocumentTypeWriter tcDocumentTypeWriter, OffsetDateTime offsetDateTime, ProcessType processType) {
+    public String saveTtcValidation(TcDocumentTypeWriter tcDocumentTypeWriter, OffsetDateTime offsetDateTime, ProcessType processType) {
         String ttcValidationDestinationPath = makeDestinationMinioPath(offsetDateTime, processType, FileKind.OUTPUTS);
         String ttcValidationFileName = getTTCValidationFilename(processType, offsetDateTime, ttcValidationDestinationPath);
         InputStream ttcValidationIs = tcDocumentTypeWriter.buildTcDocumentType();
         minioAdapter.uploadOutputForTimestamp(ttcValidationFileName, ttcValidationIs, adaptTargetProcessName(processType), "TTC-VALIDATION", offsetDateTime);
+        return minioAdapter.generatePreSignedUrl(ttcValidationFileName);
     }
 
     public String makeDestinationMinioPath(OffsetDateTime offsetDateTime, ProcessType processType, FileKind filekind) {

@@ -10,6 +10,7 @@ import com.farao_community.farao.cse_valid.app.CseValidListener;
 import org.springframework.amqp.core.AsyncAmqpTemplate;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
@@ -29,6 +30,10 @@ import java.util.Optional;
 @Configuration
 public class AmqpMessagesConfiguration {
 
+    @Value("${cse-valid-runner.bindings.response.destination}")
+    private String responseDestination;
+    @Value("${cse-valid-runner.bindings.response.expiration}")
+    private String responseExpiration;
     @Value("${cse-valid-runner.bindings.request.destination}")
     private String requestDestination;
     @Value("${cse-valid-runner.bindings.request.routing-key}")
@@ -69,4 +74,12 @@ public class AmqpMessagesConfiguration {
         return simpleMessageListenerContainer;
     }
 
+    @Bean
+    public FanoutExchange cseValidResponseExchange() {
+        return new FanoutExchange(responseDestination);
+    }
+
+    public String cseValidResponseExpiration() {
+        return responseExpiration;
+    }
 }

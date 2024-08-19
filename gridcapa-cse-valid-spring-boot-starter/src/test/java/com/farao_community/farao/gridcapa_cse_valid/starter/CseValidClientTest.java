@@ -8,12 +8,15 @@ package com.farao_community.farao.gridcapa_cse_valid.starter;
 
 import com.farao_community.farao.cse_valid.api.JsonApiConverter;
 import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
+import com.farao_community.farao.cse_valid.api.resource.CseValidResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
 
 import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -30,7 +33,9 @@ class CseValidClientTest {
 
         Mockito.when(responseMessage.getBody()).thenReturn(getClass().getResourceAsStream("/cseValidResponse.json").readAllBytes());
         Mockito.when(amqpTemplate.sendAndReceive(Mockito.same("my-queue"), Mockito.any())).thenReturn(responseMessage);
-        client.run(request);
+        CseValidResponse response = client.run(request);
+
+        assertEquals("test", response.getId());
     }
 
     private CseValidClientProperties buildProperties() {
