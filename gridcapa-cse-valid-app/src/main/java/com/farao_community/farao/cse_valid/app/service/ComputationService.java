@@ -47,14 +47,14 @@ public class ComputationService {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
         String requestId = cseValidRequest.getId();
-
+        String runId = cseValidRequest.getCurrentRunId();
         String scaledNetworkDirPath = generateScaledNetworkDirPath(network, processTargetDateTime, processType);
         String scaledNetworkName = network.getNameOrId() + ".xiidm";
         String networkFilePath = scaledNetworkDirPath + scaledNetworkName;
         String networkFiledUrl = fileExporter.saveNetworkInArtifact(network, networkFilePath, "", processTargetDateTime, processType);
         String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
 
-        return cseValidRaoRunner.runRao(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination);
+        return cseValidRaoRunner.runRao(requestId, runId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination);
     }
 
     private String generateScaledNetworkDirPath(Network network, OffsetDateTime processTargetDateTime, ProcessType processType) {

@@ -97,6 +97,7 @@ class ComputationServiceTest {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
         String requestId = cseValidRequest.getId();
+        String runId = cseValidRequest.getCurrentRunId();
 
         String jsonCracUrl = "/CSE/VALID/crac.utc";
         String raoParametersURL = "/CSE/VALID/raoParameter.utc";
@@ -119,7 +120,7 @@ class ComputationServiceTest {
         when(network.getVariantManager()).thenReturn(variantManager);
         when(variantManager.getWorkingVariantId()).thenReturn(variantName);
 
-        when(cseValidRaoRunner.runRao(requestId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination)).thenReturn(raoResponse);
+        when(cseValidRaoRunner.runRao(requestId, runId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination)).thenReturn(raoResponse);
 
         RaoResponse response = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
 

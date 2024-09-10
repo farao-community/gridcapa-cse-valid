@@ -55,12 +55,12 @@ class CseValidRaoRunnerTest {
     void runRao() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String requestId = cseValidRequest.getId();
-
+        String runId = cseValidRequest.getCurrentRunId();
         RaoResponse raoResponse = mock(RaoResponse.class);
 
         when(raoRunnerClient.runRao(any())).thenReturn(raoResponse);
 
-        RaoResponse result = cseValidRaoRunner.runRao(requestId, NETWORK_FILE_URL, JSON_CRAC_URL, RAO_PARAMETER_URL, RESULTS_DESTINATION);
+        RaoResponse result = cseValidRaoRunner.runRao(requestId, runId, NETWORK_FILE_URL, JSON_CRAC_URL, RAO_PARAMETER_URL, RESULTS_DESTINATION);
 
         assertEquals(raoResponse, result);
 

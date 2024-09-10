@@ -34,9 +34,10 @@ public class CseValidRaoRunner {
         this.raoRunnerClient = raoRunnerClient;
     }
 
-    public RaoResponse runRao(String requestId, String networkFiledUrl, String jsonCracUrl, String raoParametersURL, String resultsDestination) {
+    public RaoResponse runRao(String requestId, String runId, String networkFiledUrl, String jsonCracUrl, String raoParametersURL, String resultsDestination) {
         RaoRequest raoRequest = new RaoRequest.RaoRequestBuilder()
                 .withId(requestId)
+                .withRunId(runId)
                 .withNetworkFileUrl(networkFiledUrl)
                 .withCracFileUrl(jsonCracUrl)
                 .withRaoParametersFileUrl(raoParametersURL)
