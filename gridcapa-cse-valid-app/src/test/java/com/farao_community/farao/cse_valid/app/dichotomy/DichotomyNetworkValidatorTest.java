@@ -30,9 +30,9 @@ class DichotomyNetworkValidatorTest {
         DichotomyNetworkValidator dichotomyNetworkValidator = new DichotomyNetworkValidator(cseValidRequest, cracUrl, raoPramasUrl, raoRunnerClient, fileImporter, fileExporter);
         RaoRequest raoRequest = ReflectionTestUtils.invokeMethod(dichotomyNetworkValidator, "buildRaoRequest", networkPresignedUrl, scaledNetworkDirPath);
         assertNotNull(raoRequest);
-        assertEquals(cseValidRequest.getId() , raoRequest.getId());
-        assertEquals(cseValidRequest.getCurrentRunId() , raoRequest.getRunId());
-        assertEquals(cracUrl , raoRequest.getCracFileUrl());
-        assertEquals(raoPramasUrl , raoRequest.getRaoParametersFileUrl());
+        assertEquals(cseValidRequest.getId(), raoRequest.getId());
+        assertEquals(cseValidRequest.getCurrentRunId(), raoRequest.getRunId());
+        assertEquals(cracUrl, raoRequest.getCracFileUrl());
+        assertEquals(raoPramasUrl, raoRequest.getRaoParametersFileUrl());
     }
 }
