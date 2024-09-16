@@ -101,7 +101,7 @@ public class ExportCornerComputationService {
                 String cracUrl = timestampWrapper.isFranceImportingFromItaly()
                         ? cseValidRequest.getExportCrac().getUrl()
                         : cseValidRequest.getImportCrac().getUrl();
-                CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, cseValidRequest.getTimestamp(), network);
+                CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, network);
                 String jsonCracUrl = fileExporter.saveCracInJsonFormat(cracCreationContext.getCrac(), cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
 
                 RaoResponse raoResponse = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);

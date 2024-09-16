@@ -13,14 +13,13 @@ import com.powsybl.iidm.network.Line;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
-import com.powsybl.openrao.data.cracioapi.CracImporters;
 import com.powsybl.openrao.data.raoresultapi.RaoResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.time.OffsetDateTime;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -76,10 +75,10 @@ class FileImporterTest {
     }
 
     @Test
-    void testImportRaoResult() {
+    void testImportRaoResult() throws IOException {
         InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.1.json");
         assertNotNull(cracInputStream);
-        Crac crac = CracImporters.importCrac("crac.json", cracInputStream, mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id"));
+        Crac crac = Crac.read("crac.json", cracInputStream, mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id"));
         RaoResult raoResult = fileImporter.importRaoResult(Objects.requireNonNull(getClass().getResource("/rao-result-v1.1.json")).toString(), crac);
         assertNotNull(raoResult);
     }
@@ -93,10 +92,9 @@ class FileImporterTest {
     @Test
     void importCracCreationContext() {
         String cracUrl = Objects.requireNonNull(getClass().getResource("/20211125_0030_2D4_CRAC_FR1.xml")).toString();
-        OffsetDateTime targetProcessDateTime = OffsetDateTime.now();
         Network network = fileImporter.importNetwork("cgm.uct", Objects.requireNonNull(getClass().getResource("/20211125_1930_2D4_CO_Final_CSE1.uct")).toString());
 
-        CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, targetProcessDateTime, network);
+        CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, network);
 
         assertNotNull(cracCreationContext);
     }

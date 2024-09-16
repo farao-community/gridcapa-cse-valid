@@ -266,7 +266,7 @@ class ExportCornerComputationServiceTest {
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
 
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
@@ -308,7 +308,7 @@ class ExportCornerComputationServiceTest {
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
         when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
         when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
 
@@ -352,7 +352,7 @@ class ExportCornerComputationServiceTest {
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
         when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
         when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
 
@@ -404,7 +404,7 @@ class ExportCornerComputationServiceTest {
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
         when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
         when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
 
@@ -457,7 +457,7 @@ class ExportCornerComputationServiceTest {
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
         when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
         when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
 
@@ -511,7 +511,7 @@ class ExportCornerComputationServiceTest {
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
         when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
         when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
 
@@ -569,7 +569,7 @@ class ExportCornerComputationServiceTest {
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
         when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
         when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
 
@@ -637,7 +637,7 @@ class ExportCornerComputationServiceTest {
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
-        when(fileImporter.importCracCreationContext(cracUrl, processTargetDateTime, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
         when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
         when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
 

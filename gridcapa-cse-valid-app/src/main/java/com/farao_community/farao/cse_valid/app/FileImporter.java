@@ -14,13 +14,9 @@ import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.glsk.api.io.GlskDocumentImporters;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.cracapi.Crac;
-import com.powsybl.openrao.data.craccreation.creator.api.CracCreators;
-import com.powsybl.openrao.data.craccreation.creator.cse.CseCrac;
 import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
-import com.powsybl.openrao.data.craccreation.creator.cse.CseCracImporter;
-import com.powsybl.openrao.data.cracioapi.CracImporters;
 import com.powsybl.openrao.data.raoresultapi.RaoResult;
-import com.powsybl.openrao.data.raoresultjson.RaoResultImporter;
+import com.powsybl.openrao.data.raoresultjson.RaoResultJsonImporter;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBIntrospector;
 import jakarta.xml.bind.Unmarshaller;
@@ -33,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.OffsetDateTime;
 
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
@@ -91,16 +86,15 @@ public class FileImporter {
 
     public RaoResult importRaoResult(String raoResultUrl, Crac crac) {
         try (InputStream is = openUrlStream(raoResultUrl)) {
-            return new RaoResultImporter().importRaoResult(is, crac);
+            return new RaoResultJsonImporter().importData(is, crac);
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Error importing RAO result at %s", raoResultUrl), e);
         }
     }
 
-    public CseCracCreationContext importCracCreationContext(String cracUrl, OffsetDateTime targetProcessDateTime, Network network) {
+    public CseCracCreationContext importCracCreationContext(String cracUrl, Network network) {
         try (InputStream is = openUrlStream(cracUrl)) {
-            CseCrac nativeCseCrac = new CseCracImporter().importNativeCrac(is);
-            return (CseCracCreationContext) CracCreators.createCrac(nativeCseCrac, network, targetProcessDateTime);
+            return (CseCracCreationContext) Crac.readWithContext(getFilenameFromUrl(cracUrl), is, network);
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Error importing native CRAC at %s", cracUrl), e);
         }
@@ -108,7 +102,7 @@ public class FileImporter {
 
     public Crac importCracFromJson(String cracUrl, Network network) {
         try (InputStream is = openUrlStream(cracUrl)) {
-            return CracImporters.importCrac(getFilenameFromUrl(cracUrl), is, network);
+            return Crac.read(getFilenameFromUrl(cracUrl), is, network);
         } catch (IOException e) {
             throw new CseValidInvalidDataException(String.format("Error importing CRAC from JSON at %s", cracUrl), e);
         }
