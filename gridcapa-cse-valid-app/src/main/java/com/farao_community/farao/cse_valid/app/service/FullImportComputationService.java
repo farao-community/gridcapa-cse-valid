@@ -90,7 +90,7 @@ public class FullImportComputationService {
                 computationService.shiftNetwork(shiftValue, network, networkShifter);
 
                 String cracUrl = cseValidRequest.getImportCrac().getUrl();
-                CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, cseValidRequest.getTimestamp(), network);
+                CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, network);
                 String jsonCracUrl = fileExporter.saveCracInJsonFormat(cracCreationContext.getCrac(), cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
 
                 OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();

@@ -5,17 +5,13 @@
 	<DocumentVersion v="1"/>
 	<DocumentType v="B15"/>
 	<ProcessType v="A48"/>
-	<SenderIdentification codingScheme="A01" v="10XFR-RTE------Q"/>
+	<SenderIdentification codingScheme="A01" v="sender"/>
 	<SenderRole v="A04"/>
-	<ReceiverIdentification codingScheme="A01" v="22XCORESO------S"/>
+	<ReceiverIdentification codingScheme="A01" v="receiver"/>
 	<ReceiverRole v="A36"/>
 	<CreationDateTime v="2021-11-23T15:51:33Z"/>
 	<TimeInterval v="2021-11-24T23:00Z/2021-11-25T00:00Z"/>
 	<Domain codingScheme="A01" v="10YDOM-1001A061T"/>
 	<CRACSeries>
-		<Outages/>
-		<RemedialActions/>
-		<CriticalBranches/>
-		<CostlyRemedialActions/>
 	</CRACSeries>
 </CRACDocument>
