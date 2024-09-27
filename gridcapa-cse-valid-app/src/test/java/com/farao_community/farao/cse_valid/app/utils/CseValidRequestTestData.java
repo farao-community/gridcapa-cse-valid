@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -39,32 +39,35 @@ public final class CseValidRequestTestData {
 
     public static CseValidRequest getCseValidRequestMissingAllFiles(ProcessType processType) {
         String id = UUID.randomUUID().toString();
+        String runId = UUID.randomUUID().toString();
         OffsetDateTime timestamp = OffsetDateTime.parse("2022-12-13T14:30Z");
-        return new CseValidRequest(id, processType, timestamp, null, null, null, null, null, timestamp);
+        return new CseValidRequest(id, runId, processType, timestamp, null, null, null, null, null, timestamp);
     }
 
     /* --------------- FULL IMPORT --------------- */
 
     public static CseValidRequest getImportCseValidRequest(ProcessType processType) {
         String id = UUID.randomUUID().toString();
+        String runId = UUID.randomUUID().toString();
         OffsetDateTime timestamp = OffsetDateTime.parse("2022-12-13T14:30Z");
         CseValidFileResource ttcAdjustment = new CseValidFileResource(TTC_ADJUSTMENT_FILE_NAME, TTC_ADJUSTMENT_FILE_URL);
         CseValidFileResource importCrac = new CseValidFileResource(IMPORT_CRAC_FILE_NAME, IMPORT_CRAC_FILE_URL);
         CseValidFileResource cgm = new CseValidFileResource(CGM_FILE_NAME, CGM_FILE_URL);
         CseValidFileResource glsk = new CseValidFileResource(GLSK_FILE_NAME, GLSK_FILE_URL);
-        return new CseValidRequest(id, processType, timestamp, ttcAdjustment, importCrac, null, cgm, glsk, timestamp);
+        return new CseValidRequest(id, runId, processType, timestamp, ttcAdjustment, importCrac, null, cgm, glsk, timestamp);
     }
 
     /* --------------- EXPORT CORNER --------------- */
 
     public static CseValidRequest getExportCseValidRequest(ProcessType processType) {
         String id = UUID.randomUUID().toString();
+        String runId = UUID.randomUUID().toString();
         OffsetDateTime timestamp = OffsetDateTime.parse("2022-12-13T14:30Z");
         CseValidFileResource ttcAdjustment = new CseValidFileResource(TTC_ADJUSTMENT_FILE_NAME, TTC_ADJUSTMENT_FILE_URL);
         CseValidFileResource importCrac = new CseValidFileResource(IMPORT_CRAC_FILE_NAME, IMPORT_CRAC_FILE_URL);
         CseValidFileResource exportCrac = new CseValidFileResource(EXPORT_CRAC_FILE_NAME, EXPORT_CRAC_FILE_URL);
         CseValidFileResource cgm = new CseValidFileResource(CGM_FILE_NAME, CGM_FILE_URL);
         CseValidFileResource glsk = new CseValidFileResource(GLSK_FILE_NAME, GLSK_FILE_URL);
-        return new CseValidRequest(id, processType, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, timestamp);
+        return new CseValidRequest(id, runId, processType, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, timestamp);
     }
 }

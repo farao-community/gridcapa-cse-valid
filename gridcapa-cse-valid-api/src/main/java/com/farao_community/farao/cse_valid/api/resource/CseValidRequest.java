@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -26,6 +26,7 @@ import java.time.OffsetDateTime;
 public class CseValidRequest {
     @Id
     private final String id;
+    private final String currentRunId;
     private final ProcessType processType;
 
     /**
@@ -52,6 +53,7 @@ public class CseValidRequest {
 
     @JsonCreator
     public CseValidRequest(@JsonProperty("id") String id,
+                           @JsonProperty("currentRunId") String currentRunId,
                            @JsonProperty("processType") ProcessType processType,
                            @JsonProperty("timestamp") OffsetDateTime timestamp,
                            @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
@@ -61,6 +63,7 @@ public class CseValidRequest {
                            @JsonProperty("glsk") CseValidFileResource glsk,
                            @JsonProperty("time") OffsetDateTime time) {
         this.id = id;
+        this.currentRunId = currentRunId;
         this.processType = processType;
         this.timestamp = timestamp;
         this.ttcAdjustment = ttcAdjustment;
@@ -72,26 +75,29 @@ public class CseValidRequest {
     }
 
     public static CseValidRequest buildD2ccValidRequest(@JsonProperty("id") String id,
+                                                        @JsonProperty("currentRunId") String currentRunId,
                                                         @JsonProperty("timestamp") OffsetDateTime timestamp,
                                                         @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
                                                         @JsonProperty("importCrac") CseValidFileResource importCrac,
                                                         @JsonProperty("exportCrac") CseValidFileResource exportCrac,
                                                         @JsonProperty("cgm") CseValidFileResource cgm,
                                                         @JsonProperty("glsk") CseValidFileResource glsk) {
-        return new CseValidRequest(id, ProcessType.D2CC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, timestamp);
+        return new CseValidRequest(id, currentRunId, ProcessType.D2CC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, timestamp);
     }
 
     public static CseValidRequest buildIdccValidRequest(@JsonProperty("id") String id,
+                                                        @JsonProperty("currentRunId") String currentRunId,
                                                         @JsonProperty("timestamp") OffsetDateTime timestamp,
                                                         @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
                                                         @JsonProperty("importCrac") CseValidFileResource importCrac,
                                                         @JsonProperty("exportCrac") CseValidFileResource exportCrac,
                                                         @JsonProperty("cgm") CseValidFileResource cgm,
                                                         @JsonProperty("glsk") CseValidFileResource glsk) {
-        return new CseValidRequest(id, ProcessType.IDCC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, timestamp);
+        return new CseValidRequest(id, currentRunId, ProcessType.IDCC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, timestamp);
     }
 
     public static CseValidRequest buildD2ccValidRequest(@JsonProperty("id") String id,
+                                                        @JsonProperty("currentRunId") String currentRunId,
                                                         @JsonProperty("timestamp") OffsetDateTime timestamp,
                                                         @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
                                                         @JsonProperty("importCrac") CseValidFileResource importCrac,
@@ -99,10 +105,11 @@ public class CseValidRequest {
                                                         @JsonProperty("cgm") CseValidFileResource cgm,
                                                         @JsonProperty("glsk") CseValidFileResource glsk,
                                                         @JsonProperty("time") OffsetDateTime time) {
-        return new CseValidRequest(id, ProcessType.D2CC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
+        return new CseValidRequest(id, currentRunId, ProcessType.D2CC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
     }
 
     public static CseValidRequest buildIdccValidRequest(@JsonProperty("id") String id,
+                                                        @JsonProperty("currentRunId") String currentRunId,
                                                         @JsonProperty("timestamp") OffsetDateTime timestamp,
                                                         @JsonProperty("ttcAdjustment") CseValidFileResource ttcAdjustment,
                                                         @JsonProperty("importCrac") CseValidFileResource importCrac,
@@ -110,11 +117,15 @@ public class CseValidRequest {
                                                         @JsonProperty("cgm") CseValidFileResource cgm,
                                                         @JsonProperty("glsk") CseValidFileResource glsk,
                                                         @JsonProperty("time") OffsetDateTime time) {
-        return new CseValidRequest(id, ProcessType.IDCC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
+        return new CseValidRequest(id, currentRunId, ProcessType.IDCC, timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
     }
 
     public String getId() {
         return id;
+    }
+
+    public String getCurrentRunId() {
+        return currentRunId;
     }
 
     public ProcessType getProcessType() {

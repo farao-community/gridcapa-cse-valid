@@ -92,9 +92,7 @@ public class DichotomyRunner {
 
     NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
         return new DichotomyNetworkValidator(
-                cseValidRequest.getProcessType(),
-                cseValidRequest.getId(),
-                cseValidRequest.getTimestamp(),
+                cseValidRequest,
                 jsonCracUrl,
                 raoParametersURL,
                 raoRunnerClient,

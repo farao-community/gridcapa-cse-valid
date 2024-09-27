@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  *  This Source Code Form is subject to the terms of the Mozilla Public
  *  License, v. 2.0. If a copy of the MPL was not distributed with this
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -43,7 +43,7 @@ class CseValidRequestTest {
 
     @Test
     void checkManualCseValidD2ccRequest() {
-        CseValidRequest cseValidRequest = CseValidRequest.buildD2ccValidRequest("id", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk);
+        CseValidRequest cseValidRequest = CseValidRequest.buildD2ccValidRequest("id", "runId", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk);
         assertNotNull(cseValidRequest);
         assertEquals("id", cseValidRequest.getId());
         assertEquals(ProcessType.D2CC, cseValidRequest.getProcessType());
@@ -57,7 +57,7 @@ class CseValidRequestTest {
 
     @Test
     void checkManualCseValidIdccRequest() {
-        CseValidRequest cseValidRequest = CseValidRequest.buildIdccValidRequest("id", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk);
+        CseValidRequest cseValidRequest = CseValidRequest.buildIdccValidRequest("id", "runId", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk);
         assertNotNull(cseValidRequest);
         assertEquals("id", cseValidRequest.getId());
         assertEquals(ProcessType.IDCC, cseValidRequest.getProcessType());
@@ -71,7 +71,7 @@ class CseValidRequestTest {
 
     @Test
     void checkCseValidD2ccRequestWithDifferentTime() {
-        CseValidRequest cseValidRequest = CseValidRequest.buildD2ccValidRequest("id", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
+        CseValidRequest cseValidRequest = CseValidRequest.buildD2ccValidRequest("id", "runId", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
         assertNotNull(cseValidRequest);
         assertEquals("id", cseValidRequest.getId());
         assertEquals(ProcessType.D2CC, cseValidRequest.getProcessType());
@@ -86,7 +86,7 @@ class CseValidRequestTest {
 
     @Test
     void checkCseValidIdccRequestWithDifferentTime() {
-        CseValidRequest cseValidRequest = CseValidRequest.buildIdccValidRequest("id", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
+        CseValidRequest cseValidRequest = CseValidRequest.buildIdccValidRequest("id", "runId", timestamp, ttcAdjustment, importCrac, exportCrac, cgm, glsk, time);
         assertNotNull(cseValidRequest);
         assertEquals("id", cseValidRequest.getId());
         assertEquals(ProcessType.IDCC, cseValidRequest.getProcessType());

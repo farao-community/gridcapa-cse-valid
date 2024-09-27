@@ -6,6 +6,7 @@
  */
 package com.farao_community.farao.cse_valid.app.dichotomy;
 
+import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.FileExporter;
 import com.farao_community.farao.cse_valid.app.FileImporter;
@@ -32,6 +33,7 @@ public class DichotomyNetworkValidator implements NetworkValidator<RaoResponse> 
 
     private final ProcessType processType;
     private final String requestId;
+    private final String runId;
     private final OffsetDateTime processTargetDateTime;
     private final String jsonCracUrl;
     private final String raoParametersUrl;
@@ -40,17 +42,16 @@ public class DichotomyNetworkValidator implements NetworkValidator<RaoResponse> 
     private final FileExporter fileExporter;
     private int variantCounter = 0;
 
-    public DichotomyNetworkValidator(ProcessType processType,
-                                     String requestId,
-                                     OffsetDateTime processTargetDateTime,
+    public DichotomyNetworkValidator(CseValidRequest cseValidRequest,
                                      String jsonCracUrl,
                                      String raoParametersUrl,
                                      RaoRunnerClient raoRunnerClient,
                                      FileImporter fileImporter,
                                      FileExporter fileExporter) {
-        this.processType = processType;
-        this.requestId = requestId;
-        this.processTargetDateTime = processTargetDateTime;
+        this.processType = cseValidRequest.getProcessType();
+        this.requestId = cseValidRequest.getId();
+        this.runId = cseValidRequest.getCurrentRunId();
+        this.processTargetDateTime = cseValidRequest.getTimestamp();
         this.jsonCracUrl = jsonCracUrl;
         this.raoParametersUrl = raoParametersUrl;
         this.raoRunnerClient = raoRunnerClient;
@@ -78,6 +79,7 @@ public class DichotomyNetworkValidator implements NetworkValidator<RaoResponse> 
     private RaoRequest buildRaoRequest(String networkPresignedUrl, String scaledNetworkDirPath) {
         return new RaoRequest.RaoRequestBuilder()
                 .withId(requestId)
+                .withRunId(runId)
                 .withNetworkFileUrl(networkPresignedUrl)
                 .withCracFileUrl(jsonCracUrl)
                 .withRaoParametersFileUrl(raoParametersUrl)
