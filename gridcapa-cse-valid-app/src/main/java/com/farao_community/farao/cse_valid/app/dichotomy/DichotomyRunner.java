@@ -18,7 +18,7 @@ import com.farao_community.farao.dichotomy.api.NetworkValidator;
 import com.farao_community.farao.dichotomy.api.index.Index;
 import com.farao_community.farao.dichotomy.api.index.RangeDivisionIndexStrategy;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
 import com.powsybl.iidm.network.Network;
 import org.slf4j.Logger;
@@ -53,7 +53,7 @@ public class DichotomyRunner {
         this.cseValidNetworkShifterProvider = cseValidNetworkShifterProvider;
     }
 
-    public DichotomyResult<RaoResponse> runDichotomy(TTimestampWrapper timestampWrapper,
+    public DichotomyResult<RaoSuccessResponse> runDichotomy(TTimestampWrapper timestampWrapper,
                                                      CseValidRequest cseValidRequest,
                                                      String jsonCracUrl,
                                                      String raoParametersURL,
@@ -77,12 +77,12 @@ public class DichotomyRunner {
             networkShifter = cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, cseValidRequest.getGlsk().getUrl(), cseValidRequest.getProcessType());
         }
         businessLogger.info(DICHOTOMY_PARAMETERS_MSG, (int) minValue, (int) maxValue, (int) DEFAULT_DICHOTOMY_PRECISION);
-        NetworkValidator<RaoResponse> networkValidator = getNetworkValidator(cseValidRequest, jsonCracUrl, raoParametersURL);
-        DichotomyEngine<RaoResponse> engine = getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
+        NetworkValidator<RaoSuccessResponse> networkValidator = getNetworkValidator(cseValidRequest, jsonCracUrl, raoParametersURL);
+        DichotomyEngine<RaoSuccessResponse> engine = getDichotomyEngine(minValue, maxValue, networkShifter, networkValidator);
         return engine.run(network);
     }
 
-    DichotomyEngine<RaoResponse> getDichotomyEngine(double minValue, double maxValue, NetworkShifter networkShifter, NetworkValidator<RaoResponse> networkValidator) {
+    DichotomyEngine<RaoSuccessResponse> getDichotomyEngine(double minValue, double maxValue, NetworkShifter networkShifter, NetworkValidator<RaoSuccessResponse> networkValidator) {
         return new DichotomyEngine<>(
                 new Index<>(minValue, maxValue, DEFAULT_DICHOTOMY_PRECISION),
                 INDEX_STRATEGY_CONFIGURATION,
@@ -90,7 +90,7 @@ public class DichotomyRunner {
                 networkValidator);
     }
 
-    NetworkValidator<RaoResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
+    NetworkValidator<RaoSuccessResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
         return new DichotomyNetworkValidator(
                 cseValidRequest,
                 jsonCracUrl,

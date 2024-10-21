@@ -7,8 +7,9 @@
 package com.farao_community.farao.cse_valid.app.rao;
 
 import com.farao_community.farao.cse_valid.app.FileImporter;
+import com.farao_community.farao.rao_runner.api.resource.AbstractRaoResponse;
 import com.farao_community.farao.rao_runner.api.resource.RaoRequest;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.cracapi.Crac;
@@ -34,7 +35,7 @@ public class CseValidRaoRunner {
         this.raoRunnerClient = raoRunnerClient;
     }
 
-    public RaoResponse runRao(String requestId, String runId, String networkFiledUrl, String jsonCracUrl, String raoParametersURL, String resultsDestination) {
+    public AbstractRaoResponse runRao(String requestId, String runId, String networkFiledUrl, String jsonCracUrl, String raoParametersURL, String resultsDestination) {
         RaoRequest raoRequest = new RaoRequest.RaoRequestBuilder()
                 .withId(requestId)
                 .withRunId(runId)
@@ -45,15 +46,19 @@ public class CseValidRaoRunner {
                 .build();
 
         LOGGER.info("RAO request sent: {}", raoRequest);
-        RaoResponse raoResponse = raoRunnerClient.runRao(raoRequest);
+        AbstractRaoResponse raoResponse = raoRunnerClient.runRao(raoRequest);
         LOGGER.info("RAO response received: {}", raoResponse);
 
         return raoResponse;
     }
 
-    public boolean isSecure(RaoResponse raoResponse, Network network) {
-        String raoResultUrl = raoResponse.getRaoResultFileUrl();
-        Crac crac = fileImporter.importCracFromJson(raoResponse.getCracFileUrl(), network);
+    public boolean isSecure(AbstractRaoResponse raoResponse, Network network) {
+        if (raoResponse.isRaoFailed()) {
+            return false;
+        }
+        RaoSuccessResponse successResponse = (RaoSuccessResponse) raoResponse;
+        String raoResultUrl = successResponse.getRaoResultFileUrl();
+        Crac crac = fileImporter.importCracFromJson(successResponse.getCracFileUrl(), network);
         RaoResult raoResult = fileImporter.importRaoResult(raoResultUrl, crac);
 
         return raoResult.isSecure();

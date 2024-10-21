@@ -21,7 +21,7 @@ import com.farao_community.farao.cse_valid.app.utils.TimestampTestData;
 import com.farao_community.farao.dichotomy.api.DichotomyEngine;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.NetworkValidator;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
 import com.powsybl.iidm.network.Network;
 import org.junit.jupiter.api.Test;
@@ -88,8 +88,8 @@ class DichotomyRunnerTest {
 
         Network network = mock(Network.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
-        NetworkValidator<RaoResponse> networkValidator = mock(NetworkValidator.class);
-        DichotomyEngine<RaoResponse> engine = mock(DichotomyEngine.class);
+        NetworkValidator<RaoSuccessResponse> networkValidator = mock(NetworkValidator.class);
+        DichotomyEngine<RaoSuccessResponse> engine = mock(DichotomyEngine.class);
 
         when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
         doReturn(networkValidator).when(dichotomyRunner).getNetworkValidator(cseValidRequest, jsonCracUrl, raoParameterUrl);
@@ -123,8 +123,8 @@ class DichotomyRunnerTest {
         Network initialNetwork = mock(Network.class);
         Network network = mock(Network.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
-        NetworkValidator<RaoResponse> networkValidator = mock(NetworkValidator.class);
-        DichotomyEngine<RaoResponse> engine = mock(DichotomyEngine.class);
+        NetworkValidator<RaoSuccessResponse> networkValidator = mock(NetworkValidator.class);
+        DichotomyEngine<RaoSuccessResponse> engine = mock(DichotomyEngine.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(initialNetwork);
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
@@ -164,8 +164,8 @@ class DichotomyRunnerTest {
         Network initialNetwork = mock(Network.class);
         Network network = mock(Network.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
-        NetworkValidator<RaoResponse> networkValidator = mock(NetworkValidator.class);
-        DichotomyEngine<RaoResponse> engine = mock(DichotomyEngine.class);
+        NetworkValidator<RaoSuccessResponse> networkValidator = mock(NetworkValidator.class);
+        DichotomyEngine<RaoSuccessResponse> engine = mock(DichotomyEngine.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(initialNetwork);
         when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithItalyFrance(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);

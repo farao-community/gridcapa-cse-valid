@@ -28,7 +28,8 @@ import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidato
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.AbstractRaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
@@ -201,7 +202,7 @@ class FullImportComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        RaoResponse raoResponse = mock(RaoResponse.class);
+        AbstractRaoResponse raoResponse = mock(AbstractRaoResponse.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
@@ -248,7 +249,7 @@ class FullImportComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        RaoResponse raoResponse = mock(RaoResponse.class);
+        AbstractRaoResponse raoResponse = mock(AbstractRaoResponse.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
@@ -302,11 +303,11 @@ class FullImportComputationServiceTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
         Crac crac = mock(Crac.class);
         when(cracCreationContext.getCrac()).thenReturn(crac);
-        RaoResponse raoResponse = mock(RaoResponse.class);
+        RaoSuccessResponse raoResponse = mock(RaoSuccessResponse.class);
         NetworkShifter networkShifter = mock(NetworkShifter.class);
-        DichotomyResult<RaoResponse> dichotomyResult = mock(DichotomyResult.class);
+        DichotomyResult<RaoSuccessResponse> dichotomyResult = mock(DichotomyResult.class);
         RaoResult raoResult = mock(RaoResult.class);
-        DichotomyStepResult<RaoResponse> highestValidStep = mock(DichotomyStepResult.class);
+        DichotomyStepResult<RaoSuccessResponse> highestValidStep = mock(DichotomyStepResult.class);
 
         when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
         when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
