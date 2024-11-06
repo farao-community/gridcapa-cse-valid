@@ -13,8 +13,10 @@ import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.dichotomy.api.NetworkValidator;
 import com.farao_community.farao.dichotomy.api.exceptions.ValidationException;
 import com.farao_community.farao.dichotomy.api.results.DichotomyStepResult;
+import com.farao_community.farao.rao_runner.api.resource.AbstractRaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoFailureResponse;
 import com.farao_community.farao.rao_runner.api.resource.RaoRequest;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.raoresultapi.RaoResult;
@@ -28,7 +30,7 @@ import java.time.OffsetDateTime;
  * @author Ameni Walha {@literal <ameni.walha at rte-france.com>}
  * @author Oualid Aloui {@literal <oualid.aloui at rte-france.com>}
  */
-public class DichotomyNetworkValidator implements NetworkValidator<RaoResponse> {
+public class DichotomyNetworkValidator implements NetworkValidator<RaoSuccessResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DichotomyNetworkValidator.class);
 
     private final ProcessType processType;
@@ -60,15 +62,21 @@ public class DichotomyNetworkValidator implements NetworkValidator<RaoResponse> 
     }
 
     @Override
-    public DichotomyStepResult<RaoResponse> validateNetwork(Network network, DichotomyStepResult<RaoResponse> dichotomyStepResult) throws ValidationException {
+    public DichotomyStepResult<RaoSuccessResponse> validateNetwork(Network network, DichotomyStepResult<RaoSuccessResponse> dichotomyStepResult) throws ValidationException {
         String scaledNetworkDirPath = generateScaledNetworkDirPath(network);
         String scaledNetworkName = network.getNameOrId() + ".xiidm";
         String networkPresignedUrl = fileExporter.saveNetworkInArtifact(network, scaledNetworkDirPath + scaledNetworkName, "", processTargetDateTime, processType);
         RaoRequest raoRequest = buildRaoRequest(networkPresignedUrl, "CSE/VALID/" + scaledNetworkDirPath);
         try {
             LOGGER.info("RAO request sent: {}", raoRequest);
-            RaoResponse raoResponse = raoRunnerClient.runRao(raoRequest);
-            LOGGER.info("RAO response received: {}", raoResponse);
+            AbstractRaoResponse abstractRaoResponse = raoRunnerClient.runRao(raoRequest);
+            LOGGER.info("RAO response received: {}", abstractRaoResponse);
+            if (abstractRaoResponse.isRaoFailed()) {
+                RaoFailureResponse failureResponse = (RaoFailureResponse) abstractRaoResponse;
+                throw new ValidationException(failureResponse.getErrorMessage());
+            }
+
+            RaoSuccessResponse raoResponse = (RaoSuccessResponse) abstractRaoResponse;
             RaoResult raoResult = fileImporter.importRaoResult(raoResponse.getRaoResultFileUrl(), fileImporter.importCracFromJson(raoResponse.getCracFileUrl(), network));
             return DichotomyStepResult.fromNetworkValidationResult(raoResult, raoResponse);
         } catch (RuntimeException e) {

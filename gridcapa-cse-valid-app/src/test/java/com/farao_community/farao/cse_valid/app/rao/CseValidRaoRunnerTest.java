@@ -14,7 +14,9 @@ import com.farao_community.farao.cse_valid.api.resource.CseValidRequest;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.cse_valid.app.FileImporter;
 import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.AbstractRaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoFailureResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.farao_community.farao.rao_runner.starter.RaoRunnerClient;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.cracapi.Crac;
@@ -56,11 +58,11 @@ class CseValidRaoRunnerTest {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String requestId = cseValidRequest.getId();
         String runId = cseValidRequest.getCurrentRunId();
-        RaoResponse raoResponse = mock(RaoResponse.class);
+        AbstractRaoResponse raoResponse = mock(AbstractRaoResponse.class);
 
         when(raoRunnerClient.runRao(any())).thenReturn(raoResponse);
 
-        RaoResponse result = cseValidRaoRunner.runRao(requestId, runId, NETWORK_FILE_URL, JSON_CRAC_URL, RAO_PARAMETER_URL, RESULTS_DESTINATION);
+        AbstractRaoResponse result = cseValidRaoRunner.runRao(requestId, runId, NETWORK_FILE_URL, JSON_CRAC_URL, RAO_PARAMETER_URL, RESULTS_DESTINATION);
 
         assertEquals(raoResponse, result);
 
@@ -71,7 +73,7 @@ class CseValidRaoRunnerTest {
     @Test
     void isSecureShouldReturnTrue() {
         Crac crac = mock(Crac.class);
-        RaoResponse raoResponse = mock(RaoResponse.class);
+        RaoSuccessResponse raoResponse = mock(RaoSuccessResponse.class);
         RaoResult raoResult = mock(RaoResult.class);
         Network network = mock(Network.class);
 
@@ -90,7 +92,7 @@ class CseValidRaoRunnerTest {
     @Test
     void isSecureShouldReturnFalse() {
         Crac crac = mock(Crac.class);
-        RaoResponse raoResponse = mock(RaoResponse.class);
+        RaoSuccessResponse raoResponse = mock(RaoSuccessResponse.class);
         RaoResult raoResult = mock(RaoResult.class);
         Network network = mock(Network.class);
 
@@ -100,6 +102,16 @@ class CseValidRaoRunnerTest {
         when(raoResponse.getRaoResultFileUrl()).thenReturn(RAO_RESULT_FILE_URL);
         when(raoResponse.getCracFileUrl()).thenReturn(JSON_CRAC_URL);
         when(raoResult.isSecure()).thenReturn(false);
+
+        boolean isSecure = cseValidRaoRunner.isSecure(raoResponse, network);
+
+        assertFalse(isSecure);
+    }
+
+    @Test
+    void isSecureShouldReturnFalseInCaseOfRaoFailure() {
+        RaoFailureResponse raoResponse = new RaoFailureResponse.Builder().build();
+        Network network = mock(Network.class);
 
         boolean isSecure = cseValidRaoRunner.isSecure(raoResponse, network);
 

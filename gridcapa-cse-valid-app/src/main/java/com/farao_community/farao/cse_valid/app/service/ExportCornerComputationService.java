@@ -23,7 +23,8 @@ import com.farao_community.farao.cse_valid.app.ttc_adjustment.TTimestamp;
 import com.farao_community.farao.cse_valid.app.validator.CseValidRequestValidator;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.AbstractRaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
 import com.powsybl.openrao.data.raoresultapi.RaoResult;
@@ -104,7 +105,7 @@ public class ExportCornerComputationService {
                 CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, network);
                 String jsonCracUrl = fileExporter.saveCracInJsonFormat(cracCreationContext.getCrac(), cseValidRequest.getTimestamp(), cseValidRequest.getProcessType());
 
-                RaoResponse raoResponse = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
+                AbstractRaoResponse raoResponse = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
 
                 if (cseValidRaoRunner.isSecure(raoResponse, network)) {
                     tcDocumentTypeWriter.fillTimestampExportCornerSuccess(timestamp, timestampWrapper.getMiecValue());
@@ -148,7 +149,7 @@ public class ExportCornerComputationService {
     }
 
     private void runDichotomy(TTimestampWrapper timestampWrapper, CseValidRequest cseValidRequest, TcDocumentTypeWriter tcDocumentTypeWriter, String jsonCracUrl, String raoParametersURL, Network network, CseCracCreationContext cracCreationContext) {
-        DichotomyResult<RaoResponse> dichotomyResult = dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network, true);
+        DichotomyResult<RaoSuccessResponse> dichotomyResult = dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersURL, network, true);
         if (dichotomyResult != null && dichotomyResult.hasValidStep()) {
             String raoResultFileUrl = dichotomyResult.getHighestValidStep().getValidationData().getRaoResultFileUrl();
             RaoResult raoResult = fileImporter.importRaoResult(raoResultFileUrl, cracCreationContext.getCrac());
@@ -160,7 +161,7 @@ public class ExportCornerComputationService {
         }
     }
 
-    private double computeExportCornerValue(TTimestampWrapper timestampWrapper, DichotomyResult<RaoResponse> dichotomyResult) {
+    private double computeExportCornerValue(TTimestampWrapper timestampWrapper, DichotomyResult<RaoSuccessResponse> dichotomyResult) {
         String finalNetworkWithPraUrl = dichotomyResult.getHighestValidStep().getValidationData().getNetworkWithPraFileUrl();
         Network network = fileImporter.importNetwork(finalNetworkWithPraUrl);
         double value = NetPositionHelper.computeFranceImportFromItaly(network);

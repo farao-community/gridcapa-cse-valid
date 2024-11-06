@@ -9,7 +9,7 @@ package com.farao_community.farao.cse_valid.app.helper;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCriticalBranch;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Branch;
@@ -111,8 +111,8 @@ class LimitingElementHelperTest {
     }
 
     @NotNull
-    private static RaoResponse getValidationData() {
-        RaoResponse validationData = mock(RaoResponse.class);
+    private static RaoSuccessResponse getValidationData() {
+        RaoSuccessResponse validationData = mock(RaoSuccessResponse.class);
         when(validationData.getRaoResultFileUrl()).thenReturn("raoResultFileUrl");
         return validationData;
     }

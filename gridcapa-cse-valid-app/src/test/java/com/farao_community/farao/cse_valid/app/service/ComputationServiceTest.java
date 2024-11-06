@@ -15,7 +15,7 @@ import com.farao_community.farao.cse_valid.app.utils.CseValidRequestTestData;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
 import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.AbstractRaoResponse;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManager;
 import org.junit.jupiter.api.Test;
@@ -110,7 +110,7 @@ class ComputationServiceTest {
         String resultsDestination = "CSE/VALID/" + scaledNetworkDirPath;
 
         Network network = mock(Network.class);
-        RaoResponse raoResponse = mock(RaoResponse.class);
+        AbstractRaoResponse raoResponse = mock(AbstractRaoResponse.class);
         VariantManager variantManager = mock(VariantManager.class);
 
         when(fileExporter.makeDestinationMinioPath(processTargetDateTime, processType, FileExporter.FileKind.ARTIFACTS)).thenReturn(basePath);
@@ -122,7 +122,7 @@ class ComputationServiceTest {
 
         when(cseValidRaoRunner.runRao(requestId, runId, networkFiledUrl, jsonCracUrl, raoParametersURL, resultsDestination)).thenReturn(raoResponse);
 
-        RaoResponse response = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
+        AbstractRaoResponse response = computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersURL);
 
         assertEquals(raoResponse, response);
     }

@@ -14,7 +14,7 @@ import com.farao_community.farao.cse_valid.app.rao.CseValidRaoRunner;
 import com.farao_community.farao.dichotomy.api.NetworkShifter;
 import com.farao_community.farao.dichotomy.api.exceptions.GlskLimitationException;
 import com.farao_community.farao.dichotomy.api.exceptions.ShiftingException;
-import com.farao_community.farao.rao_runner.api.resource.RaoResponse;
+import com.farao_community.farao.rao_runner.api.resource.AbstractRaoResponse;
 import com.powsybl.iidm.network.Network;
 import org.springframework.stereotype.Service;
 
@@ -43,7 +43,7 @@ public class ComputationService {
         }
     }
 
-    protected RaoResponse runRao(CseValidRequest cseValidRequest, Network network, String jsonCracUrl, String raoParametersURL) {
+    protected AbstractRaoResponse runRao(CseValidRequest cseValidRequest, Network network, String jsonCracUrl, String raoParametersURL) {
         ProcessType processType = cseValidRequest.getProcessType();
         OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
         String requestId = cseValidRequest.getId();
