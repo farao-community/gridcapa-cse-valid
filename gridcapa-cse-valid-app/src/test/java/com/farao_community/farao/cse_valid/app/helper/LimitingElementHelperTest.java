@@ -23,8 +23,8 @@ import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.cracapi.NetworkElement;
 import com.powsybl.openrao.data.cracapi.State;
 import com.powsybl.openrao.data.cracapi.cnec.FlowCnec;
-import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
-import com.powsybl.openrao.data.craccreation.creator.cse.outage.CseOutageCreationContext;
+import com.powsybl.openrao.data.cracio.commons.api.ElementaryCreationContext;
+import com.powsybl.openrao.data.cracio.cse.CseCracCreationContext;
 import com.powsybl.openrao.data.raoresultapi.RaoResult;
 import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
@@ -148,7 +148,7 @@ class LimitingElementHelperTest {
         Contingency contingency = getContingency(contingencyElement);
         when(state.getContingency()).thenReturn(Optional.of(contingency));
 
-        CseOutageCreationContext cseOutageCreationContext = getCseOutageCreationContext();
+        ElementaryCreationContext cseOutageCreationContext = getCseOutageCreationContext();
         when(cracCreationContext.getOutageCreationContexts()).thenReturn(List.of(cseOutageCreationContext));
 
         Branch<?> branch = getBranch();
@@ -164,11 +164,11 @@ class LimitingElementHelperTest {
     }
 
     @NotNull
-    private static CseOutageCreationContext getCseOutageCreationContext() {
-        CseOutageCreationContext cseOutageCreationContext = mock(CseOutageCreationContext.class);
+    private static ElementaryCreationContext getCseOutageCreationContext() {
+        ElementaryCreationContext cseOutageCreationContext = mock(ElementaryCreationContext.class);
         when(cseOutageCreationContext.isImported()).thenReturn(true);
-        when(cseOutageCreationContext.getCreatedContingencyId()).thenReturn("contingencyId");
-        when(cseOutageCreationContext.getNativeId()).thenReturn("nativeId");
+        when(cseOutageCreationContext.getCreatedObjectId()).thenReturn("contingencyId");
+        when(cseOutageCreationContext.getNativeObjectId()).thenReturn("nativeId");
         return cseOutageCreationContext;
     }
 
