@@ -26,8 +26,8 @@ import com.farao_community.farao.dichotomy.api.results.DichotomyResult;
 import com.farao_community.farao.rao_runner.api.resource.AbstractRaoResponse;
 import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.openrao.data.cracio.cse.CseCracCreationContext;
-import com.powsybl.openrao.data.raoresultapi.RaoResult;
+import com.powsybl.openrao.data.crac.io.cse.CseCracCreationContext;
+import com.powsybl.openrao.data.raoresult.api.RaoResult;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 

@@ -13,9 +13,9 @@ import com.powsybl.iidm.network.Identifiable;
 import com.powsybl.iidm.network.IdentifiableType;
 import com.powsybl.iidm.network.Line;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.openrao.data.cracapi.Crac;
-import com.powsybl.openrao.data.cracio.cse.CseCracCreationContext;
-import com.powsybl.openrao.data.raoresultapi.RaoResult;
+import com.powsybl.openrao.data.crac.api.Crac;
+import com.powsybl.openrao.data.crac.io.cse.CseCracCreationContext;
+import com.powsybl.openrao.data.raoresult.api.RaoResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -78,7 +78,7 @@ class FileImporterTest {
 
     @Test
     void testImportRaoResult() throws IOException {
-        InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.1.json");
+        InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.5.json");
         assertNotNull(cracInputStream);
 
         final Network network = mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id");
@@ -98,7 +98,7 @@ class FileImporterTest {
         when(network.getIdentifiable("injection")).thenReturn(injectionIdentifiable);
         when(injectionIdentifiable.getType()).thenReturn(IdentifiableType.GENERATOR);
 
-        Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.1.json")).toString(), network);
+        Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.5.json")).toString(), network);
         assertNotNull(crac);
     }
 
