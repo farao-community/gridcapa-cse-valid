@@ -24,8 +24,8 @@ import com.powsybl.openrao.data.cracapi.Crac;
 import com.powsybl.openrao.data.cracapi.Instant;
 import com.powsybl.openrao.data.cracapi.NetworkElement;
 import com.powsybl.openrao.data.cracapi.cnec.FlowCnec;
-import com.powsybl.openrao.data.craccreation.creator.cse.CseCracCreationContext;
-import com.powsybl.openrao.data.craccreation.creator.cse.outage.CseOutageCreationContext;
+import com.powsybl.openrao.data.cracio.commons.api.ElementaryCreationContext;
+import com.powsybl.openrao.data.cracio.cse.CseCracCreationContext;
 import com.powsybl.openrao.data.raoresultapi.RaoResult;
 import xsd.etso_core_cmpts.TextType;
 
@@ -85,13 +85,13 @@ public final class LimitingElementHelper {
     }
 
     private static TOutage getOutage(Contingency contingency, CseCracCreationContext cracCreationContext, Network network) {
-        CseOutageCreationContext outageMatchingContingencyId = cracCreationContext.getOutageCreationContexts().stream()
+        ElementaryCreationContext outageMatchingContingencyId = cracCreationContext.getOutageCreationContexts().stream()
                 .filter(outageCreationContext -> outageCreationContext.isImported()
-                        && outageCreationContext.getCreatedContingencyId().equals(contingency.getId()))
+                        && outageCreationContext.getCreatedObjectId().equals(contingency.getId()))
                 .collect(toOne());
 
         TOutage outage = new TOutage();
-        outage.setName(getTextType(outageMatchingContingencyId.getNativeId()));
+        outage.setName(getTextType(outageMatchingContingencyId.getNativeObjectId()));
 
         contingency.getElements().forEach(contingencyElement -> {
             TElement outageElement = getElement(network, contingencyElement);
