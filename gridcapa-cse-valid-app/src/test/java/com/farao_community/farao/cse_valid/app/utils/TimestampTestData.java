@@ -174,11 +174,11 @@ public final class TimestampTestData {
         timestamp.setTime(timeValue);
 
         QuantityType mniiValue = new QuantityType();
-        mniiValue.setV(BigDecimal.TEN);
+        mniiValue.setV(BigDecimal.valueOf(100L));
         timestamp.setMNII(mniiValue);
 
         QuantityType mibniiValue = new QuantityType();
-        mibniiValue.setV(BigDecimal.valueOf(7.0));
+        mibniiValue.setV(BigDecimal.valueOf(57.0));
         timestamp.setMiBNII(mibniiValue);
 
         QuantityType antcfinalValue = new QuantityType();
@@ -380,7 +380,7 @@ public final class TimestampTestData {
         timestamp.setTime(timeValue);
 
         QuantityType miecValue = new QuantityType();
-        miecValue.setV(BigDecimal.TEN);
+        miecValue.setV(BigDecimal.valueOf(100L));
         timestamp.setMIEC(miecValue);
 
         QuantityType mibiecValue = new QuantityType();
@@ -412,7 +412,7 @@ public final class TimestampTestData {
         timestamp.setTime(timeValue);
 
         QuantityType miecValue = new QuantityType();
-        miecValue.setV(BigDecimal.TEN);
+        miecValue.setV(BigDecimal.valueOf(100L));
         timestamp.setMIEC(miecValue);
 
         QuantityType mibiecValue = new QuantityType();
