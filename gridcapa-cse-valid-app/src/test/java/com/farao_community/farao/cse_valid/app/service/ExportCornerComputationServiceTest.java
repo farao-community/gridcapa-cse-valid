@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import xsd.etso_core_cmpts.QuantityType;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -538,6 +539,77 @@ class ExportCornerComputationServiceTest {
     }
 
     @Test
+    void computeTimestampWithFranceInAreaShouldNotRunInitialShift() {
+        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
+        String cgmUrl = cseValidRequest.getCgm().getUrl();
+        String glskUrl = cseValidRequest.getGlsk().getUrl();
+        String cracUrl = cseValidRequest.getExportCrac().getUrl();
+        ProcessType processType = cseValidRequest.getProcessType();
+        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
+
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceInArea();
+        final QuantityType miec = new QuantityType();
+        miec.setV(BigDecimal.TEN);
+        timestamp.setMIEC(miec);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        TLimitingElement limitingElement = new TLimitingElement();
+
+        String jsonCracUrl = "/CSE/VALID/crac.utc";
+        String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
+        String networkFileUrl = "CSE/Valid/network.utc";
+        String raoResultFileUrl = "CSE/VALID/raoResult.utc";
+        double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
+        double exportCornerValue = 10.0;
+
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        Network network = mock(Network.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
+        Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
+        RaoSuccessResponse raoResponse = mock(RaoSuccessResponse.class);
+        DichotomyResult<RaoSuccessResponse> dichotomyResult = mock(DichotomyResult.class);
+        RaoResult raoResult = mock(RaoResult.class);
+        DichotomyStepResult<RaoSuccessResponse> highestValidStep = mock(DichotomyStepResult.class);
+        NetworkShifter networkShifter = mock(NetworkShifter.class);
+
+        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
+        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
+
+        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
+        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
+
+        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
+        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
+        when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
+
+        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true)).thenReturn(dichotomyResult);
+        when(dichotomyResult.hasValidStep()).thenReturn(true);
+        when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
+        when(highestValidStep.getValidationData()).thenReturn(raoResponse);
+        try (
+                MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class);
+                MockedStatic<NetPositionHelper> netPositionMockedStatic = Mockito.mockStatic(NetPositionHelper.class)
+        ) {
+            limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network))
+                    .thenReturn(limitingElement);
+            netPositionMockedStatic.when(() -> NetPositionHelper.computeFranceImportFromItaly(network))
+                    .thenReturn(exportCornerValue);
+            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        }
+
+        verify(computationService, times(0)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
+        verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, true);
+    }
+
+    @Test
     void computeTimestampWithFranceInAreaShouldRunDichotomy() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();
@@ -603,6 +675,77 @@ class ExportCornerComputationServiceTest {
         verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
         verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
         verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, true);
+    }
+
+    @Test
+    void computeTimestampWithFranceOutAreaShouldNotRunInitialShift() {
+        CseValidRequest cseValidRequest = CseValidRequestTestData.getExportCseValidRequest(ProcessType.IDCC);
+        String cgmUrl = cseValidRequest.getCgm().getUrl();
+        String glskUrl = cseValidRequest.getGlsk().getUrl();
+        String cracUrl = cseValidRequest.getImportCrac().getUrl();
+        ProcessType processType = cseValidRequest.getProcessType();
+        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
+
+        TTimestamp timestamp = TimestampTestData.getTimestampWithFranceOutArea();
+        final QuantityType miec = new QuantityType();
+        miec.setV(BigDecimal.TEN);
+        timestamp.setMIEC(miec);
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        TLimitingElement limitingElement = new TLimitingElement();
+
+        String jsonCracUrl = "/CSE/VALID/crac.utc";
+        String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
+        String networkFileUrl = "CSE/Valid/network.utc";
+        String raoResultFileUrl = "CSE/VALID/raoResult.utc";
+        double shiftValue = timestampWrapper.getMiecIntValue() - (timestampWrapper.getMibiecIntValue() - timestampWrapper.getAntcfinalIntValue());
+        double exportCornerValue = 10.0;
+
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        Network network = mock(Network.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
+        Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
+        RaoSuccessResponse raoResponse = mock(RaoSuccessResponse.class);
+        DichotomyResult<RaoSuccessResponse> dichotomyResult = mock(DichotomyResult.class);
+        RaoResult raoResult = mock(RaoResult.class);
+        DichotomyStepResult<RaoSuccessResponse> highestValidStep = mock(DichotomyStepResult.class);
+        NetworkShifter networkShifter = mock(NetworkShifter.class);
+
+        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
+        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
+
+        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
+        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
+
+        when(cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(false);
+        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
+        when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
+
+        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true)).thenReturn(dichotomyResult);
+        when(dichotomyResult.hasValidStep()).thenReturn(true);
+        when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
+        when(highestValidStep.getValidationData()).thenReturn(raoResponse);
+        try (
+                MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class);
+                MockedStatic<NetPositionHelper> netPositionMockedStatic = Mockito.mockStatic(NetPositionHelper.class)
+        ) {
+            limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network))
+                    .thenReturn(limitingElement);
+            netPositionMockedStatic.when(() -> NetPositionHelper.computeFranceImportFromItaly(network))
+                    .thenReturn(exportCornerValue * -1);
+            exportCornerComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        }
+
+        verify(computationService, times(0)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
+        verify(dichotomyRunner, times(1)).runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, true);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithExportCornerDichotomyResponse(timestamp, limitingElement, exportCornerValue, false);
     }
 
     @Test

@@ -277,6 +277,80 @@ class FullImportComputationServiceTest {
     }
 
     @Test
+    void computeTimestampShouldNotRunInitialShift() {
+        CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
+        String cgmUrl = cseValidRequest.getCgm().getUrl();
+        String glskUrl = cseValidRequest.getGlsk().getUrl();
+        String cracUrl = cseValidRequest.getImportCrac().getUrl();
+        ProcessType processType = cseValidRequest.getProcessType();
+        OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
+
+        TTimestamp timestamp = TimestampTestData.getTimestampWithMniiAndMibniiAndAntcfinalAndActualNtcBelowTarget();
+        TTimestampWrapper timestampWrapper = new TTimestampWrapper(timestamp, eicCodesConfiguration, eicCodesMapper);
+
+        String jsonCracUrl = "/CSE/VALID/crac.utc";
+        String raoParametersUrl = "/CSE/VALID/raoParameter.utc";
+        String networkFileUrl = "CSE/Valid/network.utc";
+        String raoResultFileUrl = "CSE/VALID/raoResult.utc";
+        double italianImport = 55.0;
+        double shiftValue = (timestampWrapper.getMibniiIntValue() - timestampWrapper.getAntcfinalIntValue()) - italianImport;
+        BigDecimal mibnii = timestampWrapper.getMibniiValue().subtract(timestampWrapper.getAntcfinalValue());
+        TLimitingElement limitingElement = new TLimitingElement();
+        double fullImportValue = 10.0;
+
+        TcDocumentTypeWriter tcDocumentTypeWriter = mock(TcDocumentTypeWriter.class);
+        Network network = mock(Network.class);
+        CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
+        Crac crac = mock(Crac.class);
+        when(cracCreationContext.getCrac()).thenReturn(crac);
+        RaoSuccessResponse raoResponse = mock(RaoSuccessResponse.class);
+        NetworkShifter networkShifter = mock(NetworkShifter.class);
+        DichotomyResult<RaoSuccessResponse> dichotomyResult = mock(DichotomyResult.class);
+        RaoResult raoResult = mock(RaoResult.class);
+        DichotomyStepResult<RaoSuccessResponse> highestValidStep = mock(DichotomyStepResult.class);
+
+        when(fileImporter.importNetwork(cgmUrl)).thenReturn(network);
+        when(fileImporter.importCracCreationContext(cracUrl, network)).thenReturn(cracCreationContext);
+        when(fileImporter.importNetwork(networkFileUrl)).thenReturn(network);
+        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
+
+        when(fileExporter.saveCracInJsonFormat(crac, processTargetDateTime, processType)).thenReturn(jsonCracUrl);
+        when(fileExporter.saveRaoParameters(processTargetDateTime, processType)).thenReturn(raoParametersUrl);
+
+        when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(true);
+
+        when(cseValidNetworkShifterProvider.getNetworkShifterForFullImport(timestampWrapper, network, glskUrl, processType)).thenReturn(networkShifter);
+        when(computationService.runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl)).thenReturn(raoResponse);
+        when(cseValidRaoRunner.isSecure(raoResponse, network)).thenReturn(true);
+
+        when(dichotomyResult.hasValidStep()).thenReturn(true);
+        when(dichotomyResult.getHighestValidStep()).thenReturn(highestValidStep);
+        when(highestValidStep.getValidationData()).thenReturn(raoResponse);
+        when(fileImporter.importRaoResult(raoResultFileUrl, crac)).thenReturn(raoResult);
+        when(dichotomyRunner.runDichotomy(timestampWrapper, cseValidRequest, jsonCracUrl, raoParametersUrl, network, false)).thenReturn(dichotomyResult);
+
+        when(raoResponse.getNetworkWithPraFileUrl()).thenReturn(networkFileUrl);
+        when(raoResponse.getRaoResultFileUrl()).thenReturn(raoResultFileUrl);
+
+        try (
+                MockedStatic<LimitingElementHelper> limitingElementServiceMockedStatic = Mockito.mockStatic(LimitingElementHelper.class);
+                MockedStatic<NetPositionHelper> netPositionMockedStatic = Mockito.mockStatic(NetPositionHelper.class)
+        ) {
+            limitingElementServiceMockedStatic.when(() -> LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network))
+                    .thenReturn(limitingElement);
+            netPositionMockedStatic.when(() -> NetPositionHelper.computeItalianImport(network))
+                    .thenReturn(italianImport, fullImportValue);
+            fullImportComputationService.computeTimestamp(timestampWrapper, cseValidRequest, tcDocumentTypeWriter);
+        }
+
+        verify(computationService, times(0)).shiftNetwork(shiftValue, network, networkShifter);
+        verify(computationService, times(1)).runRao(cseValidRequest, network, jsonCracUrl, raoParametersUrl);
+        verify(cseValidRaoRunner, times(1)).isSecure(raoResponse, network);
+        verify(tcDocumentTypeWriter, times(1)).fillTimestampWithFullImportDichotomyResponse(timestamp, mibnii, fullImportValue, limitingElement);
+    }
+
+    @Test
     void computeTimestampRunDichotomySuccessHighestValidStepNotNull() {
         CseValidRequest cseValidRequest = CseValidRequestTestData.getImportCseValidRequest(ProcessType.IDCC);
         String cgmUrl = cseValidRequest.getCgm().getUrl();

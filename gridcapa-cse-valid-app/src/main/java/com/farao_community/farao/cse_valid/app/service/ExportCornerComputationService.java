@@ -46,6 +46,7 @@ import static com.farao_community.farao.cse_valid.app.Constants.ERROR_MSG_MISSIN
 @Service
 public class ExportCornerComputationService {
 
+    private static final int MINIMUM_SHIFT_VALUE = 50;
     private final ComputationService computationService;
     private final DichotomyRunner dichotomyRunner;
     private final FileImporter fileImporter;
@@ -89,12 +90,14 @@ public class ExportCornerComputationService {
 
                 String cgmUrl = cseValidRequest.getCgm().getUrl();
                 Network network = fileImporter.importNetwork(cgmUrl);
-                String glskUrl = cseValidRequest.getGlsk().getUrl();
                 ProcessType processType = cseValidRequest.getProcessType();
-                NetworkShifter networkShifter = cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType);
                 double shiftValue = computeShiftValue(timestampWrapper);
 
-                computationService.shiftNetwork(shiftValue, network, networkShifter);
+                if (shiftValue >= MINIMUM_SHIFT_VALUE) {
+                    String glskUrl = cseValidRequest.getGlsk().getUrl();
+                    NetworkShifter networkShifter = cseValidNetworkShifterProvider.getNetworkShifterForExportCornerWithAllCountries(timestampWrapper, network, glskUrl, processType);
+                    computationService.shiftNetwork(shiftValue, network, networkShifter);
+                }
 
                 OffsetDateTime processTargetDateTime = cseValidRequest.getTimestamp();
                 String raoParametersURL = fileExporter.saveRaoParameters(processTargetDateTime, processType);
