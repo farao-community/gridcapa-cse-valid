@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.farao-community.farao</groupId>
         <artifactId>farao-parent-ws</artifactId>
-        <version>1.10.1</version>
+        <version>1.11.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>gridcapa-cse-valid</artifactId>
@@ -58,7 +58,6 @@
         <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
         <jaxb.impl.version>4.0.0</jaxb.impl.version>
         <jsonapi.converter.version>0.11</jsonapi.converter.version>
-        <logstash.version>7.4</logstash.version>
         <maven.jaxb.version>4.0.8</maven.jaxb.version>
         <jakarta.activation-api.version>2.1.0</jakarta.activation-api.version>
         <jaxb-runtime.version>4.0.5</jaxb-runtime.version>
@@ -128,11 +127,6 @@
                 <groupId>com.github.jasminb</groupId>
                 <artifactId>jsonapi-converter</artifactId>
                 <version>${jsonapi.converter.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>net.logstash.logback</groupId>
-                <artifactId>logstash-logback-encoder</artifactId>
-                <version>${logstash.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
