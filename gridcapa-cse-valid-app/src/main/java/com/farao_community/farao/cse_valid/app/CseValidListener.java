@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -47,14 +48,17 @@ public class CseValidListener implements MessageListener {
     private final AmqpTemplate amqpTemplate;
     private final CseValidHandler cseValidHandler;
     private final AmqpMessagesConfiguration amqpMessagesConfiguration;
+    private final FanoutExchange cseValidResponseExchange;
     private final StreamBridge streamBridge;
     private final Logger businessLogger;
 
     public CseValidListener(AmqpTemplate amqpTemplate, CseValidHandler cseValidHandler,
-                            AmqpMessagesConfiguration amqpMessagesConfiguration, StreamBridge streamBridge,
+                            AmqpMessagesConfiguration amqpMessagesConfiguration,
+                            FanoutExchange cseValidResponseExchange, StreamBridge streamBridge,
                             Logger businessLogger) {
         this.amqpTemplate = amqpTemplate;
         this.cseValidHandler = cseValidHandler;
+        this.cseValidResponseExchange = cseValidResponseExchange;
         this.streamBridge = streamBridge;
         this.businessLogger = businessLogger;
         this.jsonApiConverter = new JsonApiConverter();
@@ -91,11 +95,12 @@ public class CseValidListener implements MessageListener {
 
     private void sendErrorResponse(Exception e, String replyTo, String correlationId) {
         AbstractCseValidException wrappingException = new CseValidInternalException(String.format(CSE_RUN_FAILED, e.getMessage()), e);
-        businessLogger.error(String.format(CSE_RUN_FAILED, wrappingException.getDetails()));
+        final String errorMessage = String.format(CSE_RUN_FAILED, wrappingException.getDetails());
+        businessLogger.error(errorMessage);
         if (replyTo != null) {
             amqpTemplate.send(replyTo, createErrorResponse(wrappingException, correlationId));
         } else {
-            amqpTemplate.send(amqpMessagesConfiguration.cseValidResponseExchange().getName(), "", createErrorResponse(wrappingException, correlationId));
+            amqpTemplate.send(cseValidResponseExchange.getName(), "", createErrorResponse(wrappingException, correlationId));
         }
     }
 
@@ -103,7 +108,7 @@ public class CseValidListener implements MessageListener {
         if (replyTo != null) {
             amqpTemplate.send(replyTo, createMessageResponse(cseValidResponse, correlationId));
         } else {
-            amqpTemplate.send(amqpMessagesConfiguration.cseValidResponseExchange().getName(), "", createMessageResponse(cseValidResponse, correlationId));
+            amqpTemplate.send(cseValidResponseExchange.getName(), "", createMessageResponse(cseValidResponse, correlationId));
         }
     }
 
