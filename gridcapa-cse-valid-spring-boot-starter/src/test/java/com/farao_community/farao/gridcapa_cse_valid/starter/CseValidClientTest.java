@@ -40,11 +40,11 @@ class CseValidClientTest {
 
     private CseValidClientProperties buildProperties() {
         CseValidClientProperties properties = new CseValidClientProperties();
-        CseValidClientProperties.AmqpConfiguration amqpConfiguration = new CseValidClientProperties.AmqpConfiguration();
-        amqpConfiguration.setQueueName("my-queue");
+        CseValidClientProperties.BindingConfiguration amqpConfiguration = new CseValidClientProperties.BindingConfiguration();
+        amqpConfiguration.setDestination("my-queue");
         amqpConfiguration.setExpiration("60000");
         amqpConfiguration.setApplicationId("application-id");
-        properties.setAmqp(amqpConfiguration);
+        properties.setBinding(amqpConfiguration);
         return properties;
     }
 }

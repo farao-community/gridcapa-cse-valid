@@ -7,8 +7,6 @@
 package com.farao_community.farao.cse_valid.app.configuration;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.core.FanoutExchange;
-import org.springframework.amqp.core.Queue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -23,19 +21,9 @@ class AmqpMessagesConfigurationTest {
     @Autowired
     private AmqpMessagesConfiguration amqpConfiguration;
 
-    @Autowired
-    private Queue requestQueue;
-
-    @Autowired
-    private FanoutExchange responseExchange;
-
     @Test
     void checkAmqpMessageConfiguration() {
         assertNotNull(amqpConfiguration);
-        assertNotNull(requestQueue);
-        assertEquals("cse-valid-requests", requestQueue.getName());
-        assertNotNull(responseExchange);
-        assertEquals("cse-valid-response", responseExchange.getName());
-        assertEquals("600000", amqpConfiguration.cseValidResponseExpiration());
+        assertEquals(600000, amqpConfiguration.getAsyncTimeOut());
     }
 }

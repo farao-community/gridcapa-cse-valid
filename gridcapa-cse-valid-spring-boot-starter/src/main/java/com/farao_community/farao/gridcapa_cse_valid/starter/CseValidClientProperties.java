@@ -8,39 +8,50 @@ package com.farao_community.farao.gridcapa_cse_valid.starter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.Optional;
+
 /**
  * @author Theo Pascoli {@literal <theo.pascoli at rte-france.com>}
  */
 @ConfigurationProperties("cse-valid-runner")
 public class CseValidClientProperties {
-    private AmqpConfiguration amqp;
+    private BindingConfiguration binding;
 
-    public AmqpConfiguration getAmqp() {
-        return amqp;
+    public BindingConfiguration getBinding() {
+        return binding;
     }
 
-    public void setAmqp(AmqpConfiguration amqp) {
-        this.amqp = amqp;
+    public void setBinding(final BindingConfiguration binding) {
+        this.binding = binding;
     }
 
-    public static class AmqpConfiguration {
-        private String queueName;
+    public static class BindingConfiguration {
+        private String destination;
+        private String routingKey;
         private String expiration;
         private String applicationId;
 
-        public String getQueueName() {
-            return queueName;
+        public String getDestination() {
+            return destination;
         }
 
-        public void setQueueName(String queueName) {
-            this.queueName = queueName;
+        public void setDestination(final String destination) {
+            this.destination = destination;
+        }
+
+        public String getRoutingKey() {
+            return Optional.ofNullable(routingKey).orElse("#");
+        }
+
+        public void setRoutingKey(final String routingKey) {
+            this.routingKey = routingKey;
         }
 
         public String getExpiration() {
             return expiration;
         }
 
-        public void setExpiration(String expiration) {
+        public void setExpiration(final String expiration) {
             this.expiration = expiration;
         }
 
@@ -48,7 +59,7 @@ public class CseValidClientProperties {
             return applicationId;
         }
 
-        public void setApplicationId(String applicationId) {
+        public void setApplicationId(final String applicationId) {
             this.applicationId = applicationId;
         }
     }
