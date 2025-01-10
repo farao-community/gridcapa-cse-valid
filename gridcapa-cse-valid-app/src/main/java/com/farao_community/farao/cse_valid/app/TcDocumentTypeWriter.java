@@ -21,8 +21,6 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import xsd.etso_code_lists.BusinessTypeList;
 import xsd.etso_code_lists.CodingSchemeType;
 import xsd.etso_code_lists.MessageTypeList;
@@ -81,7 +79,6 @@ import static com.farao_community.farao.cse_valid.app.Constants.TIMESERIES_IDENT
  */
 public class TcDocumentTypeWriter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TcDocumentTypeWriter.class);
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'");
 
     private final CseValidRequest processStartRequest;
@@ -124,7 +121,6 @@ public class TcDocumentTypeWriter {
             JAXBElement<TcDocumentType> root = new JAXBElement<>(new QName("TTC_rtevalidation_document"), TcDocumentType.class, tcDocumentType);
             jaxbMarshaller.marshal(root, sw);
         } catch (JAXBException e) {
-            LOGGER.error("Error while writing TTC validation result document ", e);
             throw new CseValidInternalException("Error while writing TTC validation result document ", e);
         }
         return new ByteArrayInputStream(sw.toString().getBytes());
