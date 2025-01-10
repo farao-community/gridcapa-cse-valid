@@ -5,3 +5,7 @@ cse-valid-runner:
     italy: 10YIT-GRTN-----B
     slovenia: 10YSI-ELES-----O
     switzerland: 10YCH-SWISSGRIDZ
+spring:
+  cloud:
+    function:
+      definition: request

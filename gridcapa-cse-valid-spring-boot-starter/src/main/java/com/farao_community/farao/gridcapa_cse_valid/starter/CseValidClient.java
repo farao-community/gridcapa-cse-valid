@@ -32,15 +32,16 @@ public class CseValidClient {
     private final CseValidClientProperties cseValidClientProperties;
     private final JsonApiConverter jsonConverter;
 
-    public CseValidClient(AmqpTemplate amqpTemplate, CseValidClientProperties cseValidClientProperties) {
+    public CseValidClient(final AmqpTemplate amqpTemplate,
+                          final CseValidClientProperties cseValidClientProperties) {
         this.amqpTemplate = amqpTemplate;
         this.cseValidClientProperties = cseValidClientProperties;
         this.jsonConverter = new JsonApiConverter();
     }
 
-    public CseValidResponse run(CseValidRequest cseValidRequest, int priority) {
+    public CseValidResponse run(final CseValidRequest cseValidRequest, final int priority) {
         LOGGER.info("Cse valid request sent: {}", cseValidRequest);
-        Message responseMessage = amqpTemplate.sendAndReceive(cseValidClientProperties.getAmqp().getQueueName(), buildMessage(cseValidRequest, priority));
+        final Message responseMessage = amqpTemplate.sendAndReceive(cseValidClientProperties.getBinding().getDestination(), buildMessage(cseValidRequest, priority));
         if (responseMessage != null) {
             return CseValidResponseConversionHelper.convertCseValidResponse(responseMessage, jsonConverter);
         } else {
@@ -48,23 +49,23 @@ public class CseValidClient {
         }
     }
 
-    public CseValidResponse run(CseValidRequest cseValidRequest) {
+    public CseValidResponse run(final CseValidRequest cseValidRequest) {
         return run(cseValidRequest, DEFAULT_PRIORITY);
     }
 
-    public Message buildMessage(CseValidRequest cseValidRequest, int priority) {
+    public Message buildMessage(final CseValidRequest cseValidRequest, final int priority) {
         return MessageBuilder.withBody(jsonConverter.toJsonMessage(cseValidRequest))
                 .andProperties(buildMessageProperties(priority))
                 .build();
     }
 
-    private MessageProperties buildMessageProperties(int priority) {
+    private MessageProperties buildMessageProperties(final int priority) {
         return MessagePropertiesBuilder.newInstance()
-                .setAppId(cseValidClientProperties.getAmqp().getApplicationId())
+                .setAppId(cseValidClientProperties.getBinding().getApplicationId())
                 .setContentEncoding(CONTENT_ENCODING)
                 .setContentType(CONTENT_TYPE)
                 .setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT)
-                .setExpiration(cseValidClientProperties.getAmqp().getExpiration())
+                .setExpiration(cseValidClientProperties.getBinding().getExpiration())
                 .setPriority(priority)
                 .build();
     }

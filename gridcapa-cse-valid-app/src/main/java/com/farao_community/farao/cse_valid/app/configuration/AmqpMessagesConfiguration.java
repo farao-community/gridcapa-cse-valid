@@ -15,32 +15,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AmqpMessagesConfiguration {
 
-    @Value("${cse-valid-runner.bindings.response.destination}")
-    private String responseDestination;
-    @Value("${cse-valid-runner.bindings.response.expiration}")
-    private String responseExpiration;
-    @Value("${cse-valid-runner.bindings.request.destination}")
-    private String requestDestination;
-    @Value("${cse-valid-runner.bindings.request.routing-key}")
-    private String requestRoutingKey;
     @Value("${cse-valid-runner.async-time-out}")
     private long asyncTimeOut;
-
-    public String cseValidResponseExpiration() {
-        return responseExpiration;
-    }
-
-    public String getResponseDestination() {
-        return responseDestination;
-    }
-
-    public String getRequestDestination() {
-        return requestDestination;
-    }
-
-    public String getRequestRoutingKey() {
-        return requestRoutingKey;
-    }
 
     public long getAsyncTimeOut() {
         return asyncTimeOut;
