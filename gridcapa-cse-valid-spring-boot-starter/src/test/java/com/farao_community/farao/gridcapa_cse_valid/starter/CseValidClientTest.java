@@ -32,7 +32,7 @@ class CseValidClientTest {
         Message responseMessage = Mockito.mock(Message.class);
 
         Mockito.when(responseMessage.getBody()).thenReturn(getClass().getResourceAsStream("/cseValidResponse.json").readAllBytes());
-        Mockito.when(amqpTemplate.sendAndReceive(Mockito.same("my-queue"), Mockito.any())).thenReturn(responseMessage);
+        Mockito.when(amqpTemplate.sendAndReceive(Mockito.same("my-queue"), Mockito.any(), Mockito.any())).thenReturn(responseMessage);
         CseValidResponse response = client.run(request);
 
         assertEquals("test", response.getId());

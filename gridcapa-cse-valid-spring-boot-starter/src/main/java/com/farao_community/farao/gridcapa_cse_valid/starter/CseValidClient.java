@@ -41,7 +41,9 @@ public class CseValidClient {
 
     public CseValidResponse run(final CseValidRequest cseValidRequest, final int priority) {
         LOGGER.info("Cse valid request sent: {}", cseValidRequest);
-        final Message responseMessage = amqpTemplate.sendAndReceive(cseValidClientProperties.getBinding().getDestination(), buildMessage(cseValidRequest, priority));
+        final Message responseMessage = amqpTemplate.sendAndReceive(cseValidClientProperties.getBinding().getDestination(),
+                cseValidClientProperties.getBinding().getRoutingKey(),
+                buildMessage(cseValidRequest, priority));
         if (responseMessage != null) {
             return CseValidResponseConversionHelper.convertCseValidResponse(responseMessage, jsonConverter);
         } else {
