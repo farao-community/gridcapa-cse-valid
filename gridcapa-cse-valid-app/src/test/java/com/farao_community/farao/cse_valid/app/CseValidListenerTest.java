@@ -15,7 +15,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -23,6 +23,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.messaging.support.GenericMessage;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -64,13 +65,18 @@ class CseValidListenerTest {
 
     @Test
     void checkThatCorrectMessageIsHandledCorrectly() throws URISyntaxException, IOException {
-        byte[] correctMessage = Files.readAllBytes(Paths.get(getClass().getResource("/validRequest.json").toURI()));
-        Message message = MessageBuilder.withBody(correctMessage).build();
-        Instant computationStartInstant = Instant.parse("2021-01-01T00:30:00Z");
-        Instant computationEndInstant = Instant.parse("2021-01-01T00:35:00Z");
-        String resultFileUrl = "testUrl";
-        CseValidResponse cseValidResponse = new CseValidResponse("c7fc89da-dcd7-40d2-8d63-b8aef0a1ecdf", resultFileUrl, computationStartInstant, computationEndInstant);
+        final byte[] correctMessage = Files.readAllBytes(Paths.get(getClass().getResource("/validRequest.json").toURI()));
+        final Message amqpMessage = new Message(correctMessage, new MessageProperties());
+        amqpMessage.getMessageProperties().setHeader("amqp_correlationId", "12345");
+        amqpMessage.getMessageProperties().setHeader("amqp_replyTo", "amq.rabbitmq.reply-to.someQueue");
+        final GenericMessage<byte[]> message = new GenericMessage<>(amqpMessage.getBody(),
+                amqpMessage.getMessageProperties().getHeaders());
+        final Instant computationStartInstant = Instant.parse("2021-01-01T00:30:00Z");
+        final Instant computationEndInstant = Instant.parse("2021-01-01T00:35:00Z");
+        final String resultFileUrl = "testUrl";
+        final CseValidResponse cseValidResponse = new CseValidResponse("c7fc89da-dcd7-40d2-8d63-b8aef0a1ecdf", resultFileUrl, computationStartInstant, computationEndInstant);
         Mockito.when(cseValidHandler.handleCseValidRequest(Mockito.any(CseValidRequest.class))).thenReturn(cseValidResponse);
+
         cseValidListener.onMessage(message);
         Mockito.verify(streamBridge, Mockito.times(2)).send(Mockito.anyString(), Mockito.any());
         Mockito.verify(cseValidHandler, Mockito.times(1)).handleCseValidRequest(Mockito.any(CseValidRequest.class));
@@ -78,8 +84,11 @@ class CseValidListenerTest {
 
     @Test
     void checkThatInvalidMessageReturnsError() throws URISyntaxException, IOException {
-        byte[] invalidMessage = Files.readAllBytes(Paths.get(getClass().getResource("/invalidRequest.json").toURI()));
-        Message message = MessageBuilder.withBody(invalidMessage).build();
+        final byte[] invalidMessage = Files.readAllBytes(Paths.get(getClass().getResource("/invalidRequest.json").toURI()));
+        final Message amqpMessage = new Message(invalidMessage, new MessageProperties());
+        amqpMessage.getMessageProperties().setHeader("amqp_correlationId", "67890");
+        amqpMessage.getMessageProperties().setHeader("amqp_replyTo", "amq.rabbitmq.reply-to.someErrorQueue");
+        final GenericMessage<byte[]> message = new GenericMessage<>(amqpMessage.getBody(), amqpMessage.getMessageProperties().getHeaders());
         cseValidListener.onMessage(message);
         Mockito.verify(streamBridge, Mockito.times(0)).send(Mockito.anyString(), Mockito.any());
         Mockito.verify(cseValidHandler, Mockito.times(0)).handleCseValidRequest(Mockito.any(CseValidRequest.class));

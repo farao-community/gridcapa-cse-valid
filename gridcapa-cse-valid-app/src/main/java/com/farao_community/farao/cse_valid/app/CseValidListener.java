@@ -25,6 +25,7 @@ import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.core.MessagePropertiesBuilder;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -65,17 +66,20 @@ public class CseValidListener {
     }
 
     @Bean
-    public Consumer<Message> request() {
+    public Consumer<GenericMessage<byte[]>> request() {
         return this::onMessage;
     }
 
-    public void onMessage(final Message message) {
-        final String replyTo = message.getMessageProperties().getReplyTo();
-        final String correlationId = message.getMessageProperties().getCorrelationId();
-
+    public void onMessage(final GenericMessage<byte[]> message) {
+        final String replyTo = Optional.ofNullable(message.getHeaders().get("amqp_replyTo"))
+                .orElse("")
+                .toString();
+        final String correlationId = Optional.ofNullable(message.getHeaders().get("amqp_correlationId"))
+                .orElse("")
+                .toString();
         CseValidRequest cseValidRequest = null;
         try {
-            cseValidRequest = jsonApiConverter.fromJsonMessage(message.getBody(), CseValidRequest.class);
+            cseValidRequest = jsonApiConverter.fromJsonMessage(message.getPayload(), CseValidRequest.class);
             // propagate in logs MDC the task id as an extra field to be able to match microservices logs with calculation tasks.
             // This should be done only once, as soon as the information to add in mdc is available.
             MDC.put("gridcapa-task-id", cseValidRequest.getId());
