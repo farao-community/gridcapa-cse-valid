@@ -9,11 +9,14 @@ package com.farao_community.farao.cse_valid.app;
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
 import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
+import com.farao_community.farao.minio_adapter.starter.MinioUploadException;
 import com.powsybl.commons.datasource.MemDataSource;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.crac.api.Crac;
 import com.powsybl.openrao.raoapi.json.JsonRaoParameters;
 import com.powsybl.openrao.raoapi.parameters.RaoParameters;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -88,11 +91,14 @@ public class FileExporter {
         return minioAdapter.generatePreSignedUrl(raoParametersDestinationPath);
     }
 
+    @Retryable(retryFor = MinioUploadException.class,
+            backoff = @Backoff(delayExpression = "${retry.backoff.delay}", multiplierExpression = "${retry.backoff.multiplier}"),
+            maxAttemptsExpression = "${retry.max-attempts}")
     public String saveTtcValidation(TcDocumentTypeWriter tcDocumentTypeWriter, OffsetDateTime offsetDateTime, ProcessType processType) {
         String ttcValidationDestinationPath = makeDestinationMinioPath(offsetDateTime, processType, FileKind.OUTPUTS);
         String ttcValidationFileName = getTTCValidationFilename(processType, offsetDateTime, ttcValidationDestinationPath);
         InputStream ttcValidationIs = tcDocumentTypeWriter.buildTcDocumentType();
-        minioAdapter.uploadOutputForTimestamp(ttcValidationFileName, ttcValidationIs, adaptTargetProcessName(processType), "TTC-VALIDATION", offsetDateTime);
+        minioAdapter.safelyUploadOutputForTimestamp(ttcValidationFileName, ttcValidationIs, adaptTargetProcessName(processType), "TTC-VALIDATION", offsetDateTime);
         return minioAdapter.generatePreSignedUrl(ttcValidationFileName);
     }
 
