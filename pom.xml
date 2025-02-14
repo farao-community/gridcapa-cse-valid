@@ -63,9 +63,9 @@
         <jaxb-runtime.version>4.0.5</jaxb-runtime.version>
 
         <!-- BUSINESS DEPENDENCIES -->
-        <farao.dependencies.version>1.38.1</farao.dependencies.version>
-        <farao.dichotomy.version>4.24.0</farao.dichotomy.version>
-        <gridcapa.rao.runner.version>1.33.0</gridcapa.rao.runner.version>
+        <farao.dependencies.version>1.39.0</farao.dependencies.version>
+        <farao.dichotomy.version>4.25.0</farao.dichotomy.version>
+        <gridcapa.rao.runner.version>1.34.0</gridcapa.rao.runner.version>
         <task-manager.version>1.34.0</task-manager.version>
         <gridcapa.starter.minio.version>1.4.0</gridcapa.starter.minio.version>
 
