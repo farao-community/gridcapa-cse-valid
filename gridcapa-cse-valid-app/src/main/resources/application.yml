@@ -5,3 +5,9 @@ cse-valid-runner:
     italy: 10YIT-GRTN-----B
     slovenia: 10YSI-ELES-----O
     switzerland: 10YCH-SWISSGRIDZ
+
+retry:
+  backoff:
+    delay: 3000 # 3s delay before first retry
+    multiplier: 2
+  max-attempts: 5 # the first attempt + 4 potential retry
