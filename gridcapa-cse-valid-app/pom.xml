@@ -6,14 +6,14 @@
     <parent>
         <artifactId>gridcapa-cse-valid</artifactId>
         <groupId>com.farao-community.farao</groupId>
-        <version>1.26.0</version>
+        <version>1.27.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>gridcapa-cse-valid-app</artifactId>
     <name>GridCapa CSE validation runner application</name>
     <description>Cse validation runner application in GridCapa environment</description>
     <packaging>jar</packaging>
-    <version>1.26.0</version>
+    <version>1.27.0-SNAPSHOT</version>
     <properties>
         <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
     </properties>
