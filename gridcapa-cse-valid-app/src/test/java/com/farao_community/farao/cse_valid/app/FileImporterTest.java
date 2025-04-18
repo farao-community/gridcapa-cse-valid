@@ -13,7 +13,6 @@ import com.powsybl.openrao.data.crac.api.Crac;
 import com.powsybl.openrao.data.crac.io.cse.CseCracCreationContext;
 import com.powsybl.openrao.data.raoresult.api.RaoResult;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -81,40 +80,7 @@ class FileImporterTest {
         InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.5.json");
         assertNotNull(cracInputStream);
 
-        final Network network = mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id");
-        final Identifiable injectionIdentifiable = mock(Identifiable.class);
-        TwoWindingsTransformer pst = mock(TwoWindingsTransformer.class);
-        PhaseTapChanger pstChanger = mock(PhaseTapChanger.class);
-        when(pst.getPhaseTapChanger()).thenReturn(pstChanger);
-        when(pstChanger.getTapPosition()).thenReturn(2);
-        when(network.getTwoWindingsTransformer("pst")).thenReturn(pst);
-        Map<Integer, PhaseTapChangerStep> mockedSteps = new HashMap<>();
-        mockPhaseTapChangerStep(mockedSteps, 3, 3.);
-        mockPhaseTapChangerStep(mockedSteps, 2, 2.5);
-        mockPhaseTapChangerStep(mockedSteps, 1, 2.);
-        mockPhaseTapChangerStep(mockedSteps, 0, 1.5);
-        mockPhaseTapChangerStep(mockedSteps, -1, 1.);
-        mockPhaseTapChangerStep(mockedSteps, -2, .5);
-        mockPhaseTapChangerStep(mockedSteps, -3, .0);
-        when(pstChanger.getAllSteps()).thenReturn(mockedSteps);
-        // pst2
-        TwoWindingsTransformer pst2 = mock(TwoWindingsTransformer.class);
-        PhaseTapChanger pstChanger2 = mock(PhaseTapChanger.class);
-        when(pst2.getPhaseTapChanger()).thenReturn(pstChanger2);
-        when(pstChanger2.getTapPosition()).thenReturn(1);
-        when(network.getTwoWindingsTransformer("pst2")).thenReturn(pst2);
-        when(pstChanger2.getAllSteps()).thenReturn(mockedSteps);
-        // pst 3
-        TwoWindingsTransformer pst3 = mock(TwoWindingsTransformer.class);
-        PhaseTapChanger pstChanger3 = Mockito.mock(PhaseTapChanger.class);
-        Mockito.when(pst3.getPhaseTapChanger()).thenReturn(pstChanger2);
-        Mockito.when(pstChanger3.getTapPosition()).thenReturn(1);
-        Mockito.when(network.getTwoWindingsTransformer("pst3")).thenReturn(pst2);
-        Mockito.when(pstChanger3.getAllSteps()).thenReturn(mockedSteps);
-
-        when(network.getIdentifiable("injection")).thenReturn(injectionIdentifiable);
-        when(injectionIdentifiable.getType()).thenReturn(IdentifiableType.GENERATOR);
-
+        Network network = mockNetworkWithTransformers();
         Crac crac = Crac.read("crac.json", cracInputStream, network);
         RaoResult raoResult = fileImporter.importRaoResult(Objects.requireNonNull(getClass().getResource("/rao-result-v1.1.json")).toString(), crac);
         assertNotNull(raoResult);
@@ -122,40 +88,7 @@ class FileImporterTest {
 
     @Test
     void testImportCracFromJson() {
-        final Network network = mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id");
-        final Identifiable injectionIdentifiable = mock(Identifiable.class);
-        when(network.getIdentifiable("injection")).thenReturn(injectionIdentifiable);
-        when(injectionIdentifiable.getType()).thenReturn(IdentifiableType.GENERATOR);
-        // pst
-        TwoWindingsTransformer pst = mock(TwoWindingsTransformer.class);
-        PhaseTapChanger pstChanger = mock(PhaseTapChanger.class);
-        when(pst.getPhaseTapChanger()).thenReturn(pstChanger);
-        when(pstChanger.getTapPosition()).thenReturn(2);
-        when(network.getTwoWindingsTransformer("pst")).thenReturn(pst);
-        Map<Integer, PhaseTapChangerStep> mockedSteps = new HashMap<>();
-        mockPhaseTapChangerStep(mockedSteps, 3, 3.);
-        mockPhaseTapChangerStep(mockedSteps, 2, 2.5);
-        mockPhaseTapChangerStep(mockedSteps, 1, 2.);
-        mockPhaseTapChangerStep(mockedSteps, 0, 1.5);
-        mockPhaseTapChangerStep(mockedSteps, -1, 1.);
-        mockPhaseTapChangerStep(mockedSteps, -2, .5);
-        mockPhaseTapChangerStep(mockedSteps, -3, .0);
-        when(pstChanger.getAllSteps()).thenReturn(mockedSteps);
-        // pst2
-        TwoWindingsTransformer pst2 = mock(TwoWindingsTransformer.class);
-        PhaseTapChanger pstChanger2 = mock(PhaseTapChanger.class);
-        when(pst2.getPhaseTapChanger()).thenReturn(pstChanger2);
-        when(pstChanger2.getTapPosition()).thenReturn(1);
-        when(network.getTwoWindingsTransformer("pst2")).thenReturn(pst2);
-        when(pstChanger2.getAllSteps()).thenReturn(mockedSteps);
-        // pst 3
-        TwoWindingsTransformer pst3 = mock(TwoWindingsTransformer.class);
-        PhaseTapChanger pstChanger3 = Mockito.mock(PhaseTapChanger.class);
-        Mockito.when(pst3.getPhaseTapChanger()).thenReturn(pstChanger2);
-        Mockito.when(pstChanger3.getTapPosition()).thenReturn(1);
-        Mockito.when(network.getTwoWindingsTransformer("pst3")).thenReturn(pst2);
-        Mockito.when(pstChanger3.getAllSteps()).thenReturn(mockedSteps);
-
+        Network network = mockNetworkWithTransformers();
         Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.5.json")).toString(), network);
         assertNotNull(crac);
     }
@@ -168,6 +101,38 @@ class FileImporterTest {
         CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, network);
 
         assertNotNull(cracCreationContext);
+    }
+
+    private static Network mockNetworkWithTransformers() {
+        Network network = mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id");
+        final Identifiable injectionIdentifiable = mock(Identifiable.class);
+        when(network.getIdentifiable("injection")).thenReturn(injectionIdentifiable);
+        when(injectionIdentifiable.getType()).thenReturn(IdentifiableType.GENERATOR);
+
+        // Mock transformers
+        mockTransformer(network, "pst", 2);
+        mockTransformer(network, "pst2", 1);
+        mockTransformer(network, "pst3", 1);
+
+        return network;
+    }
+
+    private static void mockTransformer(Network network, String id, int tapPosition) {
+        TwoWindingsTransformer pst = mock(TwoWindingsTransformer.class);
+        PhaseTapChanger pstChanger = mock(PhaseTapChanger.class);
+        when(pst.getPhaseTapChanger()).thenReturn(pstChanger);
+        when(pstChanger.getTapPosition()).thenReturn(tapPosition);
+        when(network.getTwoWindingsTransformer(id)).thenReturn(pst);
+
+        Map<Integer, PhaseTapChangerStep> mockedSteps = new HashMap<>();
+        mockPhaseTapChangerStep(mockedSteps, 3, 3.);
+        mockPhaseTapChangerStep(mockedSteps, 2, 2.5);
+        mockPhaseTapChangerStep(mockedSteps, 1, 2.);
+        mockPhaseTapChangerStep(mockedSteps, 0, 1.5);
+        mockPhaseTapChangerStep(mockedSteps, -1, 1.);
+        mockPhaseTapChangerStep(mockedSteps, -2, .5);
+        mockPhaseTapChangerStep(mockedSteps, -3, .0);
+        when(pstChanger.getAllSteps()).thenReturn(mockedSteps);
     }
 
     private static void mockPhaseTapChangerStep(final Map<Integer, PhaseTapChangerStep> mockedSteps,
