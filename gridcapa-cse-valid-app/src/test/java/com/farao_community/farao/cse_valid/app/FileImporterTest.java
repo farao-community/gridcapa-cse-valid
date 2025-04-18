@@ -8,7 +8,14 @@ package com.farao_community.farao.cse_valid.app;
 
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.powsybl.glsk.api.GlskDocument;
-import com.powsybl.iidm.network.*;
+import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.Identifiable;
+import com.powsybl.iidm.network.IdentifiableType;
+import com.powsybl.iidm.network.Line;
+import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.PhaseTapChanger;
+import com.powsybl.iidm.network.PhaseTapChangerStep;
+import com.powsybl.iidm.network.TwoWindingsTransformer;
 import com.powsybl.openrao.data.crac.api.Crac;
 import com.powsybl.openrao.data.crac.io.cse.CseCracCreationContext;
 import com.powsybl.openrao.data.raoresult.api.RaoResult;
