@@ -24,7 +24,7 @@ import com.powsybl.openrao.data.raoresult.api.RaoResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -36,10 +36,10 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class CseValidRaoRunnerTest {
 
-    @MockBean
+    @MockitoBean
     private FileImporter fileImporter;
 
-    @MockBean
+    @MockitoBean
     private RaoRunnerClient raoRunnerClient;
 
     @Autowired
