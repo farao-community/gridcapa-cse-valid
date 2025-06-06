@@ -40,7 +40,7 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -61,25 +61,25 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class FullImportComputationServiceTest {
 
-    @MockBean
+    @MockitoBean
     private ComputationService computationService;
 
-    @MockBean
+    @MockitoBean
     private DichotomyRunner dichotomyRunner;
 
-    @MockBean
+    @MockitoBean
     private FileImporter fileImporter;
 
-    @MockBean
+    @MockitoBean
     private FileExporter fileExporter;
 
-    @MockBean
+    @MockitoBean
     private Logger businessLogger;
 
-    @MockBean
+    @MockitoBean
     private CseValidNetworkShifterProvider cseValidNetworkShifterProvider;
 
-    @MockBean
+    @MockitoBean
     private CseValidRaoRunner cseValidRaoRunner;
 
     @Autowired

@@ -13,8 +13,8 @@ import com.farao_community.farao.cse_valid.app.utils.TimestampTestData;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.Map;
 
@@ -33,10 +33,10 @@ class CseValidNetworkShifterProviderTest {
     @Autowired
     private EicCodesMapper eicCodesMapper;
 
-    @MockBean
+    @MockitoBean
     private FileImporter fileImporter;
 
-    @SpyBean
+    @MockitoSpyBean
     private CseValidNetworkShifterProvider cseValidNetworkShifterProvider;
 
     /* ------------------- getSplittingFactorsForFullImport ------------------- */

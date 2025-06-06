@@ -30,8 +30,8 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -46,28 +46,28 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class DichotomyRunnerTest {
 
-    @MockBean
+    @MockitoBean
     private FileImporter fileImporter;
 
-    @MockBean
+    @MockitoBean
     private FileExporter fileExporter;
 
-    @MockBean
+    @MockitoBean
     private RaoRunnerClient raoRunnerClient;
 
-    @MockBean
+    @MockitoBean
     private Logger businessLogger;
 
-    @MockBean
+    @MockitoBean
     private CseValidNetworkShifterProvider cseValidNetworkShifterProvider;
 
     @Autowired
     private EicCodesConfiguration eicCodesConfiguration;
 
-    @MockBean
+    @MockitoBean
     private EicCodesMapper eicCodesMapper;
 
-    @SpyBean
+    @MockitoSpyBean
     private DichotomyRunner dichotomyRunner;
 
     /* --------------- runDichotomy --------------- */

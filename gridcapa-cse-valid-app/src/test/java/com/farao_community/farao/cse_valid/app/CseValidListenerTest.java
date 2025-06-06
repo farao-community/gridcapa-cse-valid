@@ -19,7 +19,7 @@ import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -36,13 +36,13 @@ import java.time.Instant;
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
 class CseValidListenerTest {
-    @MockBean
+    @MockitoBean
     public CseValidHandler cseValidHandler;
 
     @Autowired
     public CseValidListener cseValidListener;
 
-    @MockBean
+    @MockitoBean
     private StreamBridge streamBridge;
 
     @Autowired
