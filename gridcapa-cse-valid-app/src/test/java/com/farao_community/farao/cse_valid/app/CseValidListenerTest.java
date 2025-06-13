@@ -58,7 +58,7 @@ class CseValidListenerTest {
     }
 
     @BeforeEach
-    public void resetMocks() {
+    void resetMocks() {
         Mockito.reset(amqpTemplate, cseValidHandler, streamBridge);
     }
 
