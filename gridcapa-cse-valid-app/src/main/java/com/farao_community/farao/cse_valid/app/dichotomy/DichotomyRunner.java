@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class DichotomyRunner {
-    private static final RangeDivisionIndexStrategy INDEX_STRATEGY_CONFIGURATION = new RangeDivisionIndexStrategy(false);
+    private static final RangeDivisionIndexStrategy<RaoSuccessResponse> INDEX_STRATEGY_CONFIGURATION = new RangeDivisionIndexStrategy<>(false);
     private static final String DICHOTOMY_PARAMETERS_MSG = "Minimum dichotomy index: {}, Maximum dichotomy index: {}, Dichotomy precision: {}";
     private static final double DEFAULT_DICHOTOMY_PRECISION = 50;
     private static final int DEFAULT_MIN_INDEX = 0;
@@ -83,11 +83,12 @@ public class DichotomyRunner {
     }
 
     DichotomyEngine<RaoSuccessResponse> getDichotomyEngine(double minValue, double maxValue, NetworkShifter networkShifter, NetworkValidator<RaoSuccessResponse> networkValidator) {
-        return new DichotomyEngine<>(
-                new Index<>(minValue, maxValue, DEFAULT_DICHOTOMY_PRECISION),
-                INDEX_STRATEGY_CONFIGURATION,
-                networkShifter,
-                networkValidator);
+        return DichotomyEngine.<RaoSuccessResponse>builder()
+                .withIndex(new Index<>(minValue, maxValue, DEFAULT_DICHOTOMY_PRECISION))
+                .withIndexStrategy(INDEX_STRATEGY_CONFIGURATION)
+                .withNetworkShifter(networkShifter)
+                .withNetworkValidator(networkValidator)
+                .build();
     }
 
     NetworkValidator<RaoSuccessResponse> getNetworkValidator(CseValidRequest cseValidRequest, String jsonCracUrl, String raoParametersURL) {
