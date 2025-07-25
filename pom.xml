@@ -53,6 +53,7 @@
     </modules>
 
     <properties>
+        <argLine /> <!-- required for java agent declaration, do not remove -->
         <!-- TECHNICAL DEPENDENCIES -->
         <commons.io.version>2.15.1</commons.io.version>
         <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
