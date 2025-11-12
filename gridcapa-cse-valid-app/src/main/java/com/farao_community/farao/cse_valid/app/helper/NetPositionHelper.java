@@ -7,7 +7,7 @@
 package com.farao_community.farao.cse_valid.app.helper;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
-import com.powsybl.balances_adjustment.util.CountryArea;
+import com.powsybl.balances_adjustment.util.BorderBasedCountryArea;
 import com.powsybl.balances_adjustment.util.CountryAreaFactory;
 import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Network;
@@ -32,15 +32,15 @@ public final class NetPositionHelper {
 
     public static double computeItalianImport(Network network) {
         runLoadFlow(network);
-        CountryArea itArea = new CountryAreaFactory(Country.IT).create(network);
+        BorderBasedCountryArea itArea = (BorderBasedCountryArea) new CountryAreaFactory(Country.IT).create(network);
         return Stream.of(Country.FR, Country.AT, Country.CH, Country.SI)
-                .map(country -> new CountryAreaFactory(country).create(network).getLeavingFlowToCountry(itArea))
+                .map(country -> ((BorderBasedCountryArea) new CountryAreaFactory(country).create(network)).getLeavingFlowToCountry(itArea))
                 .reduce(0., Double::sum);
     }
 
     public static double computeFranceImportFromItaly(Network network) {
         runLoadFlow(network);
-        return new CountryAreaFactory(Country.IT).create(network).getLeavingFlowToCountry(new CountryAreaFactory(Country.FR).create(network));
+        return ((BorderBasedCountryArea) new CountryAreaFactory(Country.IT).create(network)).getLeavingFlowToCountry((BorderBasedCountryArea) new CountryAreaFactory(Country.FR).create(network));
     }
 
     private static void runLoadFlow(Network network) {
