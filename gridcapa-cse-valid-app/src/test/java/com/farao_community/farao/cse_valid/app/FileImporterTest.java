@@ -9,8 +9,6 @@ package com.farao_community.farao.cse_valid.app;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TcDocumentType;
 import com.powsybl.glsk.api.GlskDocument;
 import com.powsybl.iidm.network.Branch;
-import com.powsybl.iidm.network.Identifiable;
-import com.powsybl.iidm.network.IdentifiableType;
 import com.powsybl.iidm.network.Line;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.PhaseTapChanger;
@@ -84,19 +82,18 @@ class FileImporterTest {
 
     @Test
     void testImportRaoResult() throws IOException {
-        InputStream cracInputStream = getClass().getResourceAsStream("/crac-for-rao-result-v1.5.json");
+        InputStream cracInputStream = getClass().getResourceAsStream("/SL_ep13us3case1.json");
         assertNotNull(cracInputStream);
-
-        Network network = mockNetworkWithTransformers();
+        Network network = Network.read("TestCase16Nodes.xiidm", getClass().getResourceAsStream("/TestCase16Nodes.xiidm"));
         Crac crac = Crac.read("crac.json", cracInputStream, network);
-        RaoResult raoResult = fileImporter.importRaoResult(Objects.requireNonNull(getClass().getResource("/rao-result-v1.1.json")).toString(), crac);
+        RaoResult raoResult = fileImporter.importRaoResult(Objects.requireNonNull(getClass().getResource("/raoResult.json")).toString(), crac);
         assertNotNull(raoResult);
     }
 
     @Test
     void testImportCracFromJson() {
-        Network network = mockNetworkWithTransformers();
-        Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/crac-for-rao-result-v1.5.json")).toString(), network);
+        Network network = Network.read("TestCase16Nodes.xiidm", getClass().getResourceAsStream("/TestCase16Nodes.xiidm"));
+        Crac crac = fileImporter.importCracFromJson(Objects.requireNonNull(getClass().getResource("/SL_ep13us3case1.json")).toString(), network);
         assertNotNull(crac);
     }
 
@@ -104,24 +101,8 @@ class FileImporterTest {
     void importCracCreationContext() {
         String cracUrl = Objects.requireNonNull(getClass().getResource("/20211125_0030_2D4_CRAC_FR1.xml")).toString();
         Network network = fileImporter.importNetwork("cgm.uct", Objects.requireNonNull(getClass().getResource("/20211125_1930_2D4_CO_Final_CSE1.uct")).toString());
-
         CseCracCreationContext cracCreationContext = fileImporter.importCracCreationContext(cracUrl, network);
-
         assertNotNull(cracCreationContext);
-    }
-
-    private static Network mockNetworkWithTransformers() {
-        Network network = mockNetworkWithLines("ne1Id", "ne2Id", "ne3Id");
-        final Identifiable injectionIdentifiable = mock(Identifiable.class);
-        when(network.getIdentifiable("injection")).thenReturn(injectionIdentifiable);
-        when(injectionIdentifiable.getType()).thenReturn(IdentifiableType.GENERATOR);
-
-        // Mock transformers
-        mockTransformer(network, "pst", 2);
-        mockTransformer(network, "pst2", 1);
-        mockTransformer(network, "pst3", 1);
-
-        return network;
     }
 
     private static void mockTransformer(Network network, String id, int tapPosition) {
