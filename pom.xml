@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.farao-community.farao</groupId>
         <artifactId>farao-parent-ws</artifactId>
-        <version>1.13.0</version>
+        <version>1.14.0</version>
     </parent>
 
     <artifactId>gridcapa-cse-valid</artifactId>
@@ -64,11 +64,11 @@
         <jaxb-runtime.version>4.0.5</jaxb-runtime.version>
 
         <!-- BUSINESS DEPENDENCIES -->
-        <farao.dependencies.version>1.44.1</farao.dependencies.version>
-        <farao.dichotomy.version>4.32.0</farao.dichotomy.version>
-        <gridcapa.rao.runner.version>1.38.0</gridcapa.rao.runner.version>
-        <task-manager.version>1.36.0</task-manager.version>
-        <gridcapa.starter.minio.version>1.6.0</gridcapa.starter.minio.version>
+        <farao.dependencies.version>1.46.0</farao.dependencies.version>
+        <farao.dichotomy.version>4.34.0</farao.dichotomy.version>
+        <gridcapa.rao.runner.version>1.42.0</gridcapa.rao.runner.version>
+        <task-manager.version>1.38.0</task-manager.version>
+        <gridcapa.starter.minio.version>1.8.0</gridcapa.starter.minio.version>
 
     </properties>
 
