@@ -7,8 +7,8 @@
 package com.farao_community.farao.cse_valid.app.helper;
 
 import com.farao_community.farao.cse_valid.api.exception.CseValidInternalException;
-import com.powsybl.balances_adjustment.util.BorderBasedCountryArea;
-import com.powsybl.balances_adjustment.util.CountryAreaFactory;
+import com.powsybl.networkarea.BorderBasedCountryArea;
+import com.powsybl.networkarea.CountryAreaFactory;
 import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.loadflow.LoadFlow;

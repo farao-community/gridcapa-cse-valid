@@ -11,6 +11,7 @@ import com.farao_community.farao.cse_valid.api.resource.ProcessType;
 import com.farao_community.farao.minio_adapter.starter.MinioAdapter;
 import com.farao_community.farao.minio_adapter.starter.MinioUploadException;
 import com.powsybl.commons.datasource.MemDataSource;
+import com.powsybl.commons.report.ReportNode;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.openrao.data.crac.api.Crac;
 import com.powsybl.openrao.raoapi.json.JsonRaoParameters;
@@ -82,9 +83,9 @@ public class FileExporter {
     }
 
     public String saveRaoParameters(OffsetDateTime offsetDateTime, ProcessType processType) {
-        RaoParameters raoParameters = RaoParameters.load();
+        RaoParameters raoParameters = RaoParameters.load(ReportNode.NO_OP);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        JsonRaoParameters.write(raoParameters, baos);
+        JsonRaoParameters.write(raoParameters, baos, ReportNode.NO_OP);
         String raoParametersDestinationPath = makeDestinationMinioPath(offsetDateTime, processType, FileKind.ARTIFACTS) + RAO_PARAMETERS_FILE_NAME;
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         minioAdapter.uploadArtifactForTimestamp(raoParametersDestinationPath, bais, processType.toString(), "", offsetDateTime);
