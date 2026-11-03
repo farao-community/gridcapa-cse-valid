@@ -9,7 +9,6 @@ package com.farao_community.farao.cse_valid.app.helper;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TCriticalBranch;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TElement;
 import com.farao_community.farao.cse_valid.app.ttc_adjustment.TLimitingElement;
-import com.farao_community.farao.rao_runner.api.resource.RaoSuccessResponse;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Branch;
@@ -20,7 +19,6 @@ import com.powsybl.iidm.network.Terminal;
 import com.powsybl.iidm.network.VoltageLevel;
 import com.powsybl.openrao.commons.Unit;
 import com.powsybl.openrao.data.crac.api.Crac;
-import com.powsybl.openrao.data.crac.api.NetworkElement;
 import com.powsybl.openrao.data.crac.api.State;
 import com.powsybl.openrao.data.crac.api.cnec.FlowCnec;
 import com.powsybl.openrao.data.crac.io.commons.api.ElementaryCreationContext;
@@ -46,6 +44,8 @@ import static org.mockito.Mockito.when;
 
 class LimitingElementHelperTest {
 
+    private static final String NETWORK_ELEMENT_ID = "id";
+
     @Test
     void getLimitingElementNoOutage() {
         // given
@@ -53,8 +53,7 @@ class LimitingElementHelperTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
 
         State state = mock(State.class);
-        NetworkElement networkElement = mock(NetworkElement.class);
-        FlowCnec worstCnec = getWorstCnec(state, networkElement);
+        FlowCnec worstCnec = getWorstCnec(state);
 
         Crac crac = getCrac(worstCnec);
         RaoResult raoResult = getRaoResult(worstCnec);
@@ -62,7 +61,7 @@ class LimitingElementHelperTest {
 
         when(state.isPreventive()).thenReturn(true); // outage = null
 
-        initMocksForMonitoredElement(network, networkElement);
+        initMocksForMonitoredElement(network);
 
         // when
         TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
@@ -73,7 +72,7 @@ class LimitingElementHelperTest {
                 .isNotNull()
                 .hasSize(1);
 
-        TCriticalBranch criticalBranch = limitingElement.getCriticalBranch().get(0);
+        TCriticalBranch criticalBranch = limitingElement.getCriticalBranch().getFirst();
         Assertions.assertThat(criticalBranch.getOutage()).isNull();
         assertMonitoredElementIsCorrect(criticalBranch);
     }
@@ -85,8 +84,7 @@ class LimitingElementHelperTest {
         CseCracCreationContext cracCreationContext = mock(CseCracCreationContext.class);
 
         State state = mock(State.class);
-        NetworkElement cnecNetworkElement = mock(NetworkElement.class);
-        FlowCnec worstCnec = getWorstCnec(state, cnecNetworkElement);
+        FlowCnec worstCnec = getWorstCnec(state);
 
         Crac crac = getCrac(worstCnec);
         RaoResult raoResult = getRaoResult(worstCnec);
@@ -94,7 +92,7 @@ class LimitingElementHelperTest {
 
         initMocksForOutage(network, cracCreationContext, state);
 
-        initMocksForMonitoredElement(network, cnecNetworkElement);
+        initMocksForMonitoredElement(network);
 
         // when
         TLimitingElement limitingElement = LimitingElementHelper.getLimitingElement(raoResult, cracCreationContext, network);
@@ -105,25 +103,18 @@ class LimitingElementHelperTest {
                 .isNotNull()
                 .hasSize(1);
 
-        TCriticalBranch criticalBranch = limitingElement.getCriticalBranch().get(0);
+        TCriticalBranch criticalBranch = limitingElement.getCriticalBranch().getFirst();
         assertOutageIsCorrect(criticalBranch);
         assertMonitoredElementIsCorrect(criticalBranch);
     }
 
     @NotNull
-    private static RaoSuccessResponse getValidationData() {
-        RaoSuccessResponse validationData = mock(RaoSuccessResponse.class);
-        when(validationData.getRaoResultFileUrl()).thenReturn("raoResultFileUrl");
-        return validationData;
-    }
-
-    @NotNull
-    private static FlowCnec getWorstCnec(State state, NetworkElement networkElement) {
+    private static FlowCnec getWorstCnec(State state) {
         FlowCnec worstCnec = mock(FlowCnec.class);
         when(worstCnec.isOptimized()).thenReturn(true);
         when(worstCnec.getName()).thenReturn("name");
         when(worstCnec.getState()).thenReturn(state);
-        when(worstCnec.getNetworkElement()).thenReturn(networkElement);
+        when(worstCnec.getNetworkElementId()).thenReturn(NETWORK_ELEMENT_ID);
         return worstCnec;
     }
 
@@ -182,10 +173,9 @@ class LimitingElementHelperTest {
         return branch;
     }
 
-    private static void initMocksForMonitoredElement(Network network, NetworkElement networkElement) {
+    private static void initMocksForMonitoredElement(Network network) {
         Branch<?> branch = getBranch();
-        when(networkElement.getId()).thenReturn("id");
-        when(network.getBranch("id")).thenReturn(branch);
+        when(network.getBranch(NETWORK_ELEMENT_ID)).thenReturn(branch);
     }
 
     private static Terminal mockTerminalWithCountry(Country country) {
@@ -207,7 +197,7 @@ class LimitingElementHelperTest {
                 .isNotNull()
                 .hasSize(1);
 
-        TElement outageElement = criticalBranch.getOutage().getElement().get(0);
+        TElement outageElement = criticalBranch.getOutage().getElement().getFirst();
         Assertions.assertThat(outageElement.getCode()).isNotNull();
         Assertions.assertThat(outageElement.getCode().getV()).isEqualTo("id2");
         Assertions.assertThat(outageElement.getAreafrom()).isNotNull();
@@ -222,10 +212,10 @@ class LimitingElementHelperTest {
                 .isNotNull()
                 .hasSize(1);
 
-        TElement monitoredElement = criticalBranch.getMonitoredElement().getElement().get(0);
+        TElement monitoredElement = criticalBranch.getMonitoredElement().getElement().getFirst();
         Assertions.assertThat(monitoredElement).isNotNull();
         Assertions.assertThat(monitoredElement.getCode()).isNotNull();
-        Assertions.assertThat(monitoredElement.getCode().getV()).isEqualTo("id");
+        Assertions.assertThat(monitoredElement.getCode().getV()).isEqualTo(NETWORK_ELEMENT_ID);
         Assertions.assertThat(monitoredElement.getAreafrom()).isNotNull();
         Assertions.assertThat(monitoredElement.getAreafrom().getV()).isEqualTo("FR");
         Assertions.assertThat(monitoredElement.getAreato()).isNotNull();

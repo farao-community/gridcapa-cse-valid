@@ -22,7 +22,6 @@ import com.powsybl.iidm.network.Terminal;
 import com.powsybl.openrao.commons.Unit;
 import com.powsybl.openrao.data.crac.api.Crac;
 import com.powsybl.openrao.data.crac.api.Instant;
-import com.powsybl.openrao.data.crac.api.NetworkElement;
 import com.powsybl.openrao.data.crac.api.cnec.FlowCnec;
 import com.powsybl.openrao.data.crac.io.commons.api.ElementaryCreationContext;
 import com.powsybl.openrao.data.crac.io.cse.CseCracCreationContext;
@@ -111,11 +110,11 @@ public final class LimitingElementHelper {
         return element;
     }
 
-    private static TElement getElement(Network network, NetworkElement networkElement) {
-        Branch<?> branch = network.getBranch(networkElement.getId());
+    private static TElement getElement(Network network, String networkElementId) {
+        Branch<?> branch = network.getBranch(networkElementId);
 
         TElement element = new TElement();
-        element.setCode(getTextType(networkElement.getId()));
+        element.setCode(getTextType(networkElementId));
         element.setAreafrom(getAreaFrom(branch));
         element.setAreato(getAreaTo(branch));
         return element;
@@ -147,7 +146,7 @@ public final class LimitingElementHelper {
     }
 
     private static TMonitoredElement getMonitoredElement(FlowCnec cnec, Network network) {
-        TElement element = getElement(network, cnec.getNetworkElement());
+        TElement element = getElement(network, cnec.getNetworkElementId());
         element.setName(getTextType(cnec.getName()));
 
         TMonitoredElement monitoredElement = new TMonitoredElement();
@@ -165,7 +164,7 @@ public final class LimitingElementHelper {
     private static <T> Collector<T, ?, T> toOne() {
         return Collectors.collectingAndThen(Collectors.toList(), list -> {
             if (list.size() == 1) {
-                return list.get(0);
+                return list.getFirst();
             }
             throw new LimitingElementBuildException("Found " + list.size() + " element(s), expected exactly one.");
         });
